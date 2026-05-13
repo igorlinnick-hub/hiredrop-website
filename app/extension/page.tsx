@@ -1,5 +1,8 @@
+import { redirect } from "next/navigation";
+
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import Button from "@/components/ui/Button";
+import DownloadButton from "@/components/extension/DownloadButton";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
   title: "Chrome Extension — JobFlow",
@@ -28,7 +31,14 @@ const STEPS = [
   },
 ];
 
-export default function ExtensionPage() {
+export default async function ExtensionPage() {
+  const supabase = await createClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) redirect("/login?next=/extension");
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) redirect("/login?next=/extension");
+
   return (
     <DashboardLayout>
       <div className="max-w-2xl">
@@ -94,15 +104,10 @@ export default function ExtensionPage() {
           </div>
         </div>
 
-        <Button size="lg">
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          Download Extension
-        </Button>
+        <DownloadButton token={token} />
 
         <p className="text-xs text-text2 mt-3">
-          Requires Google Chrome. The extension is not yet published to the Chrome Web Store — install manually using the steps above.
+          Requires Google Chrome. The extension is not yet published to the Chrome Web Store — install manually using the steps above. After loading the unpacked extension, open it and click <strong>Connect Account</strong>; you&apos;ll be redirected to <code>/extension/connect</code> which links your account.
         </p>
       </div>
     </DashboardLayout>

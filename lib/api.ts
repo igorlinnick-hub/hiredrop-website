@@ -61,6 +61,16 @@ export interface StatsResponse {
   max_per_platform: number;
 }
 
+export interface CampaignStatusResponse {
+  running: boolean;
+  filters: Record<string, unknown>;
+  started_at: string | null;
+  today_applications: number;
+  platform_counts: Record<string, number>;
+  limit_per_platform: number;
+  jobs_ready: number;
+}
+
 export interface ApiJob {
   id: string;
   title: string;

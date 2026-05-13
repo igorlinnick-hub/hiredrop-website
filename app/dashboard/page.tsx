@@ -1,12 +1,18 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { apiGet, type StatsResponse, type ApiJob, type ApiApplication } from "@/lib/api";
+import {
+  apiGet,
+  type StatsResponse,
+  type ApiJob,
+  type ApiApplication,
+  type CampaignStatusResponse,
+} from "@/lib/api";
 import type { Job, Application } from "@/lib/types";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import StatsCards from "@/components/dashboard/StatsCards";
 import JobsTable from "@/components/dashboard/JobsTable";
 import ApplicationHistory from "@/components/dashboard/ApplicationHistory";
-import Button from "@/components/ui/Button";
+import QuickActions from "@/components/dashboard/QuickActions";
 import UsageBanner from "@/components/dashboard/UsageBanner";
 
 export const metadata = {
@@ -41,15 +47,17 @@ export default async function DashboardPage() {
   }
 
   // Fetch all dashboard data in parallel
-  const [stats, jobs, applications] = await Promise.allSettled([
+  const [stats, jobs, applications, campaign] = await Promise.allSettled([
     apiGet<StatsResponse>("/stats", token),
     apiGet<ApiJob[]>("/jobs", token),
     apiGet<ApiApplication[]>("/applications/history", token),
+    apiGet<CampaignStatusResponse>("/campaign/status", token),
   ]);
 
   const statsData = stats.status === "fulfilled" ? stats.value : null;
   const jobsData = (jobs.status === "fulfilled" ? jobs.value : []) as Job[];
   const applicationsData = (applications.status === "fulfilled" ? applications.value : []) as unknown as Application[];
+  const campaignRunning = campaign.status === "fulfilled" ? campaign.value.running : false;
 
   const TIER_LABELS: Record<string, string> = {
     free: "Free",
@@ -60,15 +68,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardLayout>
-      {/* Quick actions */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        <Button size="sm">Find Jobs</Button>
-        <Button size="sm" variant="secondary">Check Email</Button>
-        <div className="flex items-center gap-2 ml-auto text-sm">
-          <span className="inline-block w-2 h-2 rounded-full bg-green animate-pulse" />
-          <span className="text-text2">Campaign running</span>
-        </div>
-      </div>
+      <QuickActions token={token} campaignRunning={campaignRunning} />
 
       <div className="space-y-6">
         {/* Subscription tier + daily usage */}
