@@ -15,24 +15,30 @@ export const metadata = {
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session) {
+  // getUser validates the JWT against Supabase; getSession only reads cookies.
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
     redirect("/login");
   }
 
-  // Check onboarding
+  // maybeSingle returns null instead of erroring when the row is missing
+  // (e.g. profile trigger hasn't fired yet right after signup).
   const { data: profile } = await supabase
     .from("profiles")
     .select("onboarding_completed")
-    .eq("user_id", session.user.id)
-    .single();
+    .eq("user_id", user.id)
+    .maybeSingle();
 
   if (!profile?.onboarding_completed) {
     redirect("/onboarding");
   }
 
-  const token = session.access_token;
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) {
+    redirect("/login");
+  }
 
   // Fetch all dashboard data in parallel
   const [stats, jobs, applications] = await Promise.allSettled([
