@@ -54,7 +54,7 @@ export interface StatsResponse {
   total_applications: number;
   applications_today: number;
   new_today: number;
-  tier: "free" | "pro" | "elite";
+  tier: "free" | "pro" | "elite" | "admin";
   daily_limit: number;
   remaining_today: number;
   platform_counts: Record<string, number>;

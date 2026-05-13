@@ -55,6 +55,7 @@ export default async function DashboardPage() {
     free: "Free",
     pro: "Pro",
     elite: "Elite",
+    admin: "Admin",
   };
 
   return (
