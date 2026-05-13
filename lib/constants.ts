@@ -4,13 +4,6 @@ export const PLATFORMS: Platform[] = [
   { id: "remoteok", name: "RemoteOK", status: "active", requiresLogin: false, description: "Remote jobs aggregator. No login needed." },
   { id: "indeed", name: "Indeed", status: "active", requiresLogin: true, description: "Largest job board. Supports auto-apply." },
   { id: "wellfound", name: "Wellfound", status: "active", requiresLogin: true, description: "Startup & tech jobs." },
-  { id: "glassdoor", name: "Glassdoor", status: "coming_soon", requiresLogin: true, description: "Jobs + company reviews." },
-  { id: "ziprecruiter", name: "ZipRecruiter", status: "coming_soon", requiresLogin: true, description: "AI-powered job matching." },
-  { id: "google_jobs", name: "Google Jobs", status: "coming_soon", requiresLogin: false, description: "Google job search aggregator." },
-  { id: "dice", name: "Dice", status: "coming_soon", requiresLogin: true, description: "Tech-focused job board." },
-  { id: "toptal", name: "Toptal", status: "coming_soon", requiresLogin: true, description: "Top freelance talent." },
-  { id: "hired", name: "Hired", status: "coming_soon", requiresLogin: true, description: "Tech job marketplace." },
-  { id: "flexjobs", name: "FlexJobs", status: "coming_soon", requiresLogin: true, description: "Remote & flexible jobs." },
 ];
 
 export const LOCATIONS: Location[] = [

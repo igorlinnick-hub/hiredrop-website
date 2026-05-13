@@ -36,20 +36,16 @@ export default function StepPlatforms({ profile, updateProfile, onNext, onBack }
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {PLATFORMS.map((platform) => {
-          const isActive = platform.status === "active";
           const isSelected = profile.platforms.includes(platform.id);
 
           return (
             <button
               type="button"
               key={platform.id}
-              disabled={!isActive}
               onClick={() => togglePlatform(platform.id)}
               className={[
                 "relative text-left p-4 rounded-lg border-2 transition",
-                !isActive
-                  ? "opacity-50 cursor-not-allowed border-border bg-surface"
-                  : isSelected
+                isSelected
                   ? "border-accent bg-accent/5"
                   : "border-border hover:border-text2 bg-surface",
               ].join(" ")}
@@ -59,7 +55,7 @@ export default function StepPlatforms({ profile, updateProfile, onNext, onBack }
                   <p className="font-medium text-text text-sm">{platform.name}</p>
                   <p className="text-xs text-text2 mt-0.5">{platform.description}</p>
                 </div>
-                {isActive && isSelected && (
+                {isSelected && (
                   <svg className="w-5 h-5 text-accent shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path
                       fillRule="evenodd"
@@ -70,13 +66,7 @@ export default function StepPlatforms({ profile, updateProfile, onNext, onBack }
                 )}
               </div>
 
-              {!isActive && (
-                <span className="absolute top-2 right-2 text-[10px] font-medium bg-surface2 text-text2 px-2 py-0.5 rounded-full">
-                  Coming soon
-                </span>
-              )}
-
-              {isActive && platform.requiresLogin && (
+              {platform.requiresLogin && (
                 <p className="text-[10px] text-yellow mt-2">Requires platform login</p>
               )}
             </button>

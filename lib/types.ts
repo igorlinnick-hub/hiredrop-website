@@ -15,7 +15,7 @@ export interface UserProfile {
 export interface Platform {
   id: string;
   name: string;
-  status: "active" | "coming_soon";
+  status: "active";
   requiresLogin: boolean;
   description: string;
 }
