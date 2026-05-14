@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
 
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || "https://web-production-db45.up.railway.app";
+
 export default function ResetPasswordPage() {
-  const supabase = createClient();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -18,22 +19,23 @@ export default function ResetPasswordPage() {
     setLoading(true);
     setError("");
 
-    // Route the recovery link through /auth/callback so the one-time code is
-    // exchanged for a real session (with SSR cookies) before the user lands
-    // on the update-password form. /auth/callback is already in Supabase's
-    // redirect allowlist; /auth/update-password may not be.
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/auth/update-password`,
-    });
-
-    setLoading(false);
-
-    if (resetError) {
-      setError(resetError.message);
-      return;
+    // The backend generates the Supabase recovery link with the service key
+    // and delivers it over Gmail SMTP — Supabase's built-in email is too
+    // rate-limited to rely on. The link routes through /auth/callback so the
+    // one-time code is exchanged for a session before /auth/update-password.
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) throw new Error(`Server error (${res.status})`);
+      setSent(true);
+    } catch {
+      setError("Couldn't send the reset link. Please try again in a moment.");
+    } finally {
+      setLoading(false);
     }
-
-    setSent(true);
   }
 
   return (
