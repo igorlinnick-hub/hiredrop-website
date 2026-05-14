@@ -4,6 +4,18 @@ import { createServerClient } from "@supabase/ssr";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  // `next` lets non-OAuth flows (e.g. password recovery) route through this
+  // handler purely to exchange the code for a session, then land on their
+  // own page instead of the default onboarding routing.
+  const next = searchParams.get("next");
+
+  // Supabase appends error params when a link is expired or already used.
+  const errorDescription = searchParams.get("error_description") || searchParams.get("error");
+  if (errorDescription) {
+    return NextResponse.redirect(
+      `${origin}/login?error=${encodeURIComponent(errorDescription)}`
+    );
+  }
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login`);
@@ -38,13 +50,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login`);
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("onboarding_completed")
-    .eq("user_id", user.id)
-    .single();
-
-  const destination = profile?.onboarding_completed ? "/dashboard" : "/onboarding";
+  let destination: string;
+  // Honour a safe relative `next` (must be a same-origin path) and skip the
+  // onboarding routing — password recovery needs to land on update-password.
+  if (next && next.startsWith("/") && !next.startsWith("//")) {
+    destination = next;
+  } else {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_completed")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    destination = profile?.onboarding_completed ? "/dashboard" : "/onboarding";
+  }
 
   // Preserve the Set-Cookie headers from the original response on the new redirect.
   const finalResponse = NextResponse.redirect(`${origin}${destination}`);

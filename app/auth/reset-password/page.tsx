@@ -18,8 +18,12 @@ export default function ResetPasswordPage() {
     setLoading(true);
     setError("");
 
+    // Route the recovery link through /auth/callback so the one-time code is
+    // exchanged for a real session (with SSR cookies) before the user lands
+    // on the update-password form. /auth/callback is already in Supabase's
+    // redirect allowlist; /auth/update-password may not be.
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/update-password`,
+      redirectTo: `${window.location.origin}/auth/callback?next=/auth/update-password`,
     });
 
     setLoading(false);
