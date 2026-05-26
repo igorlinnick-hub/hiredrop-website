@@ -3,8 +3,8 @@ import Footer from "@/components/landing/Footer";
 
 const FAQS = [
   {
-    q: "What is JobFlow?",
-    a: "JobFlow is an AI-powered platform that automates your job search. It finds matching jobs across multiple platforms, writes personalized cover letters using AI, and auto-applies via our Chrome extension.",
+    q: "What is HireDrop?",
+    a: "HireDrop is an AI-powered platform that automates your job search. It finds matching jobs across multiple platforms, writes personalized cover letters using AI, and auto-applies via our Chrome extension.",
   },
   {
     q: "How many applications can I send per day?",
@@ -43,7 +43,7 @@ export default function FAQPage() {
       <main className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Frequently Asked Questions</h1>
-          <p className="text-gray-600 mb-10">Everything you need to know about JobFlow.</p>
+          <p className="text-gray-600 mb-10">Everything you need to know about HireDrop.</p>
 
           <div className="space-y-6">
             {FAQS.map((faq) => (

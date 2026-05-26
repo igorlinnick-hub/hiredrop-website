@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "JobFlow — Automate Your Job Search",
+  title: "HireDrop — Automate Your Job Search",
   description: "AI-powered job search automation. Personalized cover letters, auto-apply, multi-platform search.",
 };
 

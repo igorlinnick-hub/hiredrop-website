@@ -44,7 +44,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-gray-800 text-sm text-center">
-          &copy; {new Date().getFullYear()} JobFlow. All rights reserved.
+          &copy; {new Date().getFullYear()} HireDrop. All rights reserved.
         </div>
       </div>
     </footer>

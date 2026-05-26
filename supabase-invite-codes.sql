@@ -46,6 +46,6 @@ create policy "Anyone can join waitlist"
 
 -- Insert some initial invite codes for you and your team
 insert into public.invite_codes (code, description, max_uses) values
-  ('JOBFLOW2026', 'General invite code', 50),
+  ('HIREDROP2026', 'General invite code', 50),
   ('FOUNDER', 'Founder access', null),
   ('DEVTEAM', 'Developer team', 10);

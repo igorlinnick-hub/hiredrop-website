@@ -411,7 +411,7 @@ export default function ChromeExtensionDemo() {
                       <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center">
                         <span className="text-white text-[6px] font-bold">JF</span>
                       </div>
-                      <span className="text-white text-[10px] font-semibold">JobFlow</span>
+                      <span className="text-white text-[10px] font-semibold">HireDrop</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#00B894]" />

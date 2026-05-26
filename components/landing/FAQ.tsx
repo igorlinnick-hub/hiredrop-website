@@ -78,7 +78,7 @@ export default function FAQ() {
               Frequently<br />asked<br />questions
             </h2>
             <p className="mt-4 text-[#6B6B8A]">
-              Everything you need to know about JobFlow.
+              Everything you need to know about HireDrop.
             </p>
           </div>
 

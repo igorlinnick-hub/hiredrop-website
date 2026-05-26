@@ -22,11 +22,11 @@ export default function ConnectClient({ token, email }: Props) {
     function onMessage(e: MessageEvent) {
       if (e.source !== window || !e.data) return;
 
-      if (e.data === "JOBFLOW_PONG") {
+      if (e.data === "HIREDROP_PONG") {
         pongReceived = true;
         if (detectTimer) clearTimeout(detectTimer);
         setState("storing");
-        window.postMessage({ type: "JOBFLOW_STORE_TOKEN", token }, "*");
+        window.postMessage({ type: "HIREDROP_STORE_TOKEN", token }, "*");
         storeTimer = setTimeout(() => {
           setState("failed");
           setErrorMsg("Extension responded to ping but never confirmed token storage. Try reloading the extension.");
@@ -34,7 +34,7 @@ export default function ConnectClient({ token, email }: Props) {
         return;
       }
 
-      if (typeof e.data === "object" && e.data.type === "JOBFLOW_TOKEN_STORED") {
+      if (typeof e.data === "object" && e.data.type === "HIREDROP_TOKEN_STORED") {
         if (storeTimer) clearTimeout(storeTimer);
         if (e.data.ok) {
           setState("stored");
@@ -46,7 +46,7 @@ export default function ConnectClient({ token, email }: Props) {
     }
 
     window.addEventListener("message", onMessage);
-    window.postMessage("JOBFLOW_PING", "*");
+    window.postMessage("HIREDROP_PING", "*");
 
     detectTimer = setTimeout(() => {
       if (!pongReceived) setState("extension-missing");
@@ -73,7 +73,7 @@ export default function ConnectClient({ token, email }: Props) {
           <Status
             tone="info"
             title="Looking for the extension…"
-            body="Make sure the JobFlow extension is installed and enabled in Chrome."
+            body="Make sure the HireDrop extension is installed and enabled in Chrome."
           />
         )}
 
@@ -81,7 +81,7 @@ export default function ConnectClient({ token, email }: Props) {
           <Status
             tone="warning"
             title="Extension not detected"
-            body="Install the JobFlow extension in Chrome, then reload this page."
+            body="Install the HireDrop extension in Chrome, then reload this page."
             action={
               <Link
                 href="/extension"

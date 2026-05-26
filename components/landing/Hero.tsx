@@ -170,7 +170,7 @@ export default function Hero() {
             </motion.h1>
 
             <motion.p variants={fadeUp} className="text-lg text-[#6B6B8A] mb-8 max-w-lg">
-              JobFlow finds jobs, writes personalized cover letters in your voice,
+              HireDrop finds jobs, writes personalized cover letters in your voice,
               and auto-applies while you sleep. Up to 50 applications per day.
             </motion.p>
 
