@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import ConnectClient from "./ConnectClient";
 
 export const metadata = {
-  title: "Connect Extension — JobFlow",
+  title: "Connect Extension — HireDrop",
 };
 
 export default async function ConnectExtensionPage() {

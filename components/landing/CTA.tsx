@@ -11,7 +11,7 @@ export default function CTA() {
           Ready to automate your job search?
         </h2>
         <p className="text-lg text-white/80 mb-8">
-          Join JobFlow and start receiving interview invitations instead of sending applications manually.
+          Join HireDrop and start receiving interview invitations instead of sending applications manually.
         </p>
         <Link
           href="/signup"

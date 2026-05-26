@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Check Your Email — JobFlow",
+  title: "Check Your Email — HireDrop",
 };
 
 export default function ConfirmPage() {

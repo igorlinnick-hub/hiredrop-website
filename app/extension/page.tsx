@@ -5,7 +5,7 @@ import DownloadButton from "@/components/extension/DownloadButton";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
-  title: "Chrome Extension — JobFlow",
+  title: "Chrome Extension — HireDrop",
 };
 
 const STEPS = [
@@ -27,7 +27,7 @@ const STEPS = [
   {
     step: 4,
     title: 'Load the extension',
-    description: 'Click "Load unpacked" and select the extracted extension folder. The JobFlow icon will appear in your toolbar.',
+    description: 'Click "Load unpacked" and select the extracted extension folder. The HireDrop icon will appear in your toolbar.',
   },
 ];
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import LoginForm from "@/components/auth/LoginForm";
 
 export const metadata = {
-  title: "Log In — JobFlow",
+  title: "Log In — HireDrop",
 };
 
 export default function LoginPage() {
@@ -16,7 +16,7 @@ export default function LoginPage() {
               <span className="text-[#6C5CE7]">Job</span>Flow
             </Link>
             <h1 className="mt-6 text-2xl font-bold text-[#1A1A2E]" style={{ fontFamily: "'Syne', sans-serif" }}>Welcome back</h1>
-            <p className="mt-2 text-sm text-[#6B6B8A]">Sign in to your JobFlow account</p>
+            <p className="mt-2 text-sm text-[#6B6B8A]">Sign in to your HireDrop account</p>
           </div>
 
           <div className="bg-white border border-[#E8E8F0] rounded-xl p-8">

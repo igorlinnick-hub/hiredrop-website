@@ -14,12 +14,12 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">1. Acceptance of Terms</h2>
-              <p>By using JobFlow, you agree to these terms. If you do not agree, please do not use our service.</p>
+              <p>By using HireDrop, you agree to these terms. If you do not agree, please do not use our service.</p>
             </section>
 
             <section>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">2. Service Description</h2>
-              <p>JobFlow is an AI-powered job search automation platform that finds jobs, generates cover letters, and submits applications on your behalf. We do not guarantee employment or interview outcomes.</p>
+              <p>HireDrop is an AI-powered job search automation platform that finds jobs, generates cover letters, and submits applications on your behalf. We do not guarantee employment or interview outcomes.</p>
             </section>
 
             <section>
@@ -34,12 +34,12 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">5. Limitation of Liability</h2>
-              <p>JobFlow is provided &quot;as is&quot; without warranties. We are not liable for missed applications, rejected submissions, or job platform policy changes that may affect service functionality.</p>
+              <p>HireDrop is provided &quot;as is&quot; without warranties. We are not liable for missed applications, rejected submissions, or job platform policy changes that may affect service functionality.</p>
             </section>
 
             <section>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">6. Contact</h2>
-              <p>For questions about these terms, contact us at support@jobflow.app.</p>
+              <p>For questions about these terms, contact us at support@hiredrop.app.</p>
             </section>
           </div>
         </div>

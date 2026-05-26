@@ -9,7 +9,7 @@ export default function AffiliatePage() {
       <main className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Affiliate Program</h1>
-          <p className="text-gray-600 mb-10">Earn by sharing JobFlow with your audience.</p>
+          <p className="text-gray-600 mb-10">Earn by sharing HireDrop with your audience.</p>
 
           <div className="space-y-8">
             <div className="bg-white rounded-[10px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.06)] p-8">

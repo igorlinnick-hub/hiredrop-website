@@ -27,7 +27,7 @@ export default function DownloadButton({ token }: Props) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "jobflow-extension.zip";
+      a.download = "hiredrop-extension.zip";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

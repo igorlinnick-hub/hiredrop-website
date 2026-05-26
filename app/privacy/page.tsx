@@ -23,10 +23,10 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">3. The JobFlow Chrome Extension</h2>
-              <p>The JobFlow Chrome extension runs only on indeed.com and on the JobFlow dashboard domain. On indeed.com it reads job titles, company names, and form fields, then uses your stored profile to autofill the application; it submits an application only after you explicitly start a campaign in the extension popup or on the dashboard.</p>
-              <p className="mt-2">The extension stores your Supabase session token in <code>chrome.storage.local</code> so it can authenticate API requests; this token never leaves your browser except when calling the JobFlow backend. Cached profile data is stored for 5 minutes to reduce API load. No data is shared with any third party other than the JobFlow backend, the Anthropic API (cover letters), and Supabase (storage).</p>
-              <p className="mt-2">JobFlow is not affiliated with Indeed. Users are solely responsible for ensuring their use of automation tools complies with Indeed&apos;s terms of service and any other platform&apos;s terms they apply on.</p>
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">3. The HireDrop Chrome Extension</h2>
+              <p>The HireDrop Chrome extension runs only on indeed.com and on the HireDrop dashboard domain. On indeed.com it reads job titles, company names, and form fields, then uses your stored profile to autofill the application; it submits an application only after you explicitly start a campaign in the extension popup or on the dashboard.</p>
+              <p className="mt-2">The extension stores your Supabase session token in <code>chrome.storage.local</code> so it can authenticate API requests; this token never leaves your browser except when calling the HireDrop backend. Cached profile data is stored for 5 minutes to reduce API load. No data is shared with any third party other than the HireDrop backend, the Anthropic API (cover letters), and Supabase (storage).</p>
+              <p className="mt-2">HireDrop is not affiliated with Indeed. Users are solely responsible for ensuring their use of automation tools complies with Indeed&apos;s terms of service and any other platform&apos;s terms they apply on.</p>
             </section>
 
             <section>
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
 
             <section>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">7. Contact</h2>
-              <p>Questions about this privacy policy or about data we hold on you: support@jobflow.app.</p>
+              <p>Questions about this privacy policy or about data we hold on you: support@hiredrop.app.</p>
             </section>
           </div>
         </div>

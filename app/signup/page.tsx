@@ -2,7 +2,7 @@ import AuthLayout from "@/components/auth/AuthLayout";
 import SignupForm from "@/components/auth/SignupForm";
 
 export const metadata = {
-  title: "Sign Up — JobFlow",
+  title: "Sign Up — HireDrop",
 };
 
 export default function SignupPage() {

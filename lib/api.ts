@@ -1,5 +1,5 @@
 /**
- * Typed API client for the JobFlow FastAPI backend.
+ * Typed API client for the HireDrop FastAPI backend.
  * All requests include the Supabase JWT as a Bearer token.
  */
 

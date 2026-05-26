@@ -8,7 +8,7 @@ const PLANS = [
     name: "Free",
     price: "$0",
     period: "",
-    description: "Try JobFlow with basic features",
+    description: "Try HireDrop with basic features",
     features: [
       "1 platform (RemoteOK)",
       "5 applications per day",

@@ -16,7 +16,7 @@ import QuickActions from "@/components/dashboard/QuickActions";
 import UsageBanner from "@/components/dashboard/UsageBanner";
 
 export const metadata = {
-  title: "Dashboard — JobFlow",
+  title: "Dashboard — HireDrop",
 };
 
 export default async function DashboardPage() {
