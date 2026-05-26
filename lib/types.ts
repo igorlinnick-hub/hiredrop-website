@@ -18,6 +18,8 @@ export interface Platform {
   status: "active";
   requiresLogin: boolean;
   description: string;
+  /** Cost tier — drives the badge on platform pickers. Aligns with lib/pricing.ts. */
+  costTier?: "free" | "standard" | "premium";
 }
 
 export interface Location {

@@ -1,9 +1,9 @@
 import type { Platform, Location, JobType, JobStatus } from "./types";
 
 export const PLATFORMS: Platform[] = [
-  { id: "remoteok", name: "RemoteOK", status: "active", requiresLogin: false, description: "Remote jobs aggregator. No login needed." },
-  { id: "indeed", name: "Indeed", status: "active", requiresLogin: true, description: "Largest job board. Supports auto-apply." },
-  { id: "wellfound", name: "Wellfound", status: "active", requiresLogin: true, description: "Startup & tech jobs." },
+  { id: "remoteok", name: "RemoteOK", status: "active", requiresLogin: false, description: "Remote jobs aggregator. No login needed.", costTier: "free" },
+  { id: "indeed", name: "Indeed", status: "active", requiresLogin: true, description: "Largest job board. Supports auto-apply.", costTier: "standard" },
+  { id: "wellfound", name: "Wellfound", status: "active", requiresLogin: true, description: "Startup & tech jobs.", costTier: "standard" },
 ];
 
 export const LOCATIONS: Location[] = [

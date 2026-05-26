@@ -14,6 +14,8 @@ import JobsTable from "@/components/dashboard/JobsTable";
 import ApplicationHistory from "@/components/dashboard/ApplicationHistory";
 import QuickActions from "@/components/dashboard/QuickActions";
 import UsageBanner from "@/components/dashboard/UsageBanner";
+import SpendCurve from "@/components/dashboard/SpendCurve";
+import CreditCalculator from "@/components/dashboard/CreditCalculator";
 
 export const metadata = {
   title: "Dashboard — JobFlow",
@@ -90,6 +92,10 @@ export default async function DashboardPage() {
           applicationsToday={statsData?.applications_today ?? 0}
           responseRate={0}
         />
+
+        <SpendCurve />
+
+        <CreditCalculator />
 
         <JobsTable jobs={jobsData} />
 

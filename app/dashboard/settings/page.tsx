@@ -9,6 +9,7 @@ import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
 import type { UserProfile } from "@/lib/types";
+import { TIER_BADGE_CLASS, TIER_LABEL } from "@/lib/pricing";
 
 const emptyProfile: UserProfile = {
   name: "",
@@ -240,6 +241,7 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {PLATFORMS.filter((p) => p.status === "active").map((platform) => {
               const isSelected = profile.platforms.includes(platform.id);
+              const tier = platform.costTier ?? "standard";
               return (
                 <button
                   type="button"
@@ -250,8 +252,18 @@ export default function SettingsPage() {
                     isSelected ? "border-accent bg-accent/5" : "border-border hover:border-text2",
                   ].join(" ")}
                 >
-                  <span className="font-medium text-text">{platform.name}</span>
-                  <span className="text-xs text-text2 block">{platform.description}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium text-text">{platform.name}</span>
+                    <span
+                      className={[
+                        "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide",
+                        TIER_BADGE_CLASS[tier],
+                      ].join(" ")}
+                    >
+                      {TIER_LABEL[tier]}
+                    </span>
+                  </div>
+                  <span className="text-xs text-text2 block mt-0.5">{platform.description}</span>
                 </button>
               );
             })}
