@@ -64,7 +64,7 @@ export default function ConnectClient({ token, email }: Props) {
       <div className="max-w-md w-full bg-surface border border-border rounded-xl p-8 space-y-5">
         <div className="flex items-center gap-3">
           <span className="text-2xl font-bold text-text">
-            <span className="text-accent">Job</span>Flow
+            <span className="text-accent">Hire</span>Drop
           </span>
           <span className="ml-auto text-xs text-text2">{email}</span>
         </div>

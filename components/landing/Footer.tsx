@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <Link href="/" className="text-xl font-bold text-white">
-              <span className="text-accent2">Job</span>Flow
+              <span className="text-accent2">Hire</span>Drop
             </Link>
             <p className="mt-3 text-sm">
               AI-powered job search automation. Find jobs, generate cover letters, and auto-apply.

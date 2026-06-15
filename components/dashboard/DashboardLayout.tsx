@@ -62,7 +62,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <header className="border-b border-border bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
           <Link href="/dashboard" className="text-lg font-bold text-text">
-            <span className="text-accent">Job</span>Flow
+            <span className="text-accent">Hire</span>Drop
           </Link>
 
           <div className="flex items-center gap-4">

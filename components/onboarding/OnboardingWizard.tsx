@@ -125,7 +125,7 @@ export default function OnboardingWizard() {
         {/* Logo + Sign out */}
         <div className="flex items-center justify-between mb-8">
           <span className="text-2xl font-bold text-text">
-            <span className="text-accent">Job</span>Flow
+            <span className="text-accent">Hire</span>Drop
           </span>
           <a
             href="/auth/signout"

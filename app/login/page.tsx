@@ -13,7 +13,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <Link href="/" className="text-2xl font-bold text-[#1A1A2E]" style={{ fontFamily: "'Syne', sans-serif" }}>
-              <span className="text-[#6C5CE7]">Job</span>Flow
+              <span className="text-[#6C5CE7]">Hire</span>Drop
             </Link>
             <h1 className="mt-6 text-2xl font-bold text-[#1A1A2E]" style={{ fontFamily: "'Syne', sans-serif" }}>Welcome back</h1>
             <p className="mt-2 text-sm text-[#6B6B8A]">Sign in to your HireDrop account</p>

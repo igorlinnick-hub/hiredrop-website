@@ -72,7 +72,7 @@ export default function UpdatePasswordPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-bold text-text">
-            <span className="text-accent">Job</span>Flow
+            <span className="text-accent">Hire</span>Drop
           </Link>
           <h1 className="mt-6 text-2xl font-bold text-text">Set new password</h1>
         </div>
