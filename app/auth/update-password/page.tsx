@@ -18,32 +18,27 @@ export default function UpdatePasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Recovery links from the admin generate_link API use implicit flow — tokens
-  // arrive in the URL hash, not as a ?code= param. Supabase client detects this
-  // automatically and fires PASSWORD_RECOVERY. We also check for an existing
-  // session to support the case where someone navigates here after already
-  // exchanging a code via /auth/callback.
+  // Recovery links use implicit flow (hash tokens). @supabase/ssr's
+  // createBrowserClient does not auto-process hash fragments, so we parse
+  // them manually and call setSession() directly.
   useEffect(() => {
-    const hasRecoveryHash = typeof window !== "undefined" &&
-      window.location.hash.includes("access_token");
+    const hash = typeof window !== "undefined" ? window.location.hash.slice(1) : "";
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+    const type = params.get("type");
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setPhase("ready");
-      } else if (!hasRecoveryHash) {
-        // No session and no recovery tokens in hash — link is expired/invalid.
-        setPhase("no-session");
-      }
-      // If hasRecoveryHash, wait for onAuthStateChange to fire PASSWORD_RECOVERY.
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") && session) {
-        setPhase("ready");
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    if (accessToken && refreshToken && type === "recovery") {
+      supabase.auth
+        .setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ data: { session }, error }) => {
+          setPhase(session && !error ? "ready" : "no-session");
+        });
+    } else {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setPhase(session ? "ready" : "no-session");
+      });
+    }
   }, [supabase]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
