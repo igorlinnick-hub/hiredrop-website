@@ -18,13 +18,32 @@ export default function UpdatePasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // The recovery code is exchanged for a session by /auth/callback before we
-  // ever get here, so a valid session must already exist. If it doesn't, the
-  // link was expired, already used, or someone navigated here directly.
+  // Recovery links from the admin generate_link API use implicit flow — tokens
+  // arrive in the URL hash, not as a ?code= param. Supabase client detects this
+  // automatically and fires PASSWORD_RECOVERY. We also check for an existing
+  // session to support the case where someone navigates here after already
+  // exchanging a code via /auth/callback.
   useEffect(() => {
+    const hasRecoveryHash = typeof window !== "undefined" &&
+      window.location.hash.includes("access_token");
+
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setPhase(session ? "ready" : "no-session");
+      if (session) {
+        setPhase("ready");
+      } else if (!hasRecoveryHash) {
+        // No session and no recovery tokens in hash — link is expired/invalid.
+        setPhase("no-session");
+      }
+      // If hasRecoveryHash, wait for onAuthStateChange to fire PASSWORD_RECOVERY.
     });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") && session) {
+        setPhase("ready");
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [supabase]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
