@@ -41,6 +41,7 @@ export default function OnboardingWizard() {
   const [profile, setProfile] = useState<UserProfile>(initialProfile);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Pre-fill email from auth user
   useEffect(() => {
@@ -71,6 +72,7 @@ export default function OnboardingWizard() {
 
   async function finish() {
     setSaving(true);
+    setSaveError(null);
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -79,19 +81,21 @@ export default function OnboardingWizard() {
     }
 
     // Upload resume if provided
-    let resumeUrl = null;
+    let resumeUrl = profile.resume_url ?? null;
     if (resumeFile) {
       const filePath = `${user.id}/${resumeFile.name}`;
       const { error: uploadError } = await supabase.storage
         .from("resumes")
         .upload(filePath, resumeFile, { upsert: true });
 
-      if (!uploadError) {
-        resumeUrl = filePath;
+      if (uploadError) {
+        setSaving(false);
+        setSaveError("Resume upload failed. Please try again.");
+        return;
       }
+      resumeUrl = filePath;
     }
 
-    // Save profile to Supabase
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -111,7 +115,7 @@ export default function OnboardingWizard() {
     setSaving(false);
 
     if (error) {
-      console.error("Failed to save profile:", error);
+      setSaveError("Something went wrong saving your profile. Please try again.");
       return;
     }
 
@@ -196,7 +200,14 @@ export default function OnboardingWizard() {
             <StepWritingStyle profile={profile} updateProfile={updateProfile} onNext={next} onBack={back} />
           )}
           {step === 6 && (
-            <StepDone profile={profile} resumeFile={resumeFile} onBack={back} onFinish={finish} saving={saving} />
+            <>
+              {saveError && (
+                <div className="mb-4 p-3 rounded-lg bg-red/10 border border-red/20 text-red text-sm">
+                  {saveError}
+                </div>
+              )}
+              <StepDone profile={profile} resumeFile={resumeFile} onBack={back} onFinish={finish} saving={saving} />
+            </>
           )}
         </div>
       </div>

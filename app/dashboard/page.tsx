@@ -28,17 +28,20 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // maybeSingle returns null instead of erroring when the row is missing
-  // (e.g. profile trigger hasn't fired yet right after signup).
   const { data: profile } = await supabase
     .from("profiles")
-    .select("onboarding_completed")
+    .select("onboarding_completed, name, resume_url")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!profile?.onboarding_completed) {
+  // Only hard-redirect brand new users (no profile row at all).
+  // Users with a profile row but onboarding_completed=false see a banner
+  // instead of being trapped in a redirect loop.
+  if (!profile) {
     redirect("/onboarding");
   }
+
+  const onboardingIncomplete = !profile.onboarding_completed;
 
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
@@ -68,6 +71,18 @@ export default async function DashboardPage() {
 
   return (
     <DashboardLayout>
+      {onboardingIncomplete && (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-50/60 px-4 py-3 text-sm text-amber-800">
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+          <span>Your profile setup isn&apos;t complete yet. Auto-apply won&apos;t work until you finish.</span>
+          <a href="/onboarding" className="ml-auto shrink-0 font-medium underline underline-offset-2 hover:text-amber-900">
+            Complete setup →
+          </a>
+        </div>
+      )}
+
       <QuickActions token={token} campaignRunning={campaignRunning} />
 
       <div className="space-y-6">
