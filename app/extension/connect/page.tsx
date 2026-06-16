@@ -18,9 +18,10 @@ export default async function ConnectExtensionPage() {
 
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
+  const refreshToken = session?.refresh_token ?? "";
   if (!token) {
     redirect("/login?next=/extension/connect");
   }
 
-  return <ConnectClient token={token} email={user.email ?? ""} />;
+  return <ConnectClient token={token} refreshToken={refreshToken} email={user.email ?? ""} />;
 }

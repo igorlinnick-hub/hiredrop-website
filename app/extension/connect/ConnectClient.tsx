@@ -7,10 +7,11 @@ type State = "detecting" | "extension-missing" | "storing" | "stored" | "failed"
 
 interface Props {
   token: string;
+  refreshToken: string;
   email: string;
 }
 
-export default function ConnectClient({ token, email }: Props) {
+export default function ConnectClient({ token, refreshToken, email }: Props) {
   const [state, setState] = useState<State>("detecting");
   const [errorMsg, setErrorMsg] = useState<string>("");
 
@@ -26,7 +27,7 @@ export default function ConnectClient({ token, email }: Props) {
         pongReceived = true;
         if (detectTimer) clearTimeout(detectTimer);
         setState("storing");
-        window.postMessage({ type: "HIREDROP_STORE_TOKEN", token }, "*");
+        window.postMessage({ type: "HIREDROP_STORE_TOKEN", token, refresh_token: refreshToken }, "*");
         storeTimer = setTimeout(() => {
           setState("failed");
           setErrorMsg("Extension responded to ping but never confirmed token storage. Try reloading the extension.");
@@ -57,7 +58,7 @@ export default function ConnectClient({ token, email }: Props) {
       if (detectTimer) clearTimeout(detectTimer);
       if (storeTimer) clearTimeout(storeTimer);
     };
-  }, [token]);
+  }, [token, refreshToken]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
