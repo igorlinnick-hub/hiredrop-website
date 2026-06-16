@@ -18,6 +18,7 @@ export interface Platform {
   status: "active";
   requiresLogin: boolean;
   description: string;
+  autoApply?: boolean; // supports Chrome Extension auto-apply
 }
 
 export interface Location {
@@ -45,6 +46,12 @@ export interface Job {
   date_found: string;
   link: string;
   description?: string;
+  score?: number;
+  ai_verdict?: string;
+  ai_flags?: string[];
+  ats_keywords?: string[];
+  ats_match_pct?: number;
+  tailored_resume?: string;
 }
 
 export interface Application {

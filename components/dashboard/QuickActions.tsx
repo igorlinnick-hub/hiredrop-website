@@ -4,23 +4,38 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import Button from "@/components/ui/Button";
-import { ApiError, apiGet, apiPost } from "@/lib/api";
+import { ApiError, apiPost } from "@/lib/api";
+import { PLATFORMS, LOCATIONS } from "@/lib/constants";
 
 interface Props {
   token: string;
   campaignRunning: boolean;
+  keywords: string[];
+  location: string;
+  jobType: string;
+  platforms: string[];
 }
 
 type Status = { kind: "idle" } | { kind: "ok"; msg: string } | { kind: "err"; msg: string };
 
-export default function QuickActions({ token, campaignRunning: initialCampaignRunning }: Props) {
+export default function QuickActions({
+  token,
+  campaignRunning: initialCampaignRunning,
+  keywords,
+  location,
+  jobType,
+  platforms,
+}: Props) {
   const router = useRouter();
-  const [busy, setBusy] = useState<"find" | "start" | "stop" | "email" | null>(null);
+  const [busy, setBusy] = useState<"find" | "start" | "stop" | null>(null);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [campaignRunning, setCampaignRunning] = useState(initialCampaignRunning);
 
+  const validKeywords = keywords.filter((k) => k.trim().length > 0);
+  const hasPreferences = validKeywords.length > 0 && platforms.length > 0;
+
   async function run<T>(
-    kind: "find" | "start" | "stop" | "email",
+    kind: "find" | "start" | "stop",
     op: () => Promise<T>,
     onOk: (r: T) => string,
   ) {
@@ -50,14 +65,14 @@ export default function QuickActions({ token, campaignRunning: initialCampaignRu
     return run(
       "start",
       () => apiPost<{ started: boolean }>("/campaign/start", token, {
-        keywords: [],
-        platforms: [],
-        location: "",
-        job_type: "",
+        keywords: validKeywords,
+        platforms,
+        location,
+        job_type: jobType,
       }),
       () => {
         setCampaignRunning(true);
-        return "Campaign started — extension will begin applying on Indeed";
+        return "Campaign started — extension will begin applying";
       },
     );
   }
@@ -73,18 +88,10 @@ export default function QuickActions({ token, campaignRunning: initialCampaignRu
     );
   }
 
-  function checkEmail() {
-    return run(
-      "email",
-      () => apiGet<{ configured: boolean; count: number }>("/tools/email-check", token),
-      (r) =>
-        !r.configured
-          ? "Email not configured on server"
-          : r.count === 0
-          ? "No new recruiter replies"
-          : `${r.count} new email${r.count === 1 ? "" : "s"} from recruiters`,
-    );
-  }
+  const locationLabel = LOCATIONS.find((l) => l.value === location)?.label ?? location;
+  const platformLabels = platforms
+    .map((id) => PLATFORMS.find((p) => p.id === id)?.name ?? id)
+    .join(", ");
 
   return (
     <div className="space-y-3 mb-6">
@@ -98,14 +105,16 @@ export default function QuickActions({ token, campaignRunning: initialCampaignRu
             {busy === "stop" ? "Stopping…" : "Stop Campaign"}
           </Button>
         ) : (
-          <Button size="sm" variant="primary" onClick={startCampaign} disabled={busy !== null}>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={startCampaign}
+            disabled={busy !== null || !hasPreferences}
+            title={!hasPreferences ? "Set job preferences in Settings first" : undefined}
+          >
             {busy === "start" ? "Starting…" : "Start Campaign"}
           </Button>
         )}
-
-        <Button size="sm" variant="secondary" onClick={checkEmail} disabled={busy !== null}>
-          {busy === "email" ? "Checking…" : "Check Email"}
-        </Button>
 
         <div className="flex items-center gap-2 ml-auto text-sm">
           <span
@@ -119,6 +128,31 @@ export default function QuickActions({ token, campaignRunning: initialCampaignRu
           </span>
         </div>
       </div>
+
+      {/* Campaign bar — active criteria */}
+      {campaignRunning && hasPreferences && (
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-accent/5 border border-accent/20 rounded-lg text-xs text-text2">
+          <span className="text-accent font-medium">Searching:</span>
+          <span className="font-medium text-text">{validKeywords.join(", ")}</span>
+          <span className="text-text2/40">·</span>
+          <span>{locationLabel}</span>
+          <span className="text-text2/40">·</span>
+          <span>{platformLabels}</span>
+          <a href="/dashboard/settings" className="ml-auto text-accent hover:underline">
+            Edit
+          </a>
+        </div>
+      )}
+
+      {!hasPreferences && !campaignRunning && (
+        <div className="text-sm rounded-lg px-3 py-2 border border-amber-400/30 bg-amber-50/60 text-amber-800">
+          Set job preferences in{" "}
+          <a href="/dashboard/settings" className="underline underline-offset-2 font-medium">
+            Settings
+          </a>{" "}
+          to start a campaign.
+        </div>
+      )}
 
       {status.kind !== "idle" && (
         <div

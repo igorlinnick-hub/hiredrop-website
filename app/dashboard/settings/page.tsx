@@ -235,26 +235,48 @@ export default function SettingsPage() {
         </section>
 
         {/* Platforms */}
-        <section className="bg-surface border border-border rounded-xl p-6 space-y-4">
+        <section className="bg-surface border border-border rounded-xl p-6 space-y-5">
           <h3 className="font-semibold text-text">Platforms</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {PLATFORMS.filter((p) => p.status === "active").map((platform) => {
+
+          {/* Auto-apply */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-green uppercase tracking-wide">Auto-apply</span>
+              <span className="text-xs text-text2">Extension fills & submits the form</span>
+            </div>
+            {PLATFORMS.filter((p) => p.autoApply).map((platform) => {
               const isSelected = profile.platforms.includes(platform.id);
               return (
-                <button
-                  type="button"
-                  key={platform.id}
-                  onClick={() => togglePlatform(platform.id)}
-                  className={[
-                    "text-left p-3 rounded-lg border-2 transition text-sm",
-                    isSelected ? "border-accent bg-accent/5" : "border-border hover:border-text2",
-                  ].join(" ")}
-                >
-                  <span className="font-medium text-text">{platform.name}</span>
-                  <span className="text-xs text-text2 block">{platform.description}</span>
+                <button type="button" key={platform.id} onClick={() => togglePlatform(platform.id)}
+                  className={["text-left w-full p-3 rounded-lg border-2 transition text-sm", isSelected ? "border-accent bg-accent/5" : "border-border hover:border-text2"].join(" ")}>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-text">{platform.name}</span>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green/10 text-green">Auto-apply</span>
+                  </div>
+                  <span className="text-xs text-text2">{platform.description}</span>
                 </button>
               );
             })}
+          </div>
+
+          {/* Discovery */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-accent uppercase tracking-wide">Discovery</span>
+              <span className="text-xs text-text2">We find jobs, you apply via the listing</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {PLATFORMS.filter((p) => !p.autoApply).map((platform) => {
+                const isSelected = profile.platforms.includes(platform.id);
+                return (
+                  <button type="button" key={platform.id} onClick={() => togglePlatform(platform.id)}
+                    className={["text-left p-3 rounded-lg border-2 transition text-sm", isSelected ? "border-accent bg-accent/5" : "border-border hover:border-text2"].join(" ")}>
+                    <span className="font-medium text-text block">{platform.name}</span>
+                    <span className="text-xs text-text2">{platform.description}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </section>
 

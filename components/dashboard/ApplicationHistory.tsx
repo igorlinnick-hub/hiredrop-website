@@ -24,6 +24,13 @@ export default function ApplicationHistory({ applications }: ApplicationHistoryP
         <h3 className="font-semibold text-text">Application History</h3>
       </div>
 
+      {applications.length === 0 && (
+        <div className="px-5 py-10 text-center text-text2">
+          <p className="text-sm">No applications yet.</p>
+          <p className="text-xs mt-1">Start a campaign and the extension will apply on your behalf — every submission will appear here.</p>
+        </div>
+      )}
+
       <div className="divide-y divide-border">
         {applications.map((app) => {
           const platform = PLATFORMS.find((p) => p.id === app.platform);

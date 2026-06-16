@@ -30,7 +30,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("onboarding_completed, name, resume_url")
+    .select("onboarding_completed, name, resume_url, keywords, location, job_type, platforms")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -83,7 +83,14 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <QuickActions token={token} campaignRunning={campaignRunning} />
+      <QuickActions
+        token={token}
+        campaignRunning={campaignRunning}
+        keywords={profile?.keywords ?? []}
+        location={profile?.location ?? ""}
+        jobType={profile?.job_type ?? ""}
+        platforms={profile?.platforms ?? []}
+      />
 
       <div className="space-y-6">
         {/* Subscription tier + daily usage */}
