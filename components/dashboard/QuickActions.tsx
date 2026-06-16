@@ -61,20 +61,23 @@ export default function QuickActions({
     );
   }
 
-  function startCampaign() {
-    return run(
-      "start",
-      () => apiPost<{ started: boolean }>("/campaign/start", token, {
+  async function startCampaign() {
+    setBusy("start");
+    setStatus({ kind: "idle" });
+    try {
+      await apiPost<{ started: boolean }>("/campaign/start", token, {
         keywords: validKeywords,
         platforms,
         location,
         job_type: jobType,
-      }),
-      () => {
-        setCampaignRunning(true);
-        return "Campaign started — extension will begin applying";
-      },
-    );
+      });
+      setCampaignRunning(true);
+      router.push("/dashboard/campaign");
+    } catch (e) {
+      const msg = e instanceof ApiError ? `${e.status}: ${e.message}` : String(e);
+      setStatus({ kind: "err", msg });
+      setBusy(null);
+    }
   }
 
   function stopCampaign() {
