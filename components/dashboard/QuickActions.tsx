@@ -14,7 +14,7 @@ interface Props {
   platforms: string[];
 }
 
-type Status = { kind: "idle" } | { kind: "ok"; msg: string } | { kind: "err"; msg: string };
+type Busy = "find" | "start" | "stop" | null;
 
 export default function QuickActions({
   token,
@@ -30,306 +30,226 @@ export default function QuickActions({
   const [keywords, setKeywords] = useState<string[]>(initialKeywords);
   const [location, setLocation] = useState(initialLocation || "remote");
   const [jobType, setJobType] = useState(initialJobType || "full-time");
-  const [platforms, setPlatforms] = useState<string[]>(initialPlatforms.length ? initialPlatforms : ["remoteok"]);
+  const [platforms, setPlatforms] = useState<string[]>(
+    initialPlatforms.length ? initialPlatforms : ["remoteok"]
+  );
   const [kwInput, setKwInput] = useState("");
-
   const [campaignRunning, setCampaignRunning] = useState(initialCampaignRunning);
-  const [busy, setBusy] = useState<"find" | "start" | "stop" | null>(null);
-  const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [busy, setBusy] = useState<Busy>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   // ── keyword tag input ──────────────────────────────────────────────────────
 
   function addKeyword(raw: string) {
     const word = raw.trim();
-    if (word && !keywords.includes(word)) {
-      setKeywords((prev) => [...prev, word]);
-    }
+    if (word && !keywords.includes(word)) setKeywords((p) => [...p, word]);
     setKwInput("");
   }
 
-  function handleKwKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+  function handleKwKey(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
       addKeyword(kwInput);
     } else if (e.key === "Backspace" && kwInput === "" && keywords.length > 0) {
-      setKeywords((prev) => prev.slice(0, -1));
+      setKeywords((p) => p.slice(0, -1));
     }
-  }
-
-  function removeKeyword(kw: string) {
-    setKeywords((prev) => prev.filter((k) => k !== kw));
   }
 
   function togglePlatform(id: string) {
-    setPlatforms((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
-    );
+    setPlatforms((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   }
 
-  // ── save prefs + execute ───────────────────────────────────────────────────
+  // ── save + execute ─────────────────────────────────────────────────────────
 
   async function savePrefs() {
-    await apiPost("/profile/prefs", token, {
-      keywords,
-      location,
-      job_type: jobType,
-      platforms,
-    });
+    await apiPost("/profile/prefs", token, { keywords, location, job_type: jobType, platforms });
   }
 
   async function findJobs() {
-    if (keywords.length === 0) {
-      setStatus({ kind: "err", msg: "Add at least one keyword to search" });
-      inputRef.current?.focus();
-      return;
-    }
-    setBusy("find");
-    setStatus({ kind: "idle" });
+    if (!keywords.length) { setErr("Add at least one keyword"); inputRef.current?.focus(); return; }
+    setBusy("find"); setErr(null);
     try {
       await savePrefs();
-      const r = await apiPost<{ count: number; message: string }>("/jobs/find", token, {});
-      setStatus({ kind: "ok", msg: r.message || `Found ${r.count} new jobs` });
+      await apiPost("/jobs/find", token, {});
       router.refresh();
     } catch (e) {
-      setStatus({ kind: "err", msg: e instanceof ApiError ? `${e.status}: ${e.message}` : String(e) });
-    } finally {
-      setBusy(null);
-    }
+      setErr(e instanceof ApiError ? e.message : String(e));
+    } finally { setBusy(null); }
   }
 
   async function startCampaign() {
-    if (keywords.length === 0) {
-      setStatus({ kind: "err", msg: "Add at least one keyword before starting" });
-      inputRef.current?.focus();
-      return;
-    }
-    if (platforms.length === 0) {
-      setStatus({ kind: "err", msg: "Select at least one platform" });
-      return;
-    }
-    setBusy("start");
-    setStatus({ kind: "idle" });
+    if (!keywords.length) { setErr("Add at least one keyword"); inputRef.current?.focus(); return; }
+    if (!platforms.length) { setErr("Select at least one platform"); return; }
+    setBusy("start"); setErr(null);
     try {
       await savePrefs();
-      await apiPost<{ started: boolean }>("/campaign/start", token, {
-        keywords,
-        platforms,
-        location,
-        job_type: jobType,
-      });
+      await apiPost("/campaign/start", token, { keywords, platforms, location, job_type: jobType });
       setCampaignRunning(true);
       router.push("/dashboard/campaign");
     } catch (e) {
-      setStatus({ kind: "err", msg: e instanceof ApiError ? `${e.status}: ${e.message}` : String(e) });
+      setErr(e instanceof ApiError ? e.message : String(e));
       setBusy(null);
     }
   }
 
   async function stopCampaign() {
-    setBusy("stop");
-    setStatus({ kind: "idle" });
+    setBusy("stop"); setErr(null);
     try {
-      await apiPost<{ stopped: boolean }>("/campaign/stop", token, {});
+      await apiPost("/campaign/stop", token, {});
       setCampaignRunning(false);
-      setStatus({ kind: "ok", msg: "Campaign stopped" });
       router.refresh();
     } catch (e) {
-      setStatus({ kind: "err", msg: e instanceof ApiError ? `${e.status}: ${e.message}` : String(e) });
-    } finally {
-      setBusy(null);
-    }
+      setErr(e instanceof ApiError ? e.message : String(e));
+    } finally { setBusy(null); }
   }
 
   // ── render ─────────────────────────────────────────────────────────────────
 
+  const locationLabel = LOCATIONS.find((l) => l.value === location)?.label ?? location;
+  const jobTypeLabel = JOB_TYPES.find((j) => j.value === jobType)?.label ?? jobType;
+
   return (
-    <div className="bg-surface border border-border rounded-xl mb-6 overflow-hidden">
-      {/* Campaign running banner */}
-      {campaignRunning && (
-        <div className="px-5 py-2.5 bg-green/8 border-b border-green/20 flex items-center gap-2 text-sm">
-          <span className="inline-block w-2 h-2 rounded-full bg-green animate-pulse" />
-          <span className="text-green font-medium">Campaign is running</span>
-          <a href="/dashboard/campaign" className="ml-auto text-xs text-green underline underline-offset-2">
-            Watch live →
-          </a>
+    <div className="mb-6 space-y-2">
+
+      {/* ── Main search bar ── */}
+      <div className="flex gap-2 items-stretch">
+
+        {/* Keyword tag input */}
+        <div
+          className="flex-1 flex flex-wrap items-center gap-1.5 min-h-[44px] px-3 py-2
+            bg-surface border border-border rounded-xl cursor-text
+            focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/10 transition"
+          onClick={() => inputRef.current?.focus()}
+        >
+          <svg className="w-4 h-4 text-text2/50 shrink-0 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+
+          {keywords.map((kw) => (
+            <span key={kw}
+              className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent/10 text-accent
+                text-xs font-medium rounded-full border border-accent/15 whitespace-nowrap">
+              {kw}
+              <button type="button"
+                onClick={(e) => { e.stopPropagation(); setKeywords((p) => p.filter((k) => k !== kw)); }}
+                className="hover:text-red/80 transition">
+                <svg className="w-2.5 h-2.5" viewBox="0 0 10 10" fill="currentColor">
+                  <path d="M5 4.293 8.146 1.146a.5.5 0 0 1 .708.708L5.707 5l3.147 3.146a.5.5 0 0 1-.708.708L5 5.707 1.854 8.854a.5.5 0 0 1-.708-.708L4.293 5 1.146 1.854a.5.5 0 1 1 .708-.708z" />
+                </svg>
+              </button>
+            </span>
+          ))}
+
+          <input
+            ref={inputRef}
+            value={kwInput}
+            onChange={(e) => setKwInput(e.target.value)}
+            onKeyDown={handleKwKey}
+            onBlur={() => kwInput.trim() && addKeyword(kwInput)}
+            placeholder={keywords.length === 0 ? "Job title, skill, keyword…  press Enter to add" : "Add more…"}
+            className="flex-1 min-w-[140px] bg-transparent text-sm text-text outline-none placeholder:text-text2/40"
+          />
         </div>
-      )}
 
-      <div className="p-5 space-y-4">
-
-        {/* Keywords */}
-        <div>
-          <label className="block text-xs font-semibold text-text2 uppercase tracking-wide mb-2">
-            Job Title / Keywords
-          </label>
-          {/* Tag input */}
-          <div
-            className="flex flex-wrap gap-1.5 min-h-[42px] px-3 py-2 border border-border rounded-lg
-              bg-surface2/40 cursor-text focus-within:border-accent/60 focus-within:ring-1
-              focus-within:ring-accent/20 transition"
-            onClick={() => inputRef.current?.focus()}
+        {/* Location dropdown */}
+        <div className="relative">
+          <select
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="h-full pl-3 pr-7 bg-surface border border-border rounded-xl text-sm text-text
+              appearance-none cursor-pointer focus:outline-none focus:border-accent/50
+              focus:ring-2 focus:ring-accent/10 transition whitespace-nowrap"
           >
-            {keywords.map((kw) => (
-              <span
-                key={kw}
-                className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-accent/10 text-accent
-                  text-xs font-medium rounded-full border border-accent/20"
-              >
-                {kw}
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); removeKeyword(kw); }}
-                  className="hover:text-red transition ml-0.5"
-                >
-                  <svg className="w-3 h-3" viewBox="0 0 12 12" fill="currentColor">
-                    <path d="M6 5.293 9.646 1.646a.5.5 0 0 1 .708.708L6.707 6l3.647 3.646a.5.5 0 0 1-.708.708L6 6.707l-3.646 3.647a.5.5 0 0 1-.708-.708L5.293 6 1.646 2.354a.5.5 0 1 1 .708-.708z" />
-                  </svg>
-                </button>
-              </span>
-            ))}
-            <input
-              ref={inputRef}
-              value={kwInput}
-              onChange={(e) => setKwInput(e.target.value)}
-              onKeyDown={handleKwKeyDown}
-              onBlur={() => kwInput.trim() && addKeyword(kwInput)}
-              placeholder={keywords.length === 0 ? "Python Developer, React, Backend… press Enter to add" : "Add more…"}
-              className="flex-1 min-w-[160px] bg-transparent text-sm text-text outline-none placeholder:text-text2/40"
-            />
-          </div>
+            {LOCATIONS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
+          </select>
+          <svg className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text2/50 pointer-events-none"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
         </div>
 
-        {/* Location + Job Type row */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-semibold text-text2 uppercase tracking-wide mb-2">
-              Location
-            </label>
-            <select
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-surface2/40 border border-border rounded-lg
-                text-text appearance-none cursor-pointer focus:outline-none focus:border-accent/60
-                focus:ring-1 focus:ring-accent/20 transition"
-            >
-              {LOCATIONS.map((l) => (
-                <option key={l.value} value={l.value}>{l.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text2 uppercase tracking-wide mb-2">
-              Job Type
-            </label>
-            <select
-              value={jobType}
-              onChange={(e) => setJobType(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-surface2/40 border border-border rounded-lg
-                text-text appearance-none cursor-pointer focus:outline-none focus:border-accent/60
-                focus:ring-1 focus:ring-accent/20 transition"
-            >
-              {JOB_TYPES.map((jt) => (
-                <option key={jt.value} value={jt.value}>{jt.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Platforms */}
-        <div>
-          <label className="block text-xs font-semibold text-text2 uppercase tracking-wide mb-2">
-            Platforms
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {PLATFORMS.map((p) => {
-              const selected = platforms.includes(p.id);
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => togglePlatform(p.id)}
-                  className={[
-                    "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border transition",
-                    selected
-                      ? "bg-accent text-white border-accent"
-                      : "bg-surface2/40 text-text2 border-border hover:border-accent/40 hover:text-text",
-                  ].join(" ")}
-                >
-                  {p.autoApply && (
-                    <span
-                      className={[
-                        "inline-block w-1.5 h-1.5 rounded-full",
-                        selected ? "bg-white/70" : "bg-green",
-                      ].join(" ")}
-                      title="Auto-apply"
-                    />
-                  )}
-                  {p.name}
-                </button>
-              );
-            })}
-          </div>
-          <p className="mt-1.5 text-xs text-text2/50">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-green mr-1 align-middle" />
-            Green dot = Chrome Extension auto-applies
-          </p>
-        </div>
-
-        {/* Action row */}
-        <div className="flex items-center gap-3 pt-1 border-t border-border/60">
-          <button
-            onClick={findJobs}
-            disabled={busy !== null}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border
-              border-border bg-surface2/60 text-text hover:bg-surface2 hover:border-accent/40
-              disabled:opacity-50 transition"
-          >
-            <svg className="w-4 h-4 text-text2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            {busy === "find" ? "Scanning…" : "Find Jobs"}
-          </button>
-
-          {campaignRunning ? (
-            <button
-              onClick={stopCampaign}
-              disabled={busy !== null}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border
-                bg-red/8 text-red border-red/20 hover:bg-red/15 disabled:opacity-50 transition"
-            >
-              <span className="inline-block w-2 h-2 rounded bg-red" />
-              {busy === "stop" ? "Stopping…" : "Stop Campaign"}
+        {/* Action buttons */}
+        {campaignRunning ? (
+          <>
+            <a href="/dashboard/campaign"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border
+                border-green/30 bg-green/8 text-green hover:bg-green/15 transition whitespace-nowrap">
+              <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />
+              Watch Live
+            </a>
+            <button onClick={stopCampaign} disabled={busy !== null}
+              className="px-4 py-2 text-sm font-medium rounded-xl border bg-red/8 text-red
+                border-red/20 hover:bg-red/15 disabled:opacity-50 transition whitespace-nowrap">
+              {busy === "stop" ? "Stopping…" : "Stop"}
             </button>
-          ) : (
-            <button
-              onClick={startCampaign}
-              disabled={busy !== null}
-              className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-lg
-                bg-accent text-white hover:bg-accent2 disabled:opacity-50 transition shadow-sm"
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          </>
+        ) : (
+          <>
+            <button onClick={findJobs} disabled={busy !== null}
+              className="px-4 py-2 text-sm font-medium rounded-xl border border-border bg-surface
+                text-text hover:bg-surface2 hover:border-accent/40 disabled:opacity-50 transition whitespace-nowrap">
+              {busy === "find" ? "Scanning…" : "Find Jobs"}
+            </button>
+            <button onClick={startCampaign} disabled={busy !== null}
+              className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl
+                bg-accent text-white hover:bg-accent2 disabled:opacity-50 transition shadow-sm whitespace-nowrap">
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
                   clipRule="evenodd" />
               </svg>
               {busy === "start" ? "Starting…" : "Start Campaign"}
             </button>
-          )}
+          </>
+        )}
+      </div>
 
-          {status.kind !== "idle" && (
-            <span
+      {/* ── Filter chips row ── */}
+      <div className="flex flex-wrap items-center gap-2 px-1">
+
+        {/* Job type chip */}
+        <div className="relative">
+          <select
+            value={jobType}
+            onChange={(e) => setJobType(e.target.value)}
+            className="appearance-none pl-3 pr-6 py-1 text-xs font-medium rounded-full border
+              border-border bg-surface text-text2 cursor-pointer
+              hover:border-accent/40 hover:text-text focus:outline-none focus:border-accent/50 transition"
+          >
+            {JOB_TYPES.map((j) => <option key={j.value} value={j.value}>{j.label}</option>)}
+          </select>
+          <svg className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-text2/50 pointer-events-none"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+
+        <span className="text-border">·</span>
+
+        {/* Platform chips */}
+        {PLATFORMS.map((p) => {
+          const on = platforms.includes(p.id);
+          return (
+            <button key={p.id} type="button" onClick={() => togglePlatform(p.id)}
               className={[
-                "ml-auto text-sm",
-                status.kind === "ok" ? "text-green" : "text-red",
+                "flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full border transition",
+                on
+                  ? "bg-accent/10 text-accent border-accent/25"
+                  : "bg-surface text-text2/60 border-border hover:border-accent/30 hover:text-text2",
               ].join(" ")}
             >
-              {status.msg}
-            </span>
-          )}
-        </div>
+              {p.autoApply && (
+                <span className={["w-1.5 h-1.5 rounded-full", on ? "bg-accent/60" : "bg-green/50"].join(" ")} />
+              )}
+              {p.name}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Error */}
+      {err && <p className="text-xs text-red px-1">{err}</p>}
     </div>
   );
 }
