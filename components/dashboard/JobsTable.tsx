@@ -102,7 +102,7 @@ export default function JobsTable({ jobs }: JobsTableProps) {
                         {JOB_STATUSES.find((s) => s.value === job.status)?.label || job.status}
                       </Badge>
                     </td>
-                    <td className="px-5 py-3.5 text-text2">{job.date_found}</td>
+                    <td className="px-5 py-3.5 text-text2">{new Date(job.date_found).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</td>
                     <td className="px-5 py-3.5">
                       <a href={job.link} className="text-accent hover:text-accent2 text-xs font-medium">
                         View
