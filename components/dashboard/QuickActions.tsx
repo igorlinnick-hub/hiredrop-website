@@ -84,6 +84,11 @@ export default function QuickActions({
     try {
       await savePrefs();
       await apiPost("/campaign/start", token, { keywords, platforms, location, job_type: jobType });
+      // Tell the extension to open the Indeed automation window
+      window.postMessage({
+        type: "HIREDROP_START_CAMPAIGN",
+        filters: { keywords, platforms, location, job_type: jobType },
+      }, "*");
       setCampaignRunning(true);
       router.push("/dashboard/campaign");
     } catch (e) {
