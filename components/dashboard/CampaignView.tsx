@@ -10,7 +10,7 @@ interface ActivityEntry {
   message: string;
   level: string;
   phase?: string;
-  created_at: string;
+  timestamp: string;
 }
 
 interface Props {
@@ -175,7 +175,7 @@ export default function CampaignView({ token }: Props) {
                   ].join(" ")}
                 >
                   <span className="text-text2/40 shrink-0 tabular-nums">
-                    {new Date(entry.created_at).toLocaleTimeString([], {
+                    {new Date(entry.timestamp).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
                       second: "2-digit",
