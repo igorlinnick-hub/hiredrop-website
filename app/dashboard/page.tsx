@@ -13,6 +13,7 @@ import StatsCards from "@/components/dashboard/StatsCards";
 import JobsTable from "@/components/dashboard/JobsTable";
 import ApplicationHistory from "@/components/dashboard/ApplicationHistory";
 import QuickActions from "@/components/dashboard/QuickActions";
+import SetupChecklist from "@/components/dashboard/SetupChecklist";
 import UsageBanner from "@/components/dashboard/UsageBanner";
 
 export const metadata = {
@@ -43,6 +44,7 @@ export default async function DashboardPage() {
 
   const onboardingIncomplete = !profile.onboarding_completed;
   const resumeMissing = !profile.resume_url;
+  const hasKeywords = (profile.keywords ?? []).length > 0;
 
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
@@ -72,29 +74,11 @@ export default async function DashboardPage() {
 
   return (
     <DashboardLayout>
-      {onboardingIncomplete && (
-        <div className="mb-4 flex items-center gap-3 rounded-xl border border-amber-400/30 bg-amber-50/60 px-4 py-3 text-sm text-amber-800">
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-          </svg>
-          <span>Your profile setup isn&apos;t complete yet. Auto-apply won&apos;t work until you finish.</span>
-          <a href="/onboarding" className="ml-auto shrink-0 font-medium underline underline-offset-2 hover:text-amber-900">
-            Complete setup →
-          </a>
-        </div>
-      )}
-
-      {!onboardingIncomplete && resumeMissing && (
-        <div className="mb-4 flex items-center gap-3 rounded-xl border border-orange-400/30 bg-orange-50/60 px-4 py-3 text-sm text-orange-800">
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <span>No resume uploaded — ATS Match scores will show 0% and auto-apply quality will be lower.</span>
-          <a href="/dashboard/settings" className="ml-auto shrink-0 font-medium underline underline-offset-2 hover:text-orange-900">
-            Upload resume →
-          </a>
-        </div>
-      )}
+      <SetupChecklist
+        onboardingComplete={!onboardingIncomplete}
+        hasResume={!resumeMissing}
+        hasKeywords={hasKeywords}
+      />
 
       <QuickActions
         token={token}
@@ -103,6 +87,8 @@ export default async function DashboardPage() {
         location={profile?.location ?? ""}
         jobType={profile?.job_type ?? ""}
         platforms={profile?.platforms ?? []}
+        onboardingComplete={!onboardingIncomplete}
+        hasResume={!resumeMissing}
       />
 
       <div className="space-y-6">
@@ -128,7 +114,7 @@ export default async function DashboardPage() {
 
         <JobsTable jobs={jobsData} />
 
-        <ApplicationHistory applications={applicationsData} />
+        <ApplicationHistory applications={applicationsData} token={token} />
       </div>
     </DashboardLayout>
   );

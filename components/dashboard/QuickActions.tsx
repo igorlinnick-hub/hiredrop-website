@@ -12,6 +12,8 @@ interface Props {
   location: string;
   jobType: string;
   platforms: string[];
+  onboardingComplete: boolean;
+  hasResume: boolean;
 }
 
 type Busy = "find" | "start" | "stop" | null;
@@ -23,6 +25,8 @@ export default function QuickActions({
   location: initialLocation,
   jobType: initialJobType,
   platforms: initialPlatforms,
+  onboardingComplete,
+  hasResume,
 }: Props) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -78,6 +82,8 @@ export default function QuickActions({
   }
 
   async function startCampaign() {
+    if (!onboardingComplete) { setErr("Complete your profile setup first — click \"Start setup\" above."); return; }
+    if (!hasResume) { setErr("Upload your resume first — without it, applications will be low quality."); return; }
     if (!keywords.length) { setErr("Add at least one keyword"); inputRef.current?.focus(); return; }
     if (!platforms.length) { setErr("Select at least one platform"); return; }
     setBusy("start"); setErr(null);
