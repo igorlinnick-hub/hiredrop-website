@@ -7,7 +7,9 @@ import type { Application } from "@/lib/types";
 
 const statusColor: Record<string, "blue" | "yellow" | "green" | "red"> = {
   applied: "yellow",
+  received: "blue",
   interview: "green",
+  interview_invite: "green",
   rejected: "red",
 };
 
@@ -36,8 +38,10 @@ export default function ApplicationHistory({ applications }: ApplicationHistoryP
           const platform = PLATFORMS.find((p) => p.id === app.platform);
           const expanded = expandedId === app.id;
 
+          const hasResponse = ["interview", "interview_invite", "rejected", "received"].includes(app.status);
+
           return (
-            <div key={app.id} className="px-5 py-4">
+            <div key={app.id} className={`px-5 py-4${hasResponse ? " bg-surface2/40" : ""}`}>
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-text truncate">
