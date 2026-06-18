@@ -3,6 +3,7 @@
 import { KeyboardEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, apiPost } from "@/lib/api";
+import { createClient } from "@/lib/supabase/client";
 import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
 
 interface Props {
@@ -65,16 +66,27 @@ export default function QuickActions({
 
   // ── save + execute ─────────────────────────────────────────────────────────
 
+  async function getFreshToken(): Promise<string> {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) return session.access_token;
+    // Session gone — force re-login
+    router.push("/login");
+    throw new Error("Session expired — please log in again");
+  }
+
   async function savePrefs() {
-    await apiPost("/profile/prefs", token, { keywords, location, job_type: jobType, platforms });
+    const t = await getFreshToken();
+    await apiPost("/profile/prefs", t, { keywords, location, job_type: jobType, platforms });
   }
 
   async function findJobs() {
     if (!keywords.length) { setErr("Add at least one keyword"); inputRef.current?.focus(); return; }
     setBusy("find"); setErr(null);
     try {
+      const t = await getFreshToken();
       await savePrefs();
-      await apiPost("/jobs/find", token, {});
+      await apiPost("/jobs/find", t, {});
       router.refresh();
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : String(e));
@@ -87,9 +99,9 @@ export default function QuickActions({
     if (!platforms.length) { setErr("Select at least one platform"); return; }
     setBusy("start"); setErr(null);
     try {
+      const t = await getFreshToken();
       await savePrefs();
-      await apiPost("/campaign/start", token, { keywords, platforms, location, job_type: jobType });
-      // Tell the extension to open the Indeed automation window
+      await apiPost("/campaign/start", t, { keywords, platforms, location, job_type: jobType });
       window.postMessage({
         type: "HIREDROP_START_CAMPAIGN",
         filters: { keywords, platforms, location, job_type: jobType },
@@ -105,7 +117,8 @@ export default function QuickActions({
   async function stopCampaign() {
     setBusy("stop"); setErr(null);
     try {
-      await apiPost("/campaign/stop", token, {});
+      const t = await getFreshToken();
+      await apiPost("/campaign/stop", t, {});
       window.postMessage({ type: "HIREDROP_STOP_CAMPAIGN" }, "*");
       setCampaignRunning(false);
       router.refresh();

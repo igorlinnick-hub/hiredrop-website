@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { apiGet, apiPost } from "@/lib/api";
+import { createClient } from "@/lib/supabase/client";
 
 interface ActivityEntry {
   id: string;
@@ -17,7 +18,7 @@ interface Props {
   token: string;
 }
 
-export default function CampaignView({ token }: Props) {
+export default function CampaignView({ token: initialToken }: Props) {
   const router = useRouter();
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [screenshotAge, setScreenshotAge] = useState(0);
@@ -28,33 +29,44 @@ export default function CampaignView({ token }: Props) {
   const lastScreenshotTs = useRef<number>(0);
   const activityEndRef = useRef<HTMLDivElement>(null);
 
+  async function getToken(): Promise<string> {
+    const { data: { session } } = await createClient().auth.getSession();
+    return session?.access_token ?? initialToken;
+  }
+
   const fetchScreenshot = useCallback(async () => {
     try {
-      const res = await apiGet<{ data: string | null }>("/campaign/screenshot", token);
+      const t = await getToken();
+      const res = await apiGet<{ data: string | null }>("/campaign/screenshot", t);
       if (res.data) {
         setScreenshot(res.data);
         lastScreenshotTs.current = Date.now();
         setScreenshotAge(0);
       }
     } catch {}
-  }, [token]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchActivity = useCallback(async () => {
     try {
-      const entries = await apiGet<ActivityEntry[]>("/activity?limit=50", token);
+      const t = await getToken();
+      const entries = await apiGet<ActivityEntry[]>("/activity?limit=50", t);
       setActivity(entries);
     } catch {}
-  }, [token]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchStats = useCallback(async () => {
     try {
+      const t = await getToken();
       const status = await apiGet<{ today_applications: number; jobs_ready: number }>(
         "/campaign/status",
-        token
+        t
       );
       setStats({ applied: status.today_applications, found: status.jobs_ready });
     } catch {}
-  }, [token]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     fetchScreenshot();
@@ -85,7 +97,8 @@ export default function CampaignView({ token }: Props) {
   async function stopCampaign() {
     setStopping(true);
     try {
-      await apiPost("/campaign/stop", token, {});
+      const t = await getToken();
+      await apiPost("/campaign/stop", t, {});
       setStopped(true);
       setTimeout(() => router.push("/dashboard"), 2500);
     } catch {
