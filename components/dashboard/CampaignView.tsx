@@ -218,9 +218,9 @@ export default function CampaignView({ token }: Props) {
               >
                 <div className="w-8 h-8 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
                 <div>
-                  <p className="text-sm font-medium text-text">Waiting for browser preview</p>
+                  <p className="text-sm font-medium text-text">Campaign running in your browser</p>
                   <p className="text-xs text-text2/60 mt-1">
-                    Click the HireDrop extension icon in Chrome to start automation
+                    Switch to the Indeed tab to watch live — preview appears when Indeed tab is active
                   </p>
                 </div>
               </div>
@@ -229,7 +229,7 @@ export default function CampaignView({ token }: Props) {
 
           {screenshot && (
             <div className="px-5 pb-4 text-xs text-text2/50">
-              Extension is controlling Indeed in a separate Chrome window
+              Live view — switch to the Indeed tab to see automation in action
             </div>
           )}
         </div>
