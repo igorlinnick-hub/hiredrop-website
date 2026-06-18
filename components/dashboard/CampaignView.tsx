@@ -213,25 +213,15 @@ export default function CampaignView({ token }: Props) {
             ) : (
               <div
                 className="w-full rounded-lg border border-border bg-surface2/50 flex flex-col
-                  items-center justify-center gap-4 text-center px-6"
+                  items-center justify-center gap-3"
                 style={{ aspectRatio: "16/9" }}
               >
                 <div className="w-8 h-8 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
-                <div>
-                  <p className="text-sm font-medium text-text">Campaign running in your browser</p>
-                  <p className="text-xs text-text2/60 mt-1">
-                    Switch to the Indeed tab to watch live — preview appears when Indeed tab is active
-                  </p>
-                </div>
+                <p className="text-xs text-text2/50">Connecting to browser preview…</p>
               </div>
             )}
           </div>
 
-          {screenshot && (
-            <div className="px-5 pb-4 text-xs text-text2/50">
-              Live view — switch to the Indeed tab to see automation in action
-            </div>
-          )}
         </div>
       </div>
     </DashboardLayout>
