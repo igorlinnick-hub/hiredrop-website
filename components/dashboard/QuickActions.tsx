@@ -106,6 +106,7 @@ export default function QuickActions({
     setBusy("stop"); setErr(null);
     try {
       await apiPost("/campaign/stop", token, {});
+      window.postMessage({ type: "HIREDROP_STOP_CAMPAIGN" }, "*");
       setCampaignRunning(false);
       router.refresh();
     } catch (e) {
