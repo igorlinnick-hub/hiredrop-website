@@ -15,12 +15,14 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
   const [state, setState] = useState<State>("detecting");
   const [errorMsg, setErrorMsg] = useState<string>("");
 
-  // Detect wrong domain — manifest only covers hiredrop.io and *.hiredrop.io
-  const hostname = typeof window !== "undefined" ? window.location.hostname : "hiredrop.io";
-  const wrongDomain =
-    hostname !== "hiredrop.io" && !hostname.endsWith(".hiredrop.io");
-
   useEffect(() => {
+    // Extension manifest only covers hiredrop.io — silently redirect if on wrong domain
+    const h = window.location.hostname;
+    if (h !== "hiredrop.io" && !h.endsWith(".hiredrop.io")) {
+      window.location.replace("https://hiredrop.io/extension/connect");
+      return;
+    }
+
     let pongReceived = false;
     let detectTimer: ReturnType<typeof setTimeout> | null = null;
     let retryTimer: ReturnType<typeof setInterval> | null = null;
@@ -90,23 +92,7 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
           <span className="ml-auto text-xs text-text2">{email}</span>
         </div>
 
-        {wrongDomain && (
-          <Status
-            tone="error"
-            title="Wrong URL — extension won't work here"
-            body="You're on a preview/staging URL. The extension only injects on hiredrop.io."
-            action={
-              <a
-                href="https://hiredrop.io/extension/connect"
-                className="inline-flex items-center px-4 py-2 rounded-lg bg-accent text-white text-sm font-semibold hover:opacity-90"
-              >
-                Go to hiredrop.io/extension/connect →
-              </a>
-            }
-          />
-        )}
-
-        {!wrongDomain && state === "detecting" && (
+        {state === "detecting" && (
           <Status
             tone="info"
             title="Looking for the extension…"
@@ -114,7 +100,7 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
           />
         )}
 
-        {!wrongDomain && state === "extension-missing" && (
+        {state === "extension-missing" && (
           <Status
             tone="warning"
             title="Extension not detected"
@@ -138,7 +124,7 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
           />
         )}
 
-        {!wrongDomain && state === "storing" && (
+        {state === "storing" && (
           <Status
             tone="info"
             title="Connecting your account…"
@@ -146,7 +132,7 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
           />
         )}
 
-        {!wrongDomain && state === "stored" && (
+        {state === "stored" && (
           <Status
             tone="success"
             title="Extension connected ✓"
@@ -162,7 +148,7 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
           />
         )}
 
-        {!wrongDomain && state === "failed" && (
+        {state === "failed" && (
           <Status
             tone="error"
             title="Connection failed"
