@@ -1,14 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 
 export default function LoginForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -33,9 +30,10 @@ export default function LoginForm() {
       return;
     }
 
-    const next = searchParams.get("next");
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get("next");
     const dest = next && next.startsWith("/") ? next : "/dashboard";
-    // Full navigation so content scripts re-inject on the destination page
+    // Full page navigation so Chrome re-injects content scripts on the destination
     window.location.href = dest;
   }
 
