@@ -25,6 +25,7 @@ export default function CampaignView({ token: initialToken }: Props) {
   const [stats, setStats] = useState({ applied: 0, found: 0 });
   const [stopping, setStopping] = useState(false);
   const [stopped, setStopped] = useState(false);
+  const [previewWaitSecs, setPreviewWaitSecs] = useState(0);
   const lastScreenshotTs = useRef<number>(0);
   const activityEndRef = useRef<HTMLDivElement>(null);
 
@@ -87,9 +88,12 @@ export default function CampaignView({ token: initialToken }: Props) {
     const screenshotTimer = setInterval(fetchScreenshot, 400);
     const activityTimer = setInterval(fetchActivity, 3000);
     const statsTimer = setInterval(fetchStats, 5000);
+    const startTs = Date.now();
     const ageTimer = setInterval(() => {
       if (lastScreenshotTs.current) {
         setScreenshotAge(Math.floor((Date.now() - lastScreenshotTs.current) / 1000));
+      } else {
+        setPreviewWaitSecs(Math.floor((Date.now() - startTs) / 1000));
       }
     }, 1000);
 
@@ -269,9 +273,25 @@ export default function CampaignView({ token: initialToken }: Props) {
                   ))}
                 </>
               ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                  <div className="w-8 h-8 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
-                  <p className="text-xs text-text2/50">Connecting to browser preview…</p>
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center">
+                  {previewWaitSecs < 45 ? (
+                    <>
+                      <div className="w-8 h-8 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
+                      <p className="text-xs text-text2/50">Connecting to browser preview…</p>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-8 h-8 text-text2/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-xs text-text2/60 font-medium">Preview not available</p>
+                      <p className="text-xs text-text2/40 max-w-[200px]">
+                        The extension may have DevTools open on the Indeed tab, blocking the preview stream.
+                        Close DevTools and reload this page.
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
             </div>
