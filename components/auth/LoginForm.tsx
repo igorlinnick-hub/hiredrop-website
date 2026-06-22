@@ -33,8 +33,11 @@ export default function LoginForm() {
     const params = new URLSearchParams(window.location.search);
     const next = params.get("next");
     const dest = next && next.startsWith("/") ? next : "/dashboard";
-    // Full page navigation so Chrome re-injects content scripts on the destination
-    window.location.href = dest;
+    const h = window.location.hostname;
+    const onWrongDomain = h !== "hiredrop.io" && !h.endsWith(".hiredrop.io");
+    // If on a preview URL, navigate to hiredrop.io so the extension can inject
+    const base = onWrongDomain ? "https://hiredrop.io" : "";
+    window.location.href = base + dest;
   }
 
   async function handleGoogleLogin() {
