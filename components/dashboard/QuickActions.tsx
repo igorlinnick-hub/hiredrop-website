@@ -266,21 +266,33 @@ export default function QuickActions({
 
         <span className="text-border">·</span>
 
-        {/* Platform chips */}
-        {PLATFORMS.map((p) => {
+        {/* Indeed — auto-apply chip (always on, not toggleable) */}
+        <span
+          title="Extension auto-applies on Indeed — always enabled"
+          className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full border
+            bg-accent/10 text-accent border-accent/30 select-none"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />
+          Indeed
+          <span className="text-[10px] font-normal text-accent/60 ml-0.5">auto-apply</span>
+        </span>
+
+        <span className="text-border text-[10px] text-text2/40">Find jobs from:</span>
+
+        {/* Discovery-only platforms — affect job scraping, no account needed */}
+        {PLATFORMS.filter((p) => !p.autoApply).map((p) => {
           const on = platforms.includes(p.id);
           return (
-            <button key={p.id} type="button" onClick={() => togglePlatform(p.id)}
+            <button key={p.id} type="button"
+              onClick={() => togglePlatform(p.id)}
+              title={p.description + " — no account needed, just scrapes listings"}
               className={[
-                "flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-full border transition",
+                "px-3 py-1 text-xs font-medium rounded-full border transition",
                 on
-                  ? "bg-accent/10 text-accent border-accent/25"
-                  : "bg-surface text-text2/60 border-border hover:border-accent/30 hover:text-text2",
+                  ? "bg-surface2 text-text border-border/80"
+                  : "bg-surface text-text2/50 border-border/50 hover:border-border hover:text-text2",
               ].join(" ")}
             >
-              {p.autoApply && (
-                <span className={["w-1.5 h-1.5 rounded-full", on ? "bg-accent/60" : "bg-green/50"].join(" ")} />
-              )}
               {p.name}
             </button>
           );
