@@ -18,14 +18,21 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
   useEffect(() => {
     let pongReceived = false;
     let detectTimer: ReturnType<typeof setTimeout> | null = null;
+    let retryTimer: ReturnType<typeof setInterval> | null = null;
     let storeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    function clearTimers() {
+      if (retryTimer) clearInterval(retryTimer);
+      if (detectTimer) clearTimeout(detectTimer);
+    }
 
     function onMessage(e: MessageEvent) {
       if (e.source !== window || !e.data) return;
 
       if (e.data === "HIREDROP_PONG") {
+        if (pongReceived) return;
         pongReceived = true;
-        if (detectTimer) clearTimeout(detectTimer);
+        clearTimers();
         setState("storing");
         window.postMessage({ type: "HIREDROP_STORE_TOKEN", token, refresh_token: refreshToken }, "*");
         storeTimer = setTimeout(() => {
@@ -47,15 +54,23 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
     }
 
     window.addEventListener("message", onMessage);
-    window.postMessage("HIREDROP_PING", "*");
 
+    // Retry PING every 400ms — ping.js content script may not be ready on the first fire
+    // (document_idle injection can race with React hydration)
+    window.postMessage("HIREDROP_PING", "*");
+    retryTimer = setInterval(() => {
+      if (!pongReceived) window.postMessage("HIREDROP_PING", "*");
+    }, 400);
+
+    // Give up after 5 seconds total
     detectTimer = setTimeout(() => {
+      clearTimers();
       if (!pongReceived) setState("extension-missing");
-    }, 2500);
+    }, 5000);
 
     return () => {
       window.removeEventListener("message", onMessage);
-      if (detectTimer) clearTimeout(detectTimer);
+      clearTimers();
       if (storeTimer) clearTimeout(storeTimer);
     };
   }, [token, refreshToken]);
@@ -82,14 +97,22 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
           <Status
             tone="warning"
             title="Extension not detected"
-            body="Install the HireDrop extension in Chrome, then reload this page."
+            body="Open this page from the extension popup (Connect Account button), or make sure the extension is enabled in Chrome."
             action={
-              <Link
-                href="/extension"
-                className="inline-flex items-center px-4 py-2 rounded-lg bg-accent text-white text-sm font-semibold hover:opacity-90"
-              >
-                Get the extension →
-              </Link>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="inline-flex items-center px-4 py-2 rounded-lg bg-accent text-white text-sm font-semibold hover:opacity-90"
+                >
+                  Try Again
+                </button>
+                <Link
+                  href="/extension"
+                  className="inline-flex items-center px-4 py-2 rounded-lg border border-border text-text text-sm font-medium hover:bg-surface2"
+                >
+                  Get the extension →
+                </Link>
+              </div>
             }
           />
         )}
