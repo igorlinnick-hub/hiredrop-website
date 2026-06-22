@@ -15,10 +15,10 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
   const [state, setState] = useState<State>("detecting");
   const [errorMsg, setErrorMsg] = useState<string>("");
 
-  // Detect wrong domain immediately — manifest only covers hiredrop.io
+  // Detect wrong domain — manifest only covers hiredrop.io and *.hiredrop.io
+  const hostname = typeof window !== "undefined" ? window.location.hostname : "hiredrop.io";
   const wrongDomain =
-    typeof window !== "undefined" &&
-    !window.location.hostname.endsWith("hiredrop.io");
+    hostname !== "hiredrop.io" && !hostname.endsWith(".hiredrop.io");
 
   useEffect(() => {
     let pongReceived = false;
