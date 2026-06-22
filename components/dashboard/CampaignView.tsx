@@ -20,7 +20,6 @@ interface Props {
 
 export default function CampaignView({ token: initialToken }: Props) {
   const router = useRouter();
-  const [screenshot, setScreenshot] = useState<string | null>(null);
   const [screenshotAge, setScreenshotAge] = useState(0);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [stats, setStats] = useState({ applied: 0, found: 0 });
@@ -28,6 +27,11 @@ export default function CampaignView({ token: initialToken }: Props) {
   const [stopped, setStopped] = useState(false);
   const lastScreenshotTs = useRef<number>(0);
   const activityEndRef = useRef<HTMLDivElement>(null);
+
+  // Crossfade: two slots alternate so the outgoing frame stays visible during the fade
+  const [slots, setSlots] = useState<[string | null, string | null]>([null, null]);
+  const [frontIdx, setFrontIdx] = useState<0 | 1>(0);
+  const frontIdxRef = useRef<0 | 1>(0);
 
   async function getToken(): Promise<string> {
     const { data: { session } } = await createClient().auth.getSession();
@@ -39,7 +43,14 @@ export default function CampaignView({ token: initialToken }: Props) {
       const t = await getToken();
       const res = await apiGet<{ data: string | null }>("/campaign/screenshot", t);
       if (res.data) {
-        setScreenshot(res.data);
+        const next = (1 - frontIdxRef.current) as 0 | 1;
+        setSlots(prev => {
+          const s: [string | null, string | null] = [prev[0], prev[1]];
+          s[next] = res.data;
+          return s;
+        });
+        frontIdxRef.current = next;
+        setFrontIdx(next);
         lastScreenshotTs.current = Date.now();
         setScreenshotAge(0);
       }
@@ -73,7 +84,7 @@ export default function CampaignView({ token: initialToken }: Props) {
     fetchActivity();
     fetchStats();
 
-    const screenshotTimer = setInterval(fetchScreenshot, 2500);
+    const screenshotTimer = setInterval(fetchScreenshot, 400);
     const activityTimer = setInterval(fetchActivity, 3000);
     const statsTimer = setInterval(fetchStats, 5000);
     const ageTimer = setInterval(() => {
@@ -127,6 +138,13 @@ export default function CampaignView({ token: initialToken }: Props) {
 
   return (
     <DashboardLayout>
+      <style>{`
+        @keyframes hd-slide-in {
+          from { opacity: 0; transform: translateY(-6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .hd-entry { animation: hd-slide-in 0.2s ease both; }
+      `}</style>
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <a
@@ -191,7 +209,7 @@ export default function CampaignView({ token: initialToken }: Props) {
                 <div
                   key={entry.id}
                   className={[
-                    "flex gap-3 px-3 py-2 rounded-lg",
+                    "hd-entry flex gap-3 px-3 py-2 rounded-lg",
                     entry.level === "error"
                       ? "bg-red/5 text-red"
                       : "hover:bg-surface2/60 text-text2",
@@ -218,7 +236,7 @@ export default function CampaignView({ token: initialToken }: Props) {
         <div className="bg-surface border border-border rounded-xl overflow-hidden">
           <div className="px-5 py-3.5 border-b border-border flex items-center justify-between">
             <h3 className="text-sm font-semibold text-text">Browser Preview</h3>
-            {screenshot && (
+            {(slots[0] || slots[1]) && (
               <span className="text-xs text-text2/50">
                 {screenshotAge <= 1 ? "Live" : `${screenshotAge}s ago`}
               </span>
@@ -226,23 +244,37 @@ export default function CampaignView({ token: initialToken }: Props) {
           </div>
 
           <div className="p-4">
-            {screenshot ? (
-              <img
-                src={screenshot}
-                alt="Live browser automation"
-                className="w-full rounded-lg border border-border shadow-sm"
-                style={{ aspectRatio: "16/9", objectFit: "cover", objectPosition: "top" }}
-              />
-            ) : (
-              <div
-                className="w-full rounded-lg border border-border bg-surface2/50 flex flex-col
-                  items-center justify-center gap-3"
-                style={{ aspectRatio: "16/9" }}
-              >
-                <div className="w-8 h-8 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
-                <p className="text-xs text-text2/50">Connecting to browser preview…</p>
-              </div>
-            )}
+            <p className="text-xs text-text2/50 mb-3">
+              Your extension is applying to jobs right now — this is the live view.
+            </p>
+            <div
+              className="relative w-full rounded-lg border border-border overflow-hidden shadow-sm bg-surface2/50"
+              style={{ aspectRatio: "16/9" }}
+            >
+              {slots[0] || slots[1] ? (
+                <>
+                  {([0, 1] as const).map((i) => (
+                    slots[i] && (
+                      <img
+                        key={i}
+                        src={slots[i]!}
+                        alt="Live browser automation"
+                        className="absolute inset-0 w-full h-full object-cover object-top"
+                        style={{
+                          opacity: i === frontIdx ? 1 : 0,
+                          transition: "opacity 150ms ease",
+                        }}
+                      />
+                    )
+                  ))}
+                </>
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                  <div className="w-8 h-8 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
+                  <p className="text-xs text-text2/50">Connecting to browser preview…</p>
+                </div>
+              )}
+            </div>
           </div>
 
         </div>
