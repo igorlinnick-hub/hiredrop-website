@@ -1,8 +1,8 @@
 "use client";
 
-import { KeyboardEvent, useRef, useState } from "react";
+import { KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ApiError, apiPost } from "@/lib/api";
+import { ApiError, apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
 
@@ -42,6 +42,21 @@ export default function QuickActions({
   const [campaignRunning, setCampaignRunning] = useState(initialCampaignRunning);
   const [busy, setBusy] = useState<Busy>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  // Poll /campaign/status every 5s so extension-started campaigns reflect in the UI
+  useEffect(() => {
+    const poll = setInterval(async () => {
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        const t = session?.access_token;
+        if (!t) return;
+        const status = await apiGet<{ running: boolean }>("/campaign/status", t);
+        setCampaignRunning(status.running);
+      } catch { /* ignore */ }
+    }, 5000);
+    return () => clearInterval(poll);
+  }, []);
 
   // ── keyword tag input ──────────────────────────────────────────────────────
 
