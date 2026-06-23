@@ -63,4 +63,5 @@ export interface Application {
   date_applied: string;
   status: string;
   cover_letter?: string;
+  tailored_resume?: string;
 }

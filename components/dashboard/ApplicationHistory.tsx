@@ -20,6 +20,7 @@ interface ApplicationHistoryProps {
 
 export default function ApplicationHistory({ applications, token }: ApplicationHistoryProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedResumeId, setExpandedResumeId] = useState<string | null>(null);
   const [hiredId, setHiredId] = useState<string | null>(null);
   const [hiredDone, setHiredDone] = useState<string | null>(null);
 
@@ -83,6 +84,7 @@ export default function ApplicationHistory({ applications, token }: ApplicationH
         {applications.map((app) => {
           const platform = PLATFORMS.find((p) => p.id === app.platform);
           const expanded = expandedId === app.id;
+          const expandedResume = expandedResumeId === app.id;
           const hasResponse = ["interview", "interview_invite", "rejected", "received"].includes(app.status);
           const isInterview = ["interview", "interview_invite"].includes(app.status);
           const isHired = hiredDone === app.id || app.status === "hired";
@@ -114,6 +116,15 @@ export default function ApplicationHistory({ applications, token }: ApplicationH
                     </button>
                   )}
 
+                  {app.tailored_resume && (
+                    <button
+                      onClick={() => setExpandedResumeId(expandedResume ? null : app.id)}
+                      className="text-xs text-accent/80 hover:text-accent"
+                    >
+                      {expandedResume ? "Hide resume" : "ATS resume"}
+                    </button>
+                  )}
+
                   {app.cover_letter && (
                     <button
                       onClick={() => setExpandedId(expanded ? null : app.id)}
@@ -124,6 +135,25 @@ export default function ApplicationHistory({ applications, token }: ApplicationH
                   )}
                 </div>
               </div>
+
+              {expandedResume && app.tailored_resume && (
+                <div className="mt-3 p-3 bg-surface2 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-semibold text-accent/70 uppercase tracking-wider">
+                      ATS-Tailored Resume
+                    </span>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(app.tailored_resume!)}
+                      className="text-[11px] text-text2 hover:text-accent transition"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <pre className="text-xs text-text2 whitespace-pre-wrap leading-relaxed font-mono">
+                    {app.tailored_resume}
+                  </pre>
+                </div>
+              )}
 
               {expanded && app.cover_letter && (
                 <div className="mt-3 p-3 bg-surface2 rounded-lg text-sm text-text2 leading-relaxed">

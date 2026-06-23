@@ -50,9 +50,17 @@ export default function UsageBanner({
               </span>
             )}
             {isAdmin && (
-              <span className="text-sm text-amber-600 font-medium ml-auto sm:ml-0">
-                Unlimited ∞
-              </span>
+              <>
+                <span className="text-sm text-amber-600 font-medium ml-auto sm:ml-0">
+                  Unlimited ∞
+                </span>
+                <a
+                  href="/dashboard/ats-protocol"
+                  className="text-[11px] font-medium text-amber-700/70 hover:text-amber-700 border border-amber-400/30 px-2 py-0.5 rounded transition"
+                >
+                  ATS Protocol ↗
+                </a>
+              </>
             )}
           </div>
 
