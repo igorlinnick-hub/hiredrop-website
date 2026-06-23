@@ -109,12 +109,22 @@ export default async function DashboardPage() {
           totalJobs={statsData?.total_jobs ?? 0}
           totalApplications={statsData?.total_applications ?? 0}
           applicationsToday={statsData?.applications_today ?? 0}
-          responseRate={0}
+          responseRate={
+            applicationsData.length > 0
+              ? applicationsData.filter((a) =>
+                  ["received", "interview", "interview_invite", "hired", "rejected"].includes(a.status)
+                ).length / applicationsData.length
+              : 0
+          }
         />
 
-        <JobsTable jobs={jobsData} />
+        <div id="jobs">
+          <JobsTable jobs={jobsData} />
+        </div>
 
-        <ApplicationHistory applications={applicationsData} token={token} />
+        <div id="history">
+          <ApplicationHistory applications={applicationsData} token={token} />
+        </div>
       </div>
     </DashboardLayout>
   );
