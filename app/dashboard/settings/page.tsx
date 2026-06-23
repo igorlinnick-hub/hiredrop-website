@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
+import ResumeATSPanel from "@/components/dashboard/ResumeATSPanel";
 import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
 import type { UserProfile } from "@/lib/types";
 
@@ -26,7 +27,6 @@ const emptyProfile: UserProfile = {
 
 export default function SettingsPage() {
   const supabase = createClient();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<UserProfile>(emptyProfile);
   const [keywordInput, setKeywordInput] = useState("");
   const [saving, setSaving] = useState(false);
@@ -91,30 +91,6 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleResumeUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file || file.type !== "application/pdf") return;
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const filePath = `${user.id}/${file.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from("resumes")
-      .upload(filePath, file, { upsert: true });
-
-    if (!uploadError) {
-      update({ resume_url: filePath });
-    }
-  }
-
-  async function handleRemoveResume() {
-    if (!profile.resume_url) return;
-
-    await supabase.storage.from("resumes").remove([profile.resume_url]);
-    update({ resume_url: null });
-  }
-
   async function handleSave() {
     setSaving(true);
     setError("");
@@ -133,7 +109,6 @@ export default function SettingsPage() {
         job_type: profile.job_type,
         platforms: profile.platforms,
         writing_style: profile.writing_style,
-        resume_url: profile.resume_url,
       })
       .eq("user_id", user.id);
 
@@ -280,35 +255,8 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Resume */}
-        <section className="bg-surface border border-border rounded-xl p-6 space-y-4">
-          <h3 className="font-semibold text-text">Resume</h3>
-          {profile.resume_url ? (
-            <div className="flex items-center justify-between p-3 bg-surface2 rounded-lg">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span className="text-sm text-text">{profile.resume_url.split("/").pop()}</span>
-              </div>
-              <button className="text-sm text-red hover:underline" onClick={handleRemoveResume}>
-                Remove
-              </button>
-            </div>
-          ) : (
-            <p className="text-sm text-text2">No resume uploaded. Upload a PDF to enable auto-apply.</p>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf"
-            onChange={handleResumeUpload}
-            className="hidden"
-          />
-          <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>
-            Upload New Resume
-          </Button>
-        </section>
+        {/* Resume & ATS */}
+        <ResumeATSPanel />
 
         {/* Writing Style */}
         <section className="bg-surface border border-border rounded-xl p-6 space-y-4">

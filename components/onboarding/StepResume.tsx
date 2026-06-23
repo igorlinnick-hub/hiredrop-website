@@ -8,9 +8,10 @@ interface Props {
   setResumeFile: (file: File | null) => void;
   onNext: () => void;
   onBack: () => void;
+  uploading?: boolean;
 }
 
-export default function StepResume({ resumeFile, setResumeFile, onNext, onBack }: Props) {
+export default function StepResume({ resumeFile, setResumeFile, onNext, onBack, uploading }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -97,7 +98,9 @@ export default function StepResume({ resumeFile, setResumeFile, onNext, onBack }
 
       <div className="flex justify-between pt-2">
         <Button type="button" variant="ghost" onClick={onBack}>Back</Button>
-        <Button type="submit" disabled={!resumeFile}>Continue</Button>
+        <Button type="submit" disabled={!resumeFile || uploading}>
+          {uploading ? "Uploading..." : "Continue"}
+        </Button>
       </div>
     </form>
   );

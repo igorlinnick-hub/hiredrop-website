@@ -7,6 +7,7 @@ import StepPersonalInfo from "./StepPersonalInfo";
 import StepJobPreferences from "./StepJobPreferences";
 import StepPlatforms from "./StepPlatforms";
 import StepResume from "./StepResume";
+import StepATSCheck from "./StepATSCheck";
 import StepWritingStyle from "./StepWritingStyle";
 import StepDone from "./StepDone";
 import type { UserProfile } from "@/lib/types";
@@ -16,8 +17,9 @@ const STEPS = [
   { id: 2, title: "Job Preferences" },
   { id: 3, title: "Platforms" },
   { id: 4, title: "Resume" },
-  { id: 5, title: "Writing Style" },
-  { id: 6, title: "Done" },
+  { id: 5, title: "ATS Check" },
+  { id: 6, title: "Writing Style" },
+  { id: 7, title: "Done" },
 ];
 
 const initialProfile: UserProfile = {
@@ -62,12 +64,41 @@ export default function OnboardingWizard() {
     setProfile((prev) => ({ ...prev, ...updates }));
   }
 
-  function next() {
-    if (step < STEPS.length) setStep(step + 1);
-  }
-
   function back() {
     if (step > 1) setStep(step - 1);
+  }
+
+  async function nextFromResume() {
+    setSaving(true);
+    setSaveError(null);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    if (resumeFile) {
+      const filePath = `${user.id}/resume.pdf`;
+      const { error: uploadError } = await supabase.storage
+        .from("resumes")
+        .upload(filePath, resumeFile, { upsert: true });
+
+      if (uploadError) {
+        setSaving(false);
+        setSaveError("Resume upload failed. Please try again.");
+        return;
+      }
+
+      await supabase.from("profiles").update({ resume_url: filePath }).eq("user_id", user.id);
+    }
+
+    setSaving(false);
+    setStep(5);
+  }
+
+  function next() {
+    if (step < STEPS.length) setStep(step + 1);
   }
 
   async function finish() {
@@ -78,22 +109,6 @@ export default function OnboardingWizard() {
     if (!user) {
       router.push("/login");
       return;
-    }
-
-    // Upload resume if provided
-    let resumeUrl = profile.resume_url ?? null;
-    if (resumeFile) {
-      const filePath = `${user.id}/${resumeFile.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from("resumes")
-        .upload(filePath, resumeFile, { upsert: true });
-
-      if (uploadError) {
-        setSaving(false);
-        setSaveError("Resume upload failed. Please try again.");
-        return;
-      }
-      resumeUrl = filePath;
     }
 
     const { error } = await supabase
@@ -107,7 +122,6 @@ export default function OnboardingWizard() {
         job_type: profile.job_type,
         platforms: profile.platforms,
         writing_style: profile.writing_style,
-        resume_url: resumeUrl,
         onboarding_completed: true,
       })
       .eq("user_id", user.id);
@@ -189,17 +203,28 @@ export default function OnboardingWizard() {
             <StepPlatforms profile={profile} updateProfile={updateProfile} onNext={next} onBack={back} />
           )}
           {step === 4 && (
-            <StepResume
-              resumeFile={resumeFile}
-              setResumeFile={setResumeFile}
-              onNext={next}
-              onBack={back}
-            />
+            <>
+              {saveError && (
+                <div className="mb-4 p-3 rounded-lg bg-red/10 border border-red/20 text-red text-sm">
+                  {saveError}
+                </div>
+              )}
+              <StepResume
+                resumeFile={resumeFile}
+                setResumeFile={setResumeFile}
+                onNext={nextFromResume}
+                onBack={back}
+                uploading={saving}
+              />
+            </>
           )}
           {step === 5 && (
-            <StepWritingStyle profile={profile} updateProfile={updateProfile} onNext={next} onBack={back} />
+            <StepATSCheck onNext={next} onBack={back} />
           )}
           {step === 6 && (
+            <StepWritingStyle profile={profile} updateProfile={updateProfile} onNext={next} onBack={back} />
+          )}
+          {step === 7 && (
             <>
               {saveError && (
                 <div className="mb-4 p-3 rounded-lg bg-red/10 border border-red/20 text-red text-sm">

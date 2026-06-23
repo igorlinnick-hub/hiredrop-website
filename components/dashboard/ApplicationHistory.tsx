@@ -121,7 +121,7 @@ export default function ApplicationHistory({ applications, token }: ApplicationH
                       onClick={() => setExpandedResumeId(expandedResume ? null : app.id)}
                       className="text-xs text-accent/80 hover:text-accent"
                     >
-                      {expandedResume ? "Hide resume" : "ATS resume"}
+                      {expandedResume ? "Hide draft" : "Resume draft"}
                     </button>
                   )}
 
@@ -140,7 +140,7 @@ export default function ApplicationHistory({ applications, token }: ApplicationH
                 <div className="mt-3 p-3 bg-surface2 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] font-semibold text-accent/70 uppercase tracking-wider">
-                      ATS-Tailored Resume
+                      Tailored Resume Draft
                     </span>
                     <button
                       onClick={() => navigator.clipboard.writeText(app.tailored_resume!)}
@@ -149,6 +149,9 @@ export default function ApplicationHistory({ applications, token }: ApplicationH
                       Copy
                     </button>
                   </div>
+                  <p className="text-[11px] text-text2/60 mb-2">
+                    Keyword-tailored version for this role. Your ATS-formatted PDF was submitted to the employer.
+                  </p>
                   <pre className="text-xs text-text2 whitespace-pre-wrap leading-relaxed font-mono">
                     {app.tailored_resume}
                   </pre>
