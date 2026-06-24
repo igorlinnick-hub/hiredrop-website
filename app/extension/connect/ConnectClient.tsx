@@ -56,8 +56,22 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
 
     function startStoringPhase() {
       setState("storing");
-      // Fire token into extension — no callback needed; we verify via backend polling
       window.postMessage({ type: "HIREDROP_STORE_TOKEN", token, refresh_token: refreshToken }, "*");
+
+      let diagMsg = "";
+      // Listen for TOKEN_STORED callback — captures ping_status from SW for diagnostics
+      const tokenStoredListener = (e: MessageEvent) => {
+        if (!e.data || e.data.type !== "HIREDROP_TOKEN_STORED") return;
+        const ps = e.data.ping_status ?? "no_ps";
+        const err = e.data.error ?? null;
+        if (!e.data.ok) {
+          diagMsg = `SW error: ${err || "unknown"}`;
+        } else if (ps !== "200") {
+          diagMsg = `SW ping: ${ps}`;
+        }
+        window.removeEventListener("message", tokenStoredListener);
+      };
+      window.addEventListener("message", tokenStoredListener);
 
       // Poll backend every 500ms; extension pings backend on STORE_TOKEN → confirms online
       pollTimer = setInterval(async () => {
@@ -72,7 +86,11 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
       giveUpTimer = setTimeout(() => {
         clearStore();
         setState("failed");
-        setErrorMsg("Extension didn't confirm connection within 20 seconds. Reload the extension and try again.");
+        setErrorMsg(
+          diagMsg
+            ? `Connection timed out. Diagnostic: ${diagMsg}`
+            : "Extension didn't confirm connection within 20 seconds. Reload the extension and try again."
+        );
       }, 20000);
     }
 
