@@ -185,13 +185,13 @@ export default function CampaignView({ token: initialToken }: Props) {
         </button>
       </div>
 
-      {/* Debugger banner notice — shown once so users don't panic */}
+      {/* Automation window notice */}
       <div className="mb-5 flex items-start gap-3 px-4 py-3 rounded-xl bg-surface border border-border text-xs text-text2">
         <svg className="w-4 h-4 text-accent/70 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <span>
-          <strong className="text-text font-medium">You may see a yellow "Chrome is being debugged" bar</strong> in the automation window — this is normal. HireDrop uses it to stream the live preview to your dashboard. Only Indeed tabs are captured; your other tabs are never touched.
+          <strong className="text-text font-medium">A second Chrome window will open</strong> — that&apos;s the automation browser. Keep it open (don&apos;t minimize) while the campaign runs so the live preview works here. Only Indeed tabs are captured.
         </span>
       </div>
 
