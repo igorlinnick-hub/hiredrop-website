@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || "https://web-production-db45.up.railway.app";
+
 type State = "detecting" | "extension-missing" | "storing" | "stored" | "failed";
 
 interface Props {
@@ -26,11 +29,51 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
     let pongReceived = false;
     let detectTimer: ReturnType<typeof setTimeout> | null = null;
     let retryTimer: ReturnType<typeof setInterval> | null = null;
-    let storeTimer: ReturnType<typeof setTimeout> | null = null;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let giveUpTimer: ReturnType<typeof setTimeout> | null = null;
 
-    function clearTimers() {
+    function clearDetect() {
       if (retryTimer) clearInterval(retryTimer);
       if (detectTimer) clearTimeout(detectTimer);
+    }
+    function clearStore() {
+      if (pollTimer) clearInterval(pollTimer);
+      if (giveUpTimer) clearTimeout(giveUpTimer);
+    }
+
+    async function pollExtensionOnline() {
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/extension/ping`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return false;
+        const data = await res.json();
+        return !!data.online;
+      } catch {
+        return false;
+      }
+    }
+
+    function startStoringPhase() {
+      setState("storing");
+      // Fire token into extension — no callback needed; we verify via backend polling
+      window.postMessage({ type: "HIREDROP_STORE_TOKEN", token, refresh_token: refreshToken }, "*");
+
+      // Poll backend every 500ms; extension pings backend on STORE_TOKEN → confirms online
+      pollTimer = setInterval(async () => {
+        const online = await pollExtensionOnline();
+        if (online) {
+          clearStore();
+          setState("stored");
+        }
+      }, 500);
+
+      // Give up after 20s — generous for slow SW wake-ups
+      giveUpTimer = setTimeout(() => {
+        clearStore();
+        setState("failed");
+        setErrorMsg("Extension didn't confirm connection within 20 seconds. Reload the extension and try again.");
+      }, 20000);
     }
 
     function onMessage(e: MessageEvent) {
@@ -39,24 +82,8 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
       if (e.data === "HIREDROP_PONG") {
         if (pongReceived) return;
         pongReceived = true;
-        clearTimers();
-        setState("storing");
-        window.postMessage({ type: "HIREDROP_STORE_TOKEN", token, refresh_token: refreshToken }, "*");
-        storeTimer = setTimeout(() => {
-          setState("failed");
-          setErrorMsg("Extension responded to ping but never confirmed token storage. Try reloading the extension.");
-        }, 5000);
-        return;
-      }
-
-      if (typeof e.data === "object" && e.data.type === "HIREDROP_TOKEN_STORED") {
-        if (storeTimer) clearTimeout(storeTimer);
-        if (e.data.ok) {
-          setState("stored");
-        } else {
-          setState("failed");
-          setErrorMsg(e.data.error || "Extension rejected the token.");
-        }
+        clearDetect();
+        startStoringPhase();
       }
     }
 
@@ -71,14 +98,14 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
 
     // Give up after 5 seconds total
     detectTimer = setTimeout(() => {
-      clearTimers();
+      clearDetect();
       if (!pongReceived) setState("extension-missing");
     }, 5000);
 
     return () => {
       window.removeEventListener("message", onMessage);
-      clearTimers();
-      if (storeTimer) clearTimeout(storeTimer);
+      clearDetect();
+      clearStore();
     };
   }, [token, refreshToken]);
 
@@ -128,7 +155,7 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
           <Status
             tone="info"
             title="Connecting your account…"
-            body="Passing your session to the extension. This takes about a second."
+            body="Passing your session to the extension and waiting for confirmation. This usually takes 2–5 seconds."
           />
         )}
 
