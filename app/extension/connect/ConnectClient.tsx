@@ -68,9 +68,26 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
         const ps = e.data.ping_status ?? "no_ps";
         const err = e.data.error ?? null;
         window.removeEventListener("message", tokenStoredListener);
+
+        // Extension was reloaded after this page loaded — content script is orphaned.
+        // Auto-reload once to inject a fresh content script (guard prevents infinite loop).
+        if (err === "context_invalidated") {
+          if (!sessionStorage.getItem("hd_connect_reloaded")) {
+            sessionStorage.setItem("hd_connect_reloaded", "1");
+            window.location.reload();
+          } else {
+            // Second attempt also failed — show actionable error.
+            clearStore();
+            setState("failed");
+            setErrorMsg("Extension context error. Reload the extension in chrome://extensions, then try again.");
+          }
+          return;
+        }
+
         if (e.data.ok && ps === "200") {
           // SW pinged backend successfully — we're done.
           clearStore();
+          sessionStorage.removeItem("hd_connect_reloaded");
           setState("stored");
           return;
         }
