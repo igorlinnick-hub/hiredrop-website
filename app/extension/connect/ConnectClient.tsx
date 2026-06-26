@@ -59,17 +59,26 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
       window.postMessage({ type: "HIREDROP_STORE_TOKEN", token, refresh_token: refreshToken }, "*");
 
       let diagMsg = "";
-      // Listen for TOKEN_STORED callback — captures ping_status from SW for diagnostics
+      // Listen for TOKEN_STORED callback.
+      // If SW confirms backend ping (ping_status==="200"), trust it immediately —
+      // no need to wait for the GET-poll round-trip via in-memory _ext_status.
+      // GET-poll below stays as fallback for extension builds without ping_status.
       const tokenStoredListener = (e: MessageEvent) => {
         if (!e.data || e.data.type !== "HIREDROP_TOKEN_STORED") return;
         const ps = e.data.ping_status ?? "no_ps";
         const err = e.data.error ?? null;
+        window.removeEventListener("message", tokenStoredListener);
+        if (e.data.ok && ps === "200") {
+          // SW pinged backend successfully — we're done.
+          clearStore();
+          setState("stored");
+          return;
+        }
         if (!e.data.ok) {
           diagMsg = `SW error: ${err || "unknown"}`;
-        } else if (ps !== "200") {
+        } else {
           diagMsg = `SW ping: ${ps}`;
         }
-        window.removeEventListener("message", tokenStoredListener);
       };
       window.addEventListener("message", tokenStoredListener);
 
