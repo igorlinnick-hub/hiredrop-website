@@ -86,6 +86,7 @@ export default function ResumeATSPanel() {
   const [approving, setApproving] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [docxUrl, setDocxUrl] = useState<string | null>(null);
+  const [previewKind, setPreviewKind] = useState<"ats" | "original">("ats");
   const [showPreview, setShowPreview] = useState(false);
   const [showQA, setShowQA] = useState(false);
   const [questions, setQuestions] = useState<string[]>([]);
@@ -211,6 +212,7 @@ export default function ResumeATSPanel() {
       });
       setPreviewUrl(result.preview_url);
       setDocxUrl(result.docx_url || null);
+      setPreviewKind("ats");
       setData(prev => ({ ...prev, atsResumeUrl: result.ats_resume_url }));
       setShowPreview(true);
     } catch (e: unknown) {
@@ -227,6 +229,7 @@ export default function ResumeATSPanel() {
       const token = await getToken();
       const result = await apiCall("/profile/ats/resume/url", token);
       setPreviewUrl(result.url);
+      setPreviewKind("ats");
       // DOCX is a bonus format — fetch its URL too, ignore if absent
       try {
         const docx = await apiCall("/profile/ats/resume/docx-url", token);
@@ -247,6 +250,7 @@ export default function ResumeATSPanel() {
       const result = await apiCall("/profile/resume/url", token);
       setPreviewUrl(result.url);
       setDocxUrl(null);
+      setPreviewKind("original");
       setShowPreview(true);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Could not load resume");
@@ -489,8 +493,14 @@ export default function ResumeATSPanel() {
           <div className="bg-surface border border-border rounded-2xl w-full max-w-3xl flex flex-col" style={{ maxHeight: "90vh" }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <div>
-                <h3 className="font-semibold text-text">ATS-Optimized Resume</h3>
-                <p className="text-xs text-text2 mt-0.5">Same content · ATS-safe format</p>
+                <h3 className="font-semibold text-text">
+                  {previewKind === "ats" ? "ATS-Optimized Resume" : "Your Current Resume"}
+                </h3>
+                <p className="text-xs text-text2 mt-0.5">
+                  {previewKind === "ats"
+                    ? "Same content · ATS-safe format"
+                    : "This is the file employers receive right now"}
+                </p>
               </div>
               <button onClick={() => setShowPreview(false)} className="text-text2 hover:text-text p-1">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -502,20 +512,27 @@ export default function ResumeATSPanel() {
               <iframe src={previewUrl} className="w-full h-full" style={{ minHeight: 500 }} title="ATS Resume" />
             </div>
             <div className="flex items-center gap-3 px-5 py-4 border-t border-border">
-              {!data.atsApproved ? (
-                <Button onClick={handleApprove} disabled={approving}>
-                  {approving ? "Saving…" : "Use This Version"}
-                </Button>
-              ) : (
-                <Button variant="secondary" onClick={handleDecline} disabled={approving}>
-                  {approving ? "Saving…" : "Use Original Instead"}
-                </Button>
+              {/* Approve/decline only make sense for the generated ATS version */}
+              {previewKind === "ats" && (
+                !data.atsApproved ? (
+                  <Button onClick={handleApprove} disabled={approving}>
+                    {approving ? "Saving…" : "Use This Version"}
+                  </Button>
+                ) : (
+                  <Button variant="secondary" onClick={handleDecline} disabled={approving}>
+                    {approving ? "Saving…" : "Use Original Instead"}
+                  </Button>
+                )
               )}
               <div className="ml-auto flex items-center gap-3">
-                <a href={previewUrl} download="resume_ats.pdf" className="text-sm text-accent hover:underline">
+                <a
+                  href={previewUrl}
+                  download={previewKind === "ats" ? "resume_ats.pdf" : "resume.pdf"}
+                  className="text-sm text-accent hover:underline"
+                >
                   Download PDF
                 </a>
-                {docxUrl && (
+                {previewKind === "ats" && docxUrl && (
                   <a href={docxUrl} download="resume_ats.docx" className="text-sm text-accent hover:underline">
                     Download Word
                   </a>
