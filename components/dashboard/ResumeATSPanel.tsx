@@ -92,6 +92,7 @@ export default function ResumeATSPanel() {
   const [questions, setQuestions] = useState<string[]>([]);
   const [answers, setAnswers] = useState<QA[]>([]);
   const [generating, setGenerating] = useState(false);
+  const [loadingView, setLoadingView] = useState(false);
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -225,14 +226,13 @@ export default function ResumeATSPanel() {
 
   async function handleViewATS() {
     if (previewUrl) { setShowPreview(true); return; }
-    setGenerating(true);
+    setLoadingView(true);
     setError(null);
     try {
       const token = await getToken();
       const result = await apiCall("/profile/ats/resume/url", token);
       setPreviewUrl(result.url);
       setPreviewKind("ats");
-      // DOCX is a bonus format — fetch its URL too, ignore if absent
       try {
         const docx = await apiCall("/profile/ats/resume/docx-url", token);
         setDocxUrl(docx.url || null);
@@ -241,11 +241,11 @@ export default function ResumeATSPanel() {
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Could not load ATS resume");
     }
-    setGenerating(false);
+    setLoadingView(false);
   }
 
   async function handleViewOriginal() {
-    setGenerating(true);
+    setLoadingView(true);
     setError(null);
     try {
       const token = await getToken();
@@ -257,7 +257,7 @@ export default function ResumeATSPanel() {
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Could not load resume");
     }
-    setGenerating(false);
+    setLoadingView(false);
   }
 
   async function handleApprove() {
@@ -350,9 +350,9 @@ export default function ResumeATSPanel() {
             variant="secondary"
             size="sm"
             onClick={data.atsApproved ? handleViewATS : handleViewOriginal}
-            disabled={generating}
+            disabled={loadingView}
           >
-            {generating ? "Loading…" : "View"}
+            {loadingView ? "Loading…" : "View"}
           </Button>
         </div>
       )}
@@ -433,11 +433,11 @@ export default function ResumeATSPanel() {
 
           <div className="flex flex-wrap gap-2">
             {hasATS && (
-              <Button variant="secondary" size="sm" onClick={handleViewATS} disabled={generating}>
-                {generating ? "Loading…" : "View"}
+              <Button variant="secondary" size="sm" onClick={handleViewATS} disabled={loadingView || generating}>
+                {loadingView ? "Loading…" : "View"}
               </Button>
             )}
-            <Button variant="secondary" size="sm" onClick={handleOpenQA} disabled={generating}>
+            <Button variant="secondary" size="sm" onClick={handleOpenQA} disabled={generating || loadingView}>
               {generating ? "Generating…" : hasATS ? "Regenerate" : "Generate ATS Version"}
             </Button>
             {hasATS && !data.atsApproved && (
@@ -459,9 +459,16 @@ export default function ResumeATSPanel() {
       {showQA && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className="bg-surface border border-border rounded-2xl w-full max-w-lg">
-            <div className="px-6 py-5 border-b border-border">
-              <h3 className="font-semibold text-text">A few quick questions</h3>
-              <p className="text-xs text-text2 mt-0.5">ATS searches for exact tool names. Your answers go directly into Technical Skills — the section ATS scans first.</p>
+            <div className="flex items-center justify-between px-6 py-5 border-b border-border">
+              <div>
+                <h3 className="font-semibold text-text">A few quick questions</h3>
+                <p className="text-xs text-text2 mt-0.5">ATS searches for exact tool names. Your answers go directly into Technical Skills — the section ATS scans first.</p>
+              </div>
+              <button onClick={() => setShowQA(false)} className="text-text2 hover:text-text p-1 ml-4 flex-shrink-0">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
             <div className="px-6 py-5 space-y-4">
               {questions.map((q, i) => {
@@ -498,8 +505,8 @@ export default function ResumeATSPanel() {
               <Button onClick={() => handleGenerate(answers.filter((_, i) => !skipped.has(i)))}>
                 Generate ATS Resume
               </Button>
-              <Button variant="secondary" onClick={() => handleGenerate([])}>
-                Skip All
+              <Button variant="secondary" onClick={() => setShowQA(false)}>
+                Cancel
               </Button>
             </div>
           </div>
