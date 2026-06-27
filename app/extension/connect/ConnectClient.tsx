@@ -209,12 +209,12 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
             title="Extension connected ✓"
             body="Your account is now linked. You can close this tab and start applying."
             action={
-              <Link
+              <a
                 href="/dashboard"
                 className="inline-flex items-center px-4 py-2 rounded-lg bg-accent text-white text-sm font-semibold hover:opacity-90"
               >
                 Back to dashboard
-              </Link>
+              </a>
             }
           />
         )}
