@@ -7,13 +7,12 @@ import Button from "@/components/ui/Button";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "https://web-production-db45.up.railway.app";
 
+const ATS_PASS_THRESHOLD = 80;
+
 async function apiCall(path: string, token: string, method = "GET", body?: unknown) {
   const res = await fetch(`${API_BASE}/api/v1${path}`, {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: body ? JSON.stringify(body) : undefined,
     cache: "no-store",
   });
@@ -34,24 +33,41 @@ interface ATSData {
   resumeUrl: string | null;
 }
 
+interface QA { question: string; answer: string; }
+
 const ISSUE_LABELS: Record<string, string> = {
-  columns: "Multi-column layout — ATS can't read side-by-side content",
+  columns: "Multi-column layout — ATS reads left-to-right and may jumble columns",
   tables: "Tables — ATS often can't parse table cells",
   images: "Images or graphics — ATS ignores non-text content",
   text_boxes: "Floating text boxes / complex layout",
   special_chars: "Special symbols or icons — may render as garbage",
 };
 
-function ScoreBadge({ score }: { score: number }) {
-  const color =
-    score >= 85 ? "text-green border-green bg-green/10" :
-    score >= 60 ? "text-yellow-500 border-yellow-500 bg-yellow-500/10" :
-    "text-red border-red bg-red/10";
-  const label = score >= 85 ? "ATS Ready" : score >= 60 ? "Needs Work" : "Poor";
+function ScoreRing({ score }: { score: number }) {
+  const radius = 36;
+  const circ = 2 * Math.PI * radius;
+  const fill = (score / 100) * circ;
+  const color = score >= ATS_PASS_THRESHOLD ? "#10b981" : score >= 60 ? "#f59e0b" : "#ef4444";
+  const label = score >= ATS_PASS_THRESHOLD ? "Passes ATS" : score >= 60 ? "Needs work" : "Poor";
+
   return (
-    <div className={`flex items-center gap-2 border rounded-lg px-3 py-1.5 ${color}`}>
-      <span className="text-lg font-bold">{score}</span>
-      <span className="text-xs font-semibold">/100 · {label}</span>
+    <div className="flex items-center gap-3">
+      <div className="relative w-20 h-20 flex-shrink-0">
+        <svg className="w-20 h-20 -rotate-90" viewBox="0 0 84 84">
+          <circle cx="42" cy="42" r={radius} fill="none" stroke="currentColor" strokeWidth="7" className="text-surface2" />
+          <circle cx="42" cy="42" r={radius} fill="none" stroke={color} strokeWidth="7"
+            strokeDasharray={`${fill} ${circ}`} strokeLinecap="round"
+            style={{ transition: "stroke-dasharray 0.8s ease" }} />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-xl font-bold text-text">{score}</span>
+          <span className="text-[9px] text-text2">/100</span>
+        </div>
+      </div>
+      <div>
+        <p className="font-semibold text-text" style={{ color }}>{label}</p>
+        <p className="text-xs text-text2 mt-0.5">ATS Compatibility Score</p>
+      </div>
     </div>
   );
 }
@@ -66,14 +82,15 @@ export default function ResumeATSPanel() {
   });
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
-  const [generating, setGenerating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [approving, setApproving] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [docxUrl, setDocxUrl] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const [showEdit, setShowEdit] = useState(false);
-  const [editText, setEditText] = useState("");
-  const [regenerating, setRegenerating] = useState(false);
+  const [showQA, setShowQA] = useState(false);
+  const [questions, setQuestions] = useState<string[]>([]);
+  const [answers, setAnswers] = useState<QA[]>([]);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -85,7 +102,7 @@ export default function ResumeATSPanel() {
 
   const flash = (msg: string) => {
     setSuccessMsg(msg);
-    setTimeout(() => setSuccessMsg(null), 3000);
+    setTimeout(() => setSuccessMsg(null), 4000);
   };
 
   useEffect(() => {
@@ -120,25 +137,20 @@ export default function ResumeATSPanel() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setUploading(false); return; }
 
-    const filePath = `${user.id}/resume.pdf`;
     const { error: uploadError } = await supabase.storage
-      .from("resumes").upload(filePath, file, { upsert: true });
+      .from("resumes").upload(`${user.id}/resume.pdf`, file, { upsert: true });
 
-    if (uploadError) {
-      setError("Upload failed. Please try again.");
-      setUploading(false);
-      return;
-    }
+    if (uploadError) { setError("Upload failed. Please try again."); setUploading(false); return; }
 
     await supabase.from("profiles").update({
-      resume_url: filePath,
-      ats_approved: false,
-      ats_score: null,
-      ats_issues: [],
-      ats_checked_at: null,
+      resume_url: `${user.id}/resume.pdf`,
+      ats_approved: false, ats_score: null, ats_issues: [], ats_checked_at: null,
     }).eq("user_id", user.id);
 
-    setData(prev => ({ ...prev, resumeUrl: filePath, atsApproved: false, atsScore: null, atsIssues: [], atsIssueLabels: [], atsCheckedAt: null }));
+    setData(prev => ({
+      ...prev, resumeUrl: `${user.id}/resume.pdf`,
+      atsApproved: false, atsScore: null, atsIssues: [], atsIssueLabels: [], atsCheckedAt: null,
+    }));
     setPreviewUrl(null);
     setUploading(false);
     flash("Resume uploaded. Run ATS check to analyze it.");
@@ -157,20 +169,48 @@ export default function ResumeATSPanel() {
         atsIssueLabels: result.issue_labels,
         atsCheckedAt: new Date().toISOString(),
       }));
-      flash("ATS check complete.");
+      const ok = typeof result.passes === "boolean"
+        ? result.passes
+        : result.score >= ATS_PASS_THRESHOLD;
+      if (ok) {
+        flash(`Score ${result.score}/100 — your resume passes ATS. No changes needed.`);
+      } else if (result.has_structural) {
+        flash(`Design blocks detected — ATS can't read this layout. Generate a clean version below.`);
+      } else {
+        flash(`Score ${result.score}/100 — generate an ATS-optimized version below.`);
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "ATS check failed");
     }
     setChecking(false);
   }
 
-  async function handleGenerate() {
+  async function handleOpenQA() {
+    setError(null);
+    try {
+      const token = await getToken();
+      const result = await apiCall("/profile/ats/questions", token, "POST");
+      const qs: string[] = result.questions || [];
+      setQuestions(qs);
+      setAnswers(qs.map((q: string) => ({ question: q, answer: "" })));
+      setShowQA(true);
+    } catch {
+      // If questions fail, go straight to generate
+      await handleGenerate([]);
+    }
+  }
+
+  async function handleGenerate(filledAnswers: QA[]) {
+    setShowQA(false);
     setGenerating(true);
     setError(null);
     try {
       const token = await getToken();
-      const result = await apiCall("/profile/ats/generate", token, "POST");
+      const result = await apiCall("/profile/ats/generate", token, "POST", {
+        answers: filledAnswers.filter(a => a.answer.trim()),
+      });
       setPreviewUrl(result.preview_url);
+      setDocxUrl(result.docx_url || null);
       setData(prev => ({ ...prev, atsResumeUrl: result.ats_resume_url }));
       setShowPreview(true);
     } catch (e: unknown) {
@@ -187,9 +227,29 @@ export default function ResumeATSPanel() {
       const token = await getToken();
       const result = await apiCall("/profile/ats/resume/url", token);
       setPreviewUrl(result.url);
+      // DOCX is a bonus format — fetch its URL too, ignore if absent
+      try {
+        const docx = await apiCall("/profile/ats/resume/docx-url", token);
+        setDocxUrl(docx.url || null);
+      } catch { setDocxUrl(null); }
       setShowPreview(true);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Could not load ATS resume");
+    }
+    setGenerating(false);
+  }
+
+  async function handleViewOriginal() {
+    setGenerating(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      const result = await apiCall("/profile/resume/url", token);
+      setPreviewUrl(result.url);
+      setDocxUrl(null);
+      setShowPreview(true);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Could not load resume");
     }
     setGenerating(false);
   }
@@ -202,7 +262,7 @@ export default function ResumeATSPanel() {
       await apiCall("/profile/ats/approve", token, "POST");
       setData(prev => ({ ...prev, atsApproved: true }));
       setShowPreview(false);
-      flash("ATS version is now active — will be sent to employers.");
+      flash("ATS version is now active — will be sent to all employers.");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Could not save");
     }
@@ -211,77 +271,46 @@ export default function ResumeATSPanel() {
 
   async function handleDecline() {
     setApproving(true);
-    setError(null);
     try {
       const token = await getToken();
       await apiCall("/profile/ats/decline", token, "POST");
       setData(prev => ({ ...prev, atsApproved: false }));
       setShowPreview(false);
-      flash("Original resume will be used.");
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Could not save");
-    }
+      flash("Original resume is now active.");
+    } catch { /* best effort */ }
     setApproving(false);
   }
 
-  async function handleOpenEdit() {
-    setError(null);
-    try {
-      const token = await getToken();
-      const result = await apiCall("/profile/resume/text", token);
-      setEditText(result.text || "");
-      setShowPreview(false);
-      setShowEdit(true);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Could not load resume text");
-    }
-  }
+  const formatDate = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null;
 
-  async function handleRegenerateFromEdit() {
-    if (!editText.trim()) return;
-    setRegenerating(true);
-    setError(null);
-    try {
-      const token = await getToken();
-      const result = await apiCall("/profile/ats/generate-from-text", token, "POST", { resume_text: editText });
-      setPreviewUrl(result.preview_url);
-      setShowEdit(false);
-      setShowPreview(true);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Regeneration failed");
-    }
-    setRegenerating(false);
-  }
-
-  const formatDate = (iso: string | null) => {
-    if (!iso) return null;
-    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  };
-
-  if (loading) {
-    return (
-      <section className="bg-surface border border-border rounded-xl p-6">
-        <div className="animate-pulse h-4 w-32 bg-surface2 rounded" />
-      </section>
-    );
-  }
+  if (loading) return (
+    <section className="bg-surface border border-border rounded-xl p-6">
+      <div className="animate-pulse h-4 w-40 bg-surface2 rounded" />
+    </section>
+  );
 
   const hasResume = !!data.resumeUrl;
   const hasATS = !!data.atsResumeUrl;
   const wasChecked = data.atsScore !== null;
+  // A resume "passes" only with no design blockers AND a score over threshold.
+  // Design blocks (columns/tables/images/floating blocks) force regeneration.
+  const STRUCTURAL_ISSUES = ["columns", "tables", "images", "text_boxes"];
+  const hasStructural = data.atsIssues.some(i => STRUCTURAL_ISSUES.includes(i));
+  const passes = wasChecked && !hasStructural && (data.atsScore ?? 0) >= ATS_PASS_THRESHOLD;
 
   return (
     <section className="bg-surface border border-border rounded-xl p-6 space-y-5">
-      <div className="flex items-start justify-between">
+
+      {/* Header + active badge */}
+      <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-semibold text-text">Resume & ATS</h3>
-          <p className="text-xs text-text2 mt-0.5">
-            Control which resume version gets submitted to employers.
-          </p>
+          <p className="text-xs text-text2 mt-0.5">Manage which version employers receive.</p>
         </div>
         {hasResume && (
           <div className={[
-            "flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border",
+            "flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border flex-shrink-0",
             data.atsApproved
               ? "bg-green/10 border-green text-green"
               : "bg-surface2 border-border text-text2",
@@ -292,46 +321,54 @@ export default function ResumeATSPanel() {
         )}
       </div>
 
-      {error && (
-        <div className="p-3 rounded-lg bg-red/10 border border-red/20 text-red text-sm">{error}</div>
-      )}
-      {successMsg && (
-        <div className="p-3 rounded-lg bg-green/10 border border-green/20 text-green text-sm">{successMsg}</div>
-      )}
+      {error && <div className="p-3 rounded-lg bg-red/10 border border-red/20 text-red text-sm">{error}</div>}
+      {successMsg && <div className="p-3 rounded-lg bg-green/10 border border-green/20 text-green text-sm">{successMsg}</div>}
 
-      {/* Current Resume */}
-      <div className="p-4 bg-surface2 rounded-xl border border-border space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-text2 uppercase tracking-wide">Your Resume</span>
-        </div>
-        {hasResume ? (
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
-              <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-text truncate">resume.pdf</p>
-              <p className="text-xs text-text2">Uploaded to Supabase Storage</p>
-            </div>
+      {/* What employers actually receive — single source of truth */}
+      {hasResume && (
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-accent/5 border border-accent/20">
+          <div className="w-9 h-9 rounded-lg bg-accent/15 flex items-center justify-center flex-shrink-0">
+            <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
           </div>
-        ) : (
-          <p className="text-sm text-text2">No resume uploaded yet.</p>
-        )}
-        <div className="flex gap-2">
-          <input ref={fileInputRef} type="file" accept=".pdf" onChange={handleUploadNew} className="hidden" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-text2">Sent to employers</p>
+            <p className="text-sm font-semibold text-text">
+              {data.atsApproved
+                ? "Your ATS-optimized resume"
+                : "Your original resume — already ATS-ready"}
+            </p>
+          </div>
           <Button
-            variant="secondary" size="sm"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
+            variant="secondary"
+            size="sm"
+            onClick={data.atsApproved ? handleViewATS : handleViewOriginal}
+            disabled={generating}
           >
-            {uploading ? "Uploading..." : hasResume ? "Replace Resume" : "Upload Resume"}
+            {generating ? "Loading…" : "View"}
           </Button>
         </div>
+      )}
+
+      {/* Resume file row */}
+      <div className="flex items-center gap-3 p-4 bg-surface2 rounded-xl border border-border">
+        <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+          <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-text">{hasResume ? "resume.pdf" : "No resume uploaded"}</p>
+          <p className="text-xs text-text2">{hasResume ? "Stored in Supabase Storage" : "Upload a PDF to enable auto-apply"}</p>
+        </div>
+        <input ref={fileInputRef} type="file" accept=".pdf" onChange={handleUploadNew} className="hidden" />
+        <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          {uploading ? "Uploading…" : hasResume ? "Replace" : "Upload"}
+        </Button>
       </div>
 
-      {/* ATS Score */}
+      {/* ATS Score block */}
       {hasResume && (
         <div className="p-4 bg-surface2 rounded-xl border border-border space-y-3">
           <div className="flex items-center justify-between">
@@ -340,38 +377,36 @@ export default function ResumeATSPanel() {
               <span className="text-xs text-text2">Checked {formatDate(data.atsCheckedAt)}</span>
             )}
           </div>
+
           {wasChecked && data.atsScore !== null ? (
-            <div className="space-y-2">
-              <ScoreBadge score={data.atsScore} />
+            <div className="space-y-3">
+              <ScoreRing score={data.atsScore} />
               {data.atsIssueLabels.length > 0 && (
-                <div className="space-y-1 mt-2">
+                <div className="space-y-1.5">
                   {data.atsIssueLabels.map((label, i) => (
                     <div key={i} className="flex items-start gap-2 text-sm text-text">
-                      <span className="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-red/20 text-red flex items-center justify-center text-[10px] font-bold">!</span>
+                      <span className="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-red/15 text-red flex items-center justify-center text-[10px] font-bold">!</span>
                       {label}
                     </div>
                   ))}
                 </div>
               )}
-              {data.atsScore === 100 && (
+              {passes && !data.atsIssueLabels.length && (
                 <p className="text-sm text-green">No formatting issues detected.</p>
               )}
             </div>
           ) : (
-            <p className="text-sm text-text2">Run a check to see how your resume scores.</p>
+            <p className="text-sm text-text2">Run a check to see how your resume scores with ATS systems.</p>
           )}
-          <Button
-            variant="secondary" size="sm"
-            onClick={handleCheck}
-            disabled={checking}
-          >
-            {checking ? "Checking..." : wasChecked ? "Re-run Check" : "Run ATS Check"}
+
+          <Button variant="secondary" size="sm" onClick={handleCheck} disabled={checking}>
+            {checking ? "Checking…" : wasChecked ? "Re-run Check" : "Run ATS Check"}
           </Button>
         </div>
       )}
 
-      {/* ATS Version */}
-      {hasResume && wasChecked && (
+      {/* ATS Version block — only show if score < threshold */}
+      {hasResume && wasChecked && !passes && (
         <div className="p-4 bg-surface2 rounded-xl border border-border space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-text2 uppercase tracking-wide">ATS-Optimized Version</span>
@@ -381,37 +416,69 @@ export default function ResumeATSPanel() {
               </span>
             )}
           </div>
-          {!hasATS ? (
-            <p className="text-sm text-text2">
-              No ATS version generated yet.
-              {(data.atsIssues?.length > 0) && " We can fix the issues above automatically."}
-            </p>
-          ) : (
-            <p className="text-sm text-text2">
-              {data.atsApproved
-                ? "This version is submitted to employers. Clean format, same content."
-                : "Generated. Review it, then activate to use it with employers."}
-            </p>
-          )}
+
+          <p className="text-sm text-text2">
+            {hasATS
+              ? data.atsApproved
+                ? "This clean version is being sent to employers."
+                : "Generated. Activate it to start using it."
+              : "We'll ask you a few quick questions, then generate a clean version."}
+          </p>
+
           <div className="flex flex-wrap gap-2">
             {hasATS && (
               <Button variant="secondary" size="sm" onClick={handleViewATS} disabled={generating}>
-                {generating ? "Loading..." : "View ATS Resume"}
+                {generating ? "Loading…" : "View"}
               </Button>
             )}
-            <Button variant="secondary" size="sm" onClick={handleGenerate} disabled={generating}>
-              {generating ? "Generating..." : hasATS ? "Regenerate" : "Generate ATS Version"}
+            <Button variant="secondary" size="sm" onClick={handleOpenQA} disabled={generating}>
+              {generating ? "Generating…" : hasATS ? "Regenerate" : "Generate ATS Version"}
             </Button>
             {hasATS && !data.atsApproved && (
               <Button size="sm" onClick={handleApprove} disabled={approving}>
-                {approving ? "Saving..." : "Use ATS Version"}
+                {approving ? "Saving…" : "Use ATS Version"}
               </Button>
             )}
             {hasATS && data.atsApproved && (
               <Button variant="secondary" size="sm" onClick={handleDecline} disabled={approving}>
-                {approving ? "Saving..." : "Use Original Instead"}
+                {approving ? "Saving…" : "Use Original"}
               </Button>
             )}
+          </div>
+          <p className="text-xs text-text2">To change content — upload a new resume and regenerate.</p>
+        </div>
+      )}
+
+      {/* Q&A Modal */}
+      {showQA && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-surface border border-border rounded-2xl w-full max-w-lg">
+            <div className="px-6 py-5 border-b border-border">
+              <h3 className="font-semibold text-text">A few quick questions</h3>
+              <p className="text-xs text-text2 mt-0.5">ATS searches for exact tool names. Your answers go directly into Technical Skills — the section ATS scans first.</p>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              {questions.map((q, i) => (
+                <div key={i}>
+                  <label className="block text-sm text-text mb-1">{q}</label>
+                  <input
+                    type="text"
+                    value={answers[i]?.answer || ""}
+                    onChange={e => setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: e.target.value } : a))}
+                    placeholder="Your answer…"
+                    className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-text placeholder-text2 focus:outline-none focus:border-accent"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="px-6 py-4 border-t border-border flex gap-3">
+              <Button onClick={() => handleGenerate(answers)}>
+                Generate ATS Resume
+              </Button>
+              <Button variant="secondary" onClick={() => handleGenerate([])}>
+                Skip Questions
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -423,73 +490,37 @@ export default function ResumeATSPanel() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <div>
                 <h3 className="font-semibold text-text">ATS-Optimized Resume</h3>
-                <p className="text-xs text-text2 mt-0.5">Same content · ATS-friendly format</p>
+                <p className="text-xs text-text2 mt-0.5">Same content · ATS-safe format</p>
               </div>
-              <button
-                onClick={() => setShowPreview(false)}
-                className="text-text2 hover:text-text transition p-1"
-              >
+              <button onClick={() => setShowPreview(false)} className="text-text2 hover:text-text p-1">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
             <div className="flex-1 overflow-hidden">
-              <iframe src={previewUrl} className="w-full h-full" style={{ minHeight: "500px" }} title="ATS Resume" />
+              <iframe src={previewUrl} className="w-full h-full" style={{ minHeight: 500 }} title="ATS Resume" />
             </div>
             <div className="flex items-center gap-3 px-5 py-4 border-t border-border">
               {!data.atsApproved ? (
                 <Button onClick={handleApprove} disabled={approving}>
-                  {approving ? "Saving..." : "Use This Version"}
+                  {approving ? "Saving…" : "Use This Version"}
                 </Button>
               ) : (
                 <Button variant="secondary" onClick={handleDecline} disabled={approving}>
-                  {approving ? "Saving..." : "Switch Back to Original"}
+                  {approving ? "Saving…" : "Use Original Instead"}
                 </Button>
               )}
-              <Button variant="secondary" onClick={handleOpenEdit}>Edit</Button>
-              <a
-                href={previewUrl}
-                download="resume_ats.pdf"
-                className="text-sm text-accent hover:underline ml-auto"
-              >
-                Download
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Modal */}
-      {showEdit && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-surface border border-border rounded-2xl w-full max-w-2xl flex flex-col" style={{ maxHeight: "90vh" }}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-              <div>
-                <h3 className="font-semibold text-text">Edit Resume Text</h3>
-                <p className="text-xs text-text2 mt-0.5">Edit and regenerate a new ATS PDF</p>
+              <div className="ml-auto flex items-center gap-3">
+                <a href={previewUrl} download="resume_ats.pdf" className="text-sm text-accent hover:underline">
+                  Download PDF
+                </a>
+                {docxUrl && (
+                  <a href={docxUrl} download="resume_ats.docx" className="text-sm text-accent hover:underline">
+                    Download Word
+                  </a>
+                )}
               </div>
-              <button onClick={() => setShowEdit(false)} className="text-text2 hover:text-text p-1">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex-1 overflow-auto p-5">
-              <textarea
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                disabled={regenerating}
-                className="w-full h-96 border border-border rounded-xl p-3 text-sm font-mono bg-background text-text resize-none focus:outline-none focus:border-accent"
-              />
-            </div>
-            <div className="flex gap-3 px-5 py-4 border-t border-border">
-              <Button onClick={handleRegenerateFromEdit} disabled={regenerating || !editText.trim()}>
-                {regenerating ? "Regenerating..." : "Regenerate PDF"}
-              </Button>
-              <Button variant="secondary" onClick={() => setShowEdit(false)} disabled={regenerating}>
-                Cancel
-              </Button>
             </div>
           </div>
         </div>
