@@ -82,6 +82,7 @@ export default function StepATSCheck({ onNext, onBack }: Props) {
   const [checkResult, setCheckResult] = useState<CheckResult | null>(null);
   const [questions, setQuestions] = useState<string[]>([]);
   const [answers, setAnswers] = useState<QA[]>([]);
+  const [skipped, setSkipped] = useState<Set<number>>(new Set());
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -134,7 +135,7 @@ export default function StepATSCheck({ onNext, onBack }: Props) {
     setError(null);
     try {
       const token = await getToken();
-      const filledAnswers = answers.filter(a => a.answer.trim());
+      const filledAnswers = answers.filter((a, i) => !skipped.has(i) && a.answer.trim());
       const result = await apiPost("/profile/ats/generate", token, {
         answers: filledAnswers,
       });
@@ -234,18 +235,35 @@ export default function StepATSCheck({ onNext, onBack }: Props) {
                 ATS systems search for exact tool names and software. Your resume implies you used these — confirm the specifics so ATS can match you to job postings.
               </p>
               <div className="space-y-4">
-                {questions.map((q, i) => (
-                  <div key={i}>
-                    <label className="block text-sm text-text mb-1">{q}</label>
-                    <input
-                      type="text"
-                      value={answers[i]?.answer || ""}
-                      onChange={e => updateAnswer(i, e.target.value)}
-                      placeholder="Your answer…"
-                      className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface text-text placeholder-text2 focus:outline-none focus:border-accent"
-                    />
-                  </div>
-                ))}
+                {questions.map((q, i) => {
+                  const isSkipped = skipped.has(i);
+                  return (
+                    <div key={i} className={isSkipped ? "opacity-40" : ""}>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-sm text-text flex-1 pr-2">{q}</label>
+                        <button
+                          onClick={() => setSkipped(prev => {
+                            const next = new Set(prev);
+                            if (next.has(i)) next.delete(i); else next.add(i);
+                            return next;
+                          })}
+                          className="text-xs text-text2 hover:text-text transition flex-shrink-0"
+                        >
+                          {isSkipped ? "Undo" : "Skip"}
+                        </button>
+                      </div>
+                      {!isSkipped && (
+                        <input
+                          type="text"
+                          value={answers[i]?.answer || ""}
+                          onChange={e => updateAnswer(i, e.target.value)}
+                          placeholder="Your answer…"
+                          className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-surface text-text placeholder-text2 focus:outline-none focus:border-accent"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -261,7 +279,7 @@ export default function StepATSCheck({ onNext, onBack }: Props) {
               onClick={handleUseOriginal}
               className="w-full border border-border text-text2 rounded-xl py-2.5 text-sm hover:text-text transition"
             >
-              Skip — use my original resume
+              Skip all — use my original resume
             </button>
           </div>
           <button onClick={onBack} className="mt-3 text-xs text-text2 hover:text-text transition block mx-auto">Back</button>

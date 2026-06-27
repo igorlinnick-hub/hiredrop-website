@@ -92,6 +92,7 @@ export default function ResumeATSPanel() {
   const [questions, setQuestions] = useState<string[]>([]);
   const [answers, setAnswers] = useState<QA[]>([]);
   const [generating, setGenerating] = useState(false);
+  const [skipped, setSkipped] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -194,6 +195,7 @@ export default function ResumeATSPanel() {
       const qs: string[] = result.questions || [];
       setQuestions(qs);
       setAnswers(qs.map((q: string) => ({ question: q, answer: "" })));
+      setSkipped(new Set());
       setShowQA(true);
     } catch {
       // If questions fail, go straight to generate
@@ -462,25 +464,42 @@ export default function ResumeATSPanel() {
               <p className="text-xs text-text2 mt-0.5">ATS searches for exact tool names. Your answers go directly into Technical Skills — the section ATS scans first.</p>
             </div>
             <div className="px-6 py-5 space-y-4">
-              {questions.map((q, i) => (
-                <div key={i}>
-                  <label className="block text-sm text-text mb-1">{q}</label>
-                  <input
-                    type="text"
-                    value={answers[i]?.answer || ""}
-                    onChange={e => setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: e.target.value } : a))}
-                    placeholder="Your answer…"
-                    className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-text placeholder-text2 focus:outline-none focus:border-accent"
-                  />
-                </div>
-              ))}
+              {questions.map((q, i) => {
+                const isSkipped = skipped.has(i);
+                return (
+                  <div key={i} className={isSkipped ? "opacity-40" : ""}>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-sm text-text flex-1 pr-2">{q}</label>
+                      <button
+                        onClick={() => setSkipped(prev => {
+                          const next = new Set(prev);
+                          if (next.has(i)) next.delete(i); else next.add(i);
+                          return next;
+                        })}
+                        className="text-xs text-text2 hover:text-text transition flex-shrink-0"
+                      >
+                        {isSkipped ? "Undo" : "Skip"}
+                      </button>
+                    </div>
+                    {!isSkipped && (
+                      <input
+                        type="text"
+                        value={answers[i]?.answer || ""}
+                        onChange={e => setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: e.target.value } : a))}
+                        placeholder="Your answer…"
+                        className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-text placeholder-text2 focus:outline-none focus:border-accent"
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
             <div className="px-6 py-4 border-t border-border flex gap-3">
-              <Button onClick={() => handleGenerate(answers)}>
+              <Button onClick={() => handleGenerate(answers.filter((_, i) => !skipped.has(i)))}>
                 Generate ATS Resume
               </Button>
               <Button variant="secondary" onClick={() => handleGenerate([])}>
-                Skip Questions
+                Skip All
               </Button>
             </div>
           </div>
