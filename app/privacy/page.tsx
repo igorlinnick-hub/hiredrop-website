@@ -46,7 +46,7 @@ export default function PrivacyPage() {
 
             <section>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">7. Contact</h2>
-              <p>Questions about this privacy policy or about data we hold on you: support@hiredrop.app.</p>
+              <p>Questions about this privacy policy or about data we hold on you: support@hiredrop.io.</p>
             </section>
           </div>
         </div>

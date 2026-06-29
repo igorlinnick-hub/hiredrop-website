@@ -39,7 +39,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">6. Contact</h2>
-              <p>For questions about these terms, contact us at support@hiredrop.app.</p>
+              <p>For questions about these terms, contact us at support@hiredrop.io.</p>
             </section>
           </div>
         </div>
