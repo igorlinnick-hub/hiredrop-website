@@ -114,6 +114,12 @@ export default function CampaignView({ token: initialToken }: Props) {
     try {
       const t = await getToken();
       await apiPost("/campaign/stop", t, {});
+      // Tell the extension to actually halt — apiPost only updates the backend.
+      // ping.js (injected on hiredrop.io) relays this to the service worker,
+      // which clears chrome.storage.local.campaignRunning so content.js aborts
+      // its in-flight form fill. Without this, Stop here only updated the DB and
+      // the extension kept applying. Mirrors QuickActions.stopCampaign().
+      window.postMessage({ type: "HIREDROP_STOP_CAMPAIGN" }, "*");
       setStopped(true);
       setTimeout(() => router.push("/dashboard"), 2500);
     } catch {
