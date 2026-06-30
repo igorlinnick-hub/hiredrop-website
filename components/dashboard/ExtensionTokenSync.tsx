@@ -47,9 +47,11 @@ export default function ExtensionTokenSync() {
     // Push immediately so landing on the campaign page refreshes the token at once.
     pushToken();
 
-    // Re-push every 3 minutes — well under the ~1h token lifetime, so the extension
-    // never runs on an expired token while the dashboard is open.
-    const interval = setInterval(pushToken, 3 * 60 * 1000);
+    // Re-push every 60s. The extension no longer wipes its token on a transient 401
+    // (it waits for us), so a frequent push keeps the live preview and backend tracking
+    // continuous with at most a ~60s stale window. 60s is also Chrome's effective floor
+    // for background-tab setInterval, so this still fires when the tab isn't focused.
+    const interval = setInterval(pushToken, 60 * 1000);
 
     // Also push when the tab regains focus (covers wake-from-sleep / tab switching).
     const onVisible = () => { if (!document.hidden) pushToken(); };
