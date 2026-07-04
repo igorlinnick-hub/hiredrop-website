@@ -29,9 +29,15 @@ export default function ExtensionTokenSync() {
   useEffect(() => {
     const supabase = createClient();
     let stopped = false;
+    let lastPush = 0;
 
     async function pushToken() {
       if (stopped || document.hidden) return;
+      // Debounce: focus + visibilitychange often both fire on a single tab-focus, and the
+      // interval can coincide — collapse bursts so we don't push (and ping) twice at once.
+      const now = Date.now();
+      if (now - lastPush < 3000) return;
+      lastPush = now;
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
