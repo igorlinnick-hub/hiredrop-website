@@ -34,6 +34,11 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Client component can't export `metadata`; set the tab title directly.
+  useEffect(() => {
+    document.title = "Settings — HireDrop";
+  }, []);
+
   useEffect(() => {
     async function loadProfile() {
       const { data: { user } } = await supabase.auth.getUser();
