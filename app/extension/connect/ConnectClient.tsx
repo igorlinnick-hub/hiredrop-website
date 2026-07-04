@@ -56,6 +56,37 @@ export default function ConnectClient({ token, refreshToken, email }: Props) {
 
     function startStoringPhase() {
       setState("storing");
+
+      // Approach A: mint a DURABLE extension key and hand it to the extension. This is
+      // the permanent credential — it never expires and doesn't depend on the dashboard
+      // tab staying open. The token push below remains a transitional fallback.
+      (async () => {
+        try {
+          const res = await fetch(`${API_BASE}/api/v1/extension/issue-key`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.key) window.postMessage({ type: "HIREDROP_STORE_KEY", key: data.key }, "*");
+          }
+        } catch {
+          /* fall back to the token push below */
+        }
+      })();
+
+      // Success as soon as the extension confirms it stored the durable key + pinged.
+      const keyStoredListener = (e: MessageEvent) => {
+        if (!e.data || e.data.type !== "HIREDROP_KEY_STORED") return;
+        if (e.data.ok && (e.data.ping_status ?? "") === "200") {
+          window.removeEventListener("message", keyStoredListener);
+          clearStore();
+          sessionStorage.removeItem("hd_connect_reloaded");
+          setState("stored");
+        }
+      };
+      window.addEventListener("message", keyStoredListener);
+
       window.postMessage({ type: "HIREDROP_STORE_TOKEN", token, refresh_token: refreshToken }, "*");
 
       let diagMsg = "";
