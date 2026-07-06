@@ -6,7 +6,7 @@ export const PLATFORMS: Platform[] = [
   // Discovery — server scrapes, you apply externally
   { id: "linkedin", name: "LinkedIn", status: "active", requiresLogin: false, description: "Largest professional network. High signal-to-noise." },
   { id: "glassdoor", name: "Glassdoor", status: "active", requiresLogin: false, description: "Jobs + company reviews & salaries." },
-  { id: "ziprecruiter", name: "ZipRecruiter", status: "active", requiresLogin: false, description: "Top US job board with AI matching." },
+  { id: "ziprecruiter", name: "ZipRecruiter", status: "active", requiresLogin: false, autoApply: true, description: "Top US job board with Quick Apply. Extension auto-applies on your behalf." },
   { id: "google", name: "Google Jobs", status: "active", requiresLogin: false, description: "Aggregates listings from across the web." },
   { id: "remoteok", name: "RemoteOK", status: "active", requiresLogin: false, description: "Remote-only jobs via public API." },
   { id: "wellfound", name: "Wellfound", status: "active", requiresLogin: false, description: "Startup & tech jobs." },

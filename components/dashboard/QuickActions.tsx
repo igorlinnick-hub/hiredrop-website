@@ -35,8 +35,9 @@ export default function QuickActions({
   const [keywords, setKeywords] = useState<string[]>(initialKeywords);
   const [location, setLocation] = useState(initialLocation || "remote");
   const [jobType, setJobType] = useState(initialJobType || "full-time");
+  // Indeed is always included — it's the core auto-apply platform
   const [platforms, setPlatforms] = useState<string[]>(
-    initialPlatforms.length ? initialPlatforms : ["remoteok"]
+    initialPlatforms.length ? [...new Set([...initialPlatforms, "indeed"])] : ["indeed", "remoteok"]
   );
   const [kwInput, setKwInput] = useState("");
   const [campaignRunning, setCampaignRunning] = useState(initialCampaignRunning);
@@ -76,6 +77,7 @@ export default function QuickActions({
   }
 
   function togglePlatform(id: string) {
+    if (id === "indeed") return; // always on
     setPlatforms((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   }
 
@@ -276,6 +278,27 @@ export default function QuickActions({
           Indeed
           <span className="text-[10px] font-normal text-accent/60 ml-0.5">auto-apply</span>
         </span>
+
+        {/* Other auto-apply platforms — toggleable */}
+        {PLATFORMS.filter((p) => p.autoApply && p.id !== "indeed").map((p) => {
+          const on = platforms.includes(p.id);
+          return (
+            <button key={p.id} type="button"
+              onClick={() => togglePlatform(p.id)}
+              title={p.description}
+              className={[
+                "flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border transition",
+                on
+                  ? "bg-accent/10 text-accent border-accent/30 font-semibold"
+                  : "bg-surface text-text2/50 border-border/50 hover:border-accent/30 hover:text-text2",
+              ].join(" ")}
+            >
+              {on && <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />}
+              {p.name}
+              {on && <span className="text-[10px] font-normal text-accent/60 ml-0.5">auto-apply</span>}
+            </button>
+          );
+        })}
 
         <span className="text-border text-[10px] text-text2/40">Find jobs from:</span>
 
