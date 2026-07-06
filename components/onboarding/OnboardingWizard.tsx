@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import StepPersonalInfo from "./StepPersonalInfo";
 import StepJobPreferences from "./StepJobPreferences";
+import StepReassurance from "./StepReassurance";
 import StepPlatforms from "./StepPlatforms";
 import StepResume from "./StepResume";
 import StepATSCheck from "./StepATSCheck";
@@ -15,11 +16,12 @@ import type { UserProfile } from "@/lib/types";
 const STEPS = [
   { id: 1, title: "Personal Info" },
   { id: 2, title: "Job Preferences" },
-  { id: 3, title: "Platforms" },
-  { id: 4, title: "Resume" },
-  { id: 5, title: "ATS Check" },
-  { id: 6, title: "Writing Style" },
-  { id: 7, title: "Done" },
+  { id: 3, title: "Safety" },
+  { id: 4, title: "Platforms" },
+  { id: 5, title: "Resume" },
+  { id: 6, title: "ATS Check" },
+  { id: 7, title: "Writing Style" },
+  { id: 8, title: "Done" },
 ];
 
 const initialProfile: UserProfile = {
@@ -94,7 +96,7 @@ export default function OnboardingWizard() {
     }
 
     setSaving(false);
-    setStep(5);
+    setStep(6); // → ATS Check
   }
 
   function next() {
@@ -200,9 +202,12 @@ export default function OnboardingWizard() {
             <StepJobPreferences profile={profile} updateProfile={updateProfile} onNext={next} onBack={back} />
           )}
           {step === 3 && (
-            <StepPlatforms profile={profile} updateProfile={updateProfile} onNext={next} onBack={back} />
+            <StepReassurance onNext={next} onBack={back} />
           )}
           {step === 4 && (
+            <StepPlatforms profile={profile} updateProfile={updateProfile} onNext={next} onBack={back} />
+          )}
+          {step === 5 && (
             <>
               {saveError && (
                 <div className="mb-4 p-3 rounded-lg bg-red/10 border border-red/20 text-red text-sm">
@@ -218,13 +223,13 @@ export default function OnboardingWizard() {
               />
             </>
           )}
-          {step === 5 && (
+          {step === 6 && (
             <StepATSCheck onNext={next} onBack={back} />
           )}
-          {step === 6 && (
+          {step === 7 && (
             <StepWritingStyle profile={profile} updateProfile={updateProfile} onNext={next} onBack={back} />
           )}
-          {step === 7 && (
+          {step === 8 && (
             <>
               {saveError && (
                 <div className="mb-4 p-3 rounded-lg bg-red/10 border border-red/20 text-red text-sm">

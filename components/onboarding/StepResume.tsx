@@ -38,9 +38,10 @@ export default function StepResume({ resumeFile, setResumeFile, onNext, onBack, 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-text">Upload Resume</h2>
+        <h2 className="text-xl font-bold text-text">Upload your resume</h2>
         <p className="text-sm text-text2 mt-1">
-          Your resume is used for auto-applying and as context for AI cover letters.
+          Used for auto-applying and as context for tailored cover letters. Optional — you can add it
+          any time before your first application.
         </p>
       </div>
 
@@ -96,11 +97,23 @@ export default function StepResume({ resumeFile, setResumeFile, onNext, onBack, 
         )}
       </div>
 
-      <div className="flex justify-between pt-2">
+      <div className="flex justify-between items-center pt-2">
         <Button type="button" variant="ghost" onClick={onBack}>Back</Button>
-        <Button type="submit" disabled={!resumeFile || uploading}>
-          {uploading ? "Uploading..." : "Continue"}
-        </Button>
+        <div className="flex items-center gap-4">
+          {!resumeFile && (
+            <button
+              type="button"
+              onClick={onNext}
+              disabled={uploading}
+              className="text-sm text-text2 hover:text-accent transition disabled:opacity-50"
+            >
+              Skip for now
+            </button>
+          )}
+          <Button type="submit" disabled={!resumeFile || uploading}>
+            {uploading ? "Uploading..." : "Continue"}
+          </Button>
+        </div>
       </div>
     </form>
   );
