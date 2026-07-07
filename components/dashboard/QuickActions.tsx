@@ -55,6 +55,11 @@ export default function QuickActions({
   const [campaignRunning, setCampaignRunning] = useState(initialCampaignRunning);
   const [busy, setBusy] = useState<Busy>(null);
   const [err, setErr] = useState<string | null>(null);
+  // Per-platform login state, reported by the extension (Indeed/ZipRecruiter).
+  // connReady flips true once the extension answers — so we don't show "connect"
+  // prompts when the extension isn't installed at all.
+  const [connections, setConnections] = useState<Record<string, { status: string }>>({});
+  const [connReady, setConnReady] = useState(false);
 
   // Poll /campaign/status every 5s so extension-started campaigns reflect in the UI
   useEffect(() => {
@@ -70,6 +75,39 @@ export default function QuickActions({
     }, 5000);
     return () => clearInterval(poll);
   }, []);
+
+  // Ask the extension for platform login state (via the ping.js bridge) on mount,
+  // on tab focus (the user may have just logged in on another tab), and periodically.
+  useEffect(() => {
+    function onMsg(e: MessageEvent) {
+      if (e.source !== window || !e.data || typeof e.data !== "object") return;
+      if (e.data.type === "HIREDROP_PLATFORM_CONNECTIONS") {
+        setConnReady(true);
+        if (e.data.ok) setConnections(e.data.connections || {});
+      }
+    }
+    window.addEventListener("message", onMsg);
+    const ask = () => window.postMessage({ type: "HIREDROP_GET_PLATFORM_CONNECTIONS" }, "*");
+    ask();
+    const onVisible = () => { if (!document.hidden) ask(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    const iv = setInterval(ask, 10000);
+    return () => {
+      window.removeEventListener("message", onMsg);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+      clearInterval(iv);
+    };
+  }, []);
+
+  const selectedAutoApply = platforms.find((p) => AUTO_APPLY_IDS.includes(p)) || "indeed";
+  const selectedAutoName = PLATFORMS.find((p) => p.id === selectedAutoApply)?.name || selectedAutoApply;
+  const selectedAutoStatus = connections[selectedAutoApply]?.status;
+
+  function connectPlatform(id: string) {
+    window.postMessage({ type: "HIREDROP_OPEN_PLATFORM_LOGIN", platform: id }, "*");
+  }
 
   // ── keyword tag input ──────────────────────────────────────────────────────
 
@@ -131,6 +169,14 @@ export default function QuickActions({
     if (!onboardingComplete) { setErr("Complete your profile setup first — click \"Start setup\" above."); return; }
     if (!keywords.length) { setErr("Add at least one keyword"); inputRef.current?.focus(); return; }
     if (!platforms.length) { setErr("Select at least one platform"); return; }
+    // Auto-apply needs a logged-in account on the target platform. If the extension
+    // told us the user is signed out, open the login/sign-up page instead of starting
+    // a campaign that would just stall at a login wall.
+    if (selectedAutoStatus === "logged_out") {
+      setErr(`Sign into ${selectedAutoName} first — we opened the login page. Log in or create an account, then start.`);
+      connectPlatform(selectedAutoApply);
+      return;
+    }
     setBusy("start"); setErr(null);
     try {
       const t = await getFreshToken();
@@ -307,6 +353,32 @@ export default function QuickActions({
             </button>
           );
         })}
+
+        {/* Connection status for the selected auto-apply platform. Auto-apply needs
+            the user logged into that site in this browser — we detect it and, if
+            they're not, offer a one-click link to log in or create an account. */}
+        {connReady && selectedAutoStatus === "connected" && (
+          <span className="flex items-center gap-1 text-[11px] text-green font-medium" title={`Signed into ${selectedAutoName}`}>
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+            {selectedAutoName} connected
+          </span>
+        )}
+        {connReady && selectedAutoStatus !== "connected" && (
+          <button type="button" onClick={() => connectPlatform(selectedAutoApply)}
+            title={`Open ${selectedAutoName} to log in or create an account`}
+            className={[
+              "flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-full border transition",
+              selectedAutoStatus === "logged_out"
+                ? "bg-yellow/10 text-yellow border-yellow/40 hover:bg-yellow/20"
+                : "bg-surface text-text2 border-border/60 hover:border-accent/40 hover:text-text",
+            ].join(" ")}
+          >
+            {selectedAutoStatus === "logged_out" ? `Sign into ${selectedAutoName}` : `Connect ${selectedAutoName}`}
+            <span aria-hidden>→</span>
+          </button>
+        )}
 
         <span className="text-border text-[10px] text-text2/40">Find jobs from:</span>
 
