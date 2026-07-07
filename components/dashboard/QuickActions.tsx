@@ -6,6 +6,9 @@ import { ApiError, apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
 
+// Platforms the extension can auto-apply on. Exactly one runs per campaign.
+const AUTO_APPLY_IDS = PLATFORMS.filter((p) => p.autoApply).map((p) => p.id);
+
 interface Props {
   token: string;
   campaignRunning: boolean;
@@ -35,10 +38,19 @@ export default function QuickActions({
   const [keywords, setKeywords] = useState<string[]>(initialKeywords);
   const [location, setLocation] = useState(initialLocation || "remote");
   const [jobType, setJobType] = useState(initialJobType || "full-time");
-  // Indeed is always included — it's the core auto-apply platform
-  const [platforms, setPlatforms] = useState<string[]>(
-    initialPlatforms.length ? [...new Set([...initialPlatforms, "indeed"])] : ["indeed", "remoteok"]
-  );
+  // A campaign auto-applies on exactly ONE platform (the extension runs it to the
+  // daily cap, then stops) — so auto-apply is a radio, not a multi-select. Discovery
+  // platforms (LinkedIn/Glassdoor/…) are multi-select; they only scrape listings.
+  const [platforms, setPlatforms] = useState<string[]>(() => {
+    const base = initialPlatforms.length ? [...initialPlatforms] : ["indeed", "remoteok"];
+    const selectedAuto = base.filter((x) => AUTO_APPLY_IDS.includes(x));
+    if (selectedAuto.length === 0) base.push("indeed");
+    else if (selectedAuto.length > 1) {
+      const keep = selectedAuto[0];
+      return [...new Set([...base.filter((x) => !AUTO_APPLY_IDS.includes(x)), keep])];
+    }
+    return [...new Set(base)];
+  });
   const [kwInput, setKwInput] = useState("");
   const [campaignRunning, setCampaignRunning] = useState(initialCampaignRunning);
   const [busy, setBusy] = useState<Busy>(null);
@@ -76,8 +88,13 @@ export default function QuickActions({
     }
   }
 
-  function togglePlatform(id: string) {
-    if (id === "indeed") return; // always on
+  // Auto-apply is a radio: picking one auto-apply platform replaces the other.
+  function selectAutoApply(id: string) {
+    setPlatforms((p) => [...p.filter((x) => !AUTO_APPLY_IDS.includes(x)), id]);
+  }
+
+  // Discovery platforms are an independent multi-select (they only scrape listings).
+  function toggleDiscovery(id: string) {
     setPlatforms((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   }
 
@@ -268,24 +285,15 @@ export default function QuickActions({
 
         <span className="text-border">·</span>
 
-        {/* Indeed — auto-apply chip (always on, not toggleable) */}
-        <span
-          title="Extension auto-applies on Indeed — always enabled"
-          className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full border
-            bg-accent/10 text-accent border-accent/30 select-none"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />
-          Indeed
-          <span className="text-[10px] font-normal text-accent/60 ml-0.5">auto-apply</span>
-        </span>
+        <span className="text-[10px] text-text2/40 mr-0.5">Auto-apply on:</span>
 
-        {/* Other auto-apply platforms — toggleable */}
-        {PLATFORMS.filter((p) => p.autoApply && p.id !== "indeed").map((p) => {
+        {/* Auto-apply platforms — radio: exactly one runs per campaign */}
+        {PLATFORMS.filter((p) => p.autoApply).map((p) => {
           const on = platforms.includes(p.id);
           return (
             <button key={p.id} type="button"
-              onClick={() => togglePlatform(p.id)}
-              title={p.description}
+              onClick={() => selectAutoApply(p.id)}
+              title={on ? `${p.name} — extension auto-applies for this campaign` : `Switch auto-apply to ${p.name}`}
               className={[
                 "flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border transition",
                 on
@@ -307,7 +315,7 @@ export default function QuickActions({
           const on = platforms.includes(p.id);
           return (
             <button key={p.id} type="button"
-              onClick={() => togglePlatform(p.id)}
+              onClick={() => toggleDiscovery(p.id)}
               title={p.description + " — no account needed, just scrapes listings"}
               className={[
                 "px-3 py-1 text-xs font-medium rounded-full border transition",
