@@ -9,6 +9,12 @@ import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
 // Platforms the extension can auto-apply on. Exactly one runs per campaign.
 const AUTO_APPLY_IDS = PLATFORMS.filter((p) => p.autoApply).map((p) => p.id);
 
+// Login / sign-up landing pages — both offer "create account" for new users.
+const PLATFORM_LOGIN_URLS: Record<string, string> = {
+  indeed: "https://secure.indeed.com/account/login",
+  ziprecruiter: "https://www.ziprecruiter.com/authn/login?realm=candidates",
+};
+
 interface Props {
   token: string;
   campaignRunning: boolean;
@@ -106,7 +112,11 @@ export default function QuickActions({
   const selectedAutoStatus = connections[selectedAutoApply]?.status;
 
   function connectPlatform(id: string) {
-    window.postMessage({ type: "HIREDROP_OPEN_PLATFORM_LOGIN", platform: id }, "*");
+    // Open the login/sign-up page directly (a click is a user gesture, so it isn't
+    // popup-blocked). content.js on that page then detects and stores the new login
+    // state. We don't route through the extension's service worker — it can go stale.
+    const url = PLATFORM_LOGIN_URLS[id];
+    if (url) window.open(url, "_blank", "noopener");
   }
 
   // ── keyword tag input ──────────────────────────────────────────────────────
