@@ -343,52 +343,55 @@ export default function QuickActions({
 
         <span className="text-[10px] text-text2/40 mr-0.5">Auto-apply on:</span>
 
-        {/* Auto-apply platforms — radio: exactly one runs per campaign */}
+        {/* Auto-apply platforms. The radio chip selects which one runs THIS campaign;
+            the connect control next to it is about the ACCOUNT (persistent) — so the
+            user can connect Indeed AND ZipRecruiter independently, then pick which to
+            run. Not connected → a one-click link that opens the platform to log in or
+            create a (free) account; content.js detects it and flips the chip to ✓. */}
         {PLATFORMS.filter((p) => p.autoApply).map((p) => {
           const on = platforms.includes(p.id);
+          const status = connections[p.id]?.status;
+          const connected = status === "connected";
           return (
-            <button key={p.id} type="button"
-              onClick={() => selectAutoApply(p.id)}
-              title={on ? `${p.name} — extension auto-applies for this campaign` : `Switch auto-apply to ${p.name}`}
-              className={[
-                "flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border transition",
-                on
-                  ? "bg-accent/10 text-accent border-accent/30 font-semibold"
-                  : "bg-surface text-text2/50 border-border/50 hover:border-accent/30 hover:text-text2",
-              ].join(" ")}
-            >
-              {on && <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />}
-              {p.name}
-              {on && <span className="text-[10px] font-normal text-accent/60 ml-0.5">auto-apply</span>}
-            </button>
+            <span key={p.id} className="inline-flex items-center gap-1">
+              <button type="button"
+                onClick={() => selectAutoApply(p.id)}
+                title={on ? `${p.name} — auto-applies for this campaign` : `Run this campaign on ${p.name}`}
+                className={[
+                  "flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border transition",
+                  on
+                    ? "bg-accent/10 text-accent border-accent/30 font-semibold"
+                    : "bg-surface text-text2/50 border-border/50 hover:border-accent/30 hover:text-text2",
+                ].join(" ")}
+              >
+                {on && <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />}
+                {p.name}
+                {on && <span className="text-[10px] font-normal text-accent/60 ml-0.5">auto-apply</span>}
+              </button>
+
+              {connReady && connected && (
+                <span className="flex items-center text-green" title={`Signed into ${p.name}`}>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                </span>
+              )}
+              {connReady && !connected && (
+                <button type="button" onClick={() => connectPlatform(p.id)}
+                  title={`Open ${p.name} to log in or create a free account`}
+                  className={[
+                    "flex items-center gap-0.5 px-2 py-0.5 text-[11px] font-semibold rounded-full border transition",
+                    status === "logged_out"
+                      ? "bg-yellow/10 text-yellow border-yellow/40 hover:bg-yellow/20"
+                      : "bg-surface text-text2 border-border/60 hover:border-accent/40 hover:text-text",
+                  ].join(" ")}
+                >
+                  connect<span aria-hidden> ↗</span>
+                </button>
+              )}
+            </span>
           );
         })}
-
-        {/* Connection status for the selected auto-apply platform. Auto-apply needs
-            the user logged into that site in this browser — we detect it and, if
-            they're not, offer a one-click link to log in or create an account. */}
-        {connReady && selectedAutoStatus === "connected" && (
-          <span className="flex items-center gap-1 text-[11px] text-green font-medium" title={`Signed into ${selectedAutoName}`}>
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-            {selectedAutoName} connected
-          </span>
-        )}
-        {connReady && selectedAutoStatus !== "connected" && (
-          <button type="button" onClick={() => connectPlatform(selectedAutoApply)}
-            title={`Open ${selectedAutoName} to log in or create an account`}
-            className={[
-              "flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded-full border transition",
-              selectedAutoStatus === "logged_out"
-                ? "bg-yellow/10 text-yellow border-yellow/40 hover:bg-yellow/20"
-                : "bg-surface text-text2 border-border/60 hover:border-accent/40 hover:text-text",
-            ].join(" ")}
-          >
-            {selectedAutoStatus === "logged_out" ? `Sign into ${selectedAutoName}` : `Connect ${selectedAutoName}`}
-            <span aria-hidden>→</span>
-          </button>
-        )}
 
         <span className="text-border text-[10px] text-text2/40">Find jobs from:</span>
 
