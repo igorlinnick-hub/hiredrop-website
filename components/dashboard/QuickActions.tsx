@@ -190,10 +190,41 @@ export default function QuickActions({
       const t = await getFreshToken();
       await savePrefs();
       await apiPost("/campaign/start", t, { keywords, platforms, location, job_type: jobType });
-      window.postMessage({
-        type: "HIREDROP_START_CAMPAIGN",
-        filters: { keywords, platforms, location, job_type: jobType },
-      }, "*");
+
+      // Ask the extension to launch, and WAIT for its verdict: it can refuse (e.g.
+      // pre-flight found the target platform logged out). Ignoring that left a
+      // zombie state — backend "running", extension idle. Timeout = extension
+      // absent or an old ping.js that doesn't answer: proceed as before.
+      const verdict = await new Promise<{ ok: boolean; message?: string } | null>((resolve) => {
+        let done = false;
+        const finish = (v: { ok: boolean; message?: string } | null) => {
+          if (done) return;
+          done = true;
+          window.removeEventListener("message", onMsg);
+          resolve(v);
+        };
+        function onMsg(e: MessageEvent) {
+          if (e.source !== window || !e.data || typeof e.data !== "object") return;
+          if (e.data.type === "HIREDROP_CAMPAIGN_STARTED") {
+            finish({ ok: !!e.data.ok, message: e.data.message || e.data.error });
+          }
+        }
+        window.addEventListener("message", onMsg);
+        window.postMessage({
+          type: "HIREDROP_START_CAMPAIGN",
+          filters: { keywords, platforms, location, job_type: jobType },
+        }, "*");
+        setTimeout(() => finish(null), 5000);
+      });
+
+      if (verdict && !verdict.ok) {
+        // Roll the backend back so status doesn't show a campaign nothing is running.
+        await apiPost("/campaign/stop", t, {}).catch(() => {});
+        setErr(verdict.message || "The extension couldn't start the campaign.");
+        setBusy(null);
+        return;
+      }
+
       setCampaignRunning(true);
       router.push("/dashboard/campaign");
     } catch (e) {
