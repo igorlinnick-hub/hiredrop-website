@@ -8,12 +8,9 @@ import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
 
 // Platforms the extension can auto-apply on. Exactly one runs per campaign.
 const AUTO_APPLY_IDS = PLATFORMS.filter((p) => p.autoApply).map((p) => p.id);
-
-// Login / sign-up landing pages — both offer "create account" for new users.
-const PLATFORM_LOGIN_URLS: Record<string, string> = {
-  indeed: "https://secure.indeed.com/account/login",
-  ziprecruiter: "https://www.ziprecruiter.com/authn/login?realm=candidates",
-};
+// All known platform ids — stored prefs may contain retired platforms (linkedin,
+// craigslist); filter them out so they're never re-sent to the backend.
+const KNOWN_IDS = PLATFORMS.map((p) => p.id);
 
 interface Props {
   token: string;
@@ -46,9 +43,10 @@ export default function QuickActions({
   const [jobType, setJobType] = useState(initialJobType || "full-time");
   // A campaign auto-applies on exactly ONE platform (the extension runs it to the
   // daily cap, then stops) — so auto-apply is a radio, not a multi-select. Discovery
-  // platforms (LinkedIn/Glassdoor/…) are multi-select; they only scrape listings.
+  // platforms (Glassdoor/Google/…) are multi-select; they only fetch listings.
   const [platforms, setPlatforms] = useState<string[]>(() => {
-    const base = initialPlatforms.length ? [...initialPlatforms] : ["indeed", "remoteok"];
+    const stored = initialPlatforms.filter((x) => KNOWN_IDS.includes(x));
+    const base = stored.length ? stored : ["indeed", "remoteok"];
     const selectedAuto = base.filter((x) => AUTO_APPLY_IDS.includes(x));
     if (selectedAuto.length === 0) base.push("indeed");
     else if (selectedAuto.length > 1) {
@@ -112,10 +110,10 @@ export default function QuickActions({
   const selectedAutoStatus = connections[selectedAutoApply]?.status;
 
   function connectPlatform(id: string) {
-    // Open the login/sign-up page directly (a click is a user gesture, so it isn't
+    // Open the platform's auth page directly (a click is a user gesture, so it isn't
     // popup-blocked). content.js on that page then detects and stores the new login
     // state. We don't route through the extension's service worker — it can go stale.
-    const url = PLATFORM_LOGIN_URLS[id];
+    const url = PLATFORMS.find((p) => p.id === id)?.loginUrl;
     if (url) window.open(url, "_blank", "noopener");
   }
 

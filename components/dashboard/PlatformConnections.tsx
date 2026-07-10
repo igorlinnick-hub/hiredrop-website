@@ -134,16 +134,30 @@ export default function PlatformConnections() {
                         {loggedOut && (
                           <span className="hidden sm:inline text-[11px] text-yellow font-medium mr-0.5">Not signed in</span>
                         )}
-                        <button type="button" onClick={() => openUrl(p.loginUrl)}
-                          className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-border bg-surface
-                            text-text hover:border-accent/40 hover:text-accent transition whitespace-nowrap">
-                          Log in <span aria-hidden>↗</span>
-                        </button>
-                        <button type="button" onClick={() => openUrl(p.signupUrl)}
-                          className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-accent text-white
-                            hover:bg-accent-hover transition whitespace-nowrap">
-                          Sign up
-                        </button>
+                        {/* Platforms with a unified auth page (Indeed, ZipRecruiter, Glassdoor:
+                            enter email → logs in OR creates the account) get ONE button; only
+                            platforms with a distinct signup page (Wellfound) get two. */}
+                        {p.signupUrl ? (
+                          <>
+                            <button type="button" onClick={() => openUrl(p.loginUrl)}
+                              className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-border bg-surface
+                                text-text hover:border-accent/40 hover:text-accent transition whitespace-nowrap">
+                              Log in <span aria-hidden>↗</span>
+                            </button>
+                            <button type="button" onClick={() => openUrl(p.signupUrl)}
+                              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-accent text-white
+                                hover:bg-accent-hover transition whitespace-nowrap">
+                              Sign up
+                            </button>
+                          </>
+                        ) : (
+                          <button type="button" onClick={() => openUrl(p.loginUrl)}
+                            title={`Opens ${p.name} — log in, or create a free account right there`}
+                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-accent text-white
+                              hover:bg-accent-hover transition whitespace-nowrap">
+                            Log in / Sign up <span aria-hidden>↗</span>
+                          </button>
+                        )}
                       </>
                     )}
                   </div>
