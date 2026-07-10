@@ -12,13 +12,12 @@ interface Props {
 }
 
 const autoApplyPlatforms = PLATFORMS.filter((p) => p.autoApply);
-const discoveryPlatforms = PLATFORMS.filter((p) => !p.autoApply);
 
 export default function StepPlatforms({ profile, updateProfile, onNext, onBack }: Props) {
   function togglePlatform(platformId: string) {
-    const current = profile.platforms;
+    const current = profile.platforms.filter((p) => autoApplyPlatforms.some((ap) => ap.id === p));
     if (current.includes(platformId)) {
-      if (current.length === 1) return;
+      if (current.length === 1) return; // keep at least one selected
       updateProfile({ platforms: current.filter((p) => p !== platformId) });
     } else {
       updateProfile({ platforms: [...current, platformId] });
@@ -33,46 +32,21 @@ export default function StepPlatforms({ profile, updateProfile, onNext, onBack }
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-text">Search Platforms</h2>
-        <p className="text-sm text-text2 mt-1">Choose where to search for jobs. Select at least one.</p>
+        <h2 className="text-xl font-bold text-text">Where should HireDrop apply?</h2>
+        <p className="text-sm text-text2 mt-1">
+          HireDrop auto-fills and submits applications for you on these platforms. Pick at least one.
+        </p>
       </div>
 
-      {/* Auto-apply platforms */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-green uppercase tracking-wide">Auto-apply</span>
-          <span className="text-xs text-text2">— Extension fills & submits the form for you</span>
-        </div>
-        <div className="grid grid-cols-1 gap-2">
-          {autoApplyPlatforms.map((platform) => (
-            <PlatformCard
-              key={platform.id}
-              platform={platform}
-              selected={profile.platforms.includes(platform.id)}
-              onToggle={() => togglePlatform(platform.id)}
-              badge="Auto-apply"
-              badgeColor="green"
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Discovery platforms */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-accent uppercase tracking-wide">Discovery</span>
-          <span className="text-xs text-text2">— We find jobs, you apply via the job listing</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {discoveryPlatforms.map((platform) => (
-            <PlatformCard
-              key={platform.id}
-              platform={platform}
-              selected={profile.platforms.includes(platform.id)}
-              onToggle={() => togglePlatform(platform.id)}
-            />
-          ))}
-        </div>
+      <div className="grid grid-cols-1 gap-2">
+        {autoApplyPlatforms.map((platform) => (
+          <PlatformCard
+            key={platform.id}
+            platform={platform}
+            selected={profile.platforms.includes(platform.id)}
+            onToggle={() => togglePlatform(platform.id)}
+          />
+        ))}
       </div>
 
       <div className="flex justify-between pt-2">

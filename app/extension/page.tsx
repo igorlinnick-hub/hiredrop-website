@@ -34,8 +34,8 @@ export default async function ExtensionPage() {
               "Automatically fills out Indeed application forms (name, email, phone, work experience)",
               "Uploads your resume PDF to each application",
               "Pastes AI-generated cover letters tailored to each job",
-              "Mimics human behavior (random delays, mouse movements) to avoid detection",
-              "Up to 50 applications per day on Indeed",
+              "Applies at a natural, human pace (realistic delays) to keep your account safe",
+              "Human-paced daily limits that protect your account",
             ].map((line) => (
               <li key={line} className="flex items-start gap-3">
                 <svg className="w-5 h-5 text-green shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">

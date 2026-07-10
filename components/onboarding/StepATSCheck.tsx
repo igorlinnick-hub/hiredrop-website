@@ -23,6 +23,7 @@ async function apiPost(path: string, token: string, body?: unknown) {
 }
 
 type State =
+  | "no_resume"   // resume skipped — nothing to check
   | "checking"
   | "pass"        // score >= 80, no action needed
   | "questions"   // score < 80, collecting user answers
@@ -48,6 +49,7 @@ interface QA {
 interface Props {
   onNext: () => void;
   onBack: () => void;
+  hasResume?: boolean;
 }
 
 function ScoreRing({ score }: { score: number }) {
@@ -76,9 +78,9 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
-export default function StepATSCheck({ onNext, onBack }: Props) {
+export default function StepATSCheck({ onNext, onBack, hasResume = true }: Props) {
   const supabase = createClient();
-  const [state, setState] = useState<State>("checking");
+  const [state, setState] = useState<State>(hasResume ? "checking" : "no_resume");
   const [checkResult, setCheckResult] = useState<CheckResult | null>(null);
   const [questions, setQuestions] = useState<string[]>([]);
   const [answers, setAnswers] = useState<QA[]>([]);
@@ -93,6 +95,7 @@ export default function StepATSCheck({ onNext, onBack }: Props) {
   }, [supabase]);
 
   useEffect(() => {
+    if (!hasResume) return; // no resume uploaded — skip the backend check entirely
     async function run() {
       try {
         const token = await getToken();
@@ -124,7 +127,7 @@ export default function StepATSCheck({ onNext, onBack }: Props) {
       }
     }
     run();
-  }, [getToken]);
+  }, [getToken, hasResume]);
 
   function updateAnswer(i: number, value: string) {
     setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: value } : a));
@@ -172,6 +175,31 @@ export default function StepATSCheck({ onNext, onBack }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* ── No resume (skipped upload) ── */}
+      {state === "no_resume" && (
+        <div className="flex flex-col items-center text-center gap-5 py-8">
+          <div className="w-14 h-14 rounded-full bg-surface2 border-2 border-border flex items-center justify-center">
+            <svg className="w-7 h-7 text-text2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-xl font-bold text-text">ATS check needs a resume</p>
+            <p className="text-sm text-text2 mt-1 max-w-xs mx-auto">
+              You skipped uploading a resume. Add one anytime from Settings, then run an ATS check to
+              boost your pass rate.
+            </p>
+          </div>
+          <button
+            onClick={onNext}
+            className="bg-accent text-white rounded-xl px-8 py-3 font-medium hover:bg-accent/90 transition"
+          >
+            Continue
+          </button>
+          <button onClick={onBack} className="text-xs text-text2 hover:text-text transition">Back</button>
+        </div>
+      )}
+
       {/* ── Checking ── */}
       {state === "checking" && (
         <div className="flex flex-col items-center gap-4 py-16">

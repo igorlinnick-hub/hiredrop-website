@@ -95,7 +95,7 @@ export default function AIProcess() {
             Watch AI work for you
           </h2>
           <p className="text-lg text-gray-400">
-            From resume to application in seconds. Fully automated.
+            From resume to a tailored application in seconds — you review before it sends.
           </p>
         </div>
 

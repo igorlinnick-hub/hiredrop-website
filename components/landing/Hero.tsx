@@ -8,7 +8,7 @@ import AIOrb from "./AIOrb";
 const AI_PROMPTS = [
   { question: "What salary should I expect?", answer: "Based on your skills, $95K–$140K for remote roles." },
   { question: "Best keywords for my resume?", answer: "Growth marketing, data-driven, pipeline generation." },
-  { question: "How many jobs can I apply to?", answer: "Up to 50 applications per day, fully automated." },
+  { question: "Will this get my account banned?", answer: "No — it applies from your browser, at a human pace." },
   { question: "Will cover letters sound like me?", answer: "Yes — AI matches your writing style perfectly." },
 ];
 
@@ -156,7 +156,7 @@ export default function Hero() {
               variants={fadeUp}
               className="inline-block mb-6 px-4 py-1.5 bg-[#EEE9FF] text-[#6C5CE7] text-sm font-medium rounded-full"
             >
-              AI-Powered Job Search Automation
+              Human-in-the-loop AI · Your account stays yours
             </motion.div>
 
             <motion.h1
@@ -164,14 +164,15 @@ export default function Hero() {
               className="text-4xl sm:text-5xl lg:text-[52px] font-bold text-[#1A1A2E] leading-[1.1] mb-6"
               style={{ fontFamily: "'Syne', sans-serif" }}
             >
-              Stop applying manually.
+              Apply to more jobs.
               <br />
-              <span className="text-[#6C5CE7]">Let AI do it for you.</span>
+              <span className="text-[#6C5CE7]">Without risking your account.</span>
             </motion.h1>
 
             <motion.p variants={fadeUp} className="text-lg text-[#6B6B8A] mb-8 max-w-lg">
-              HireDrop finds jobs, writes personalized cover letters in your voice,
-              and auto-applies while you sleep. Up to 50 applications per day.
+              HireDrop finds roles, tailors your resume and cover letter for each one,
+              and applies from your own browser — at a human pace, so your account stays
+              safe. You review before anything sends.
             </motion.p>
 
             <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-start gap-4 mb-10">

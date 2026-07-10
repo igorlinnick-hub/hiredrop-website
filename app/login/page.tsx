@@ -57,7 +57,7 @@ export default function LoginPage() {
               </span>
             </div>
           </div>
-          <p className="mt-6 text-sm text-[#6B6B8A]">AI applies while you sleep</p>
+          <p className="mt-6 text-sm text-[#6B6B8A]">Applies from your own browser — your account stays safe</p>
         </div>
       </div>
     </div>

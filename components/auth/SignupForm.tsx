@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { redeemPromoCode } from "@/lib/promo";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 
@@ -26,7 +27,9 @@ export default function SignupForm() {
     const email = form.get("email") as string;
     const password = form.get("password") as string;
     const confirm = form.get("confirm_password") as string;
-    const inviteCode = (form.get("invite_code") as string || "").trim();
+    // Promo code is validated SERVER-SIDE after signup (never read client-side),
+    // so we just carry it through — case-sensitive, no client validation.
+    const promoCode = (form.get("promo_code") as string || "").trim();
 
     if (password.length < 8) {
       setError("Password must be at least 8 characters.");
@@ -40,29 +43,8 @@ export default function SignupForm() {
       return;
     }
 
-    // Validate invite code
-    if (inviteCode) {
-      const { data: codeData } = await supabase
-        .from("invite_codes")
-        .select("id, uses, max_uses")
-        .eq("code", inviteCode.toUpperCase())
-        .eq("active", true)
-        .single();
-
-      if (!codeData) {
-        setError("Invalid invite code.");
-        setLoading(false);
-        return;
-      }
-
-      if (codeData.max_uses && codeData.uses >= codeData.max_uses) {
-        setError("This invite code has been fully used.");
-        setLoading(false);
-        return;
-      }
-    }
-
-    // Sign up directly (invite code optional for now)
+    // Sign up. The promo code rides along in metadata so onboarding can redeem it
+    // even when email confirmation is on (no session yet at this point).
     const { data: signUpData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -71,7 +53,7 @@ export default function SignupForm() {
         data: {
           first_name: firstName,
           last_name: lastName,
-          ...(inviteCode ? { invite_code: inviteCode.toUpperCase() } : {}),
+          ...(promoCode ? { promo_code: promoCode } : {}),
         },
       },
     });
@@ -91,20 +73,19 @@ export default function SignupForm() {
       return;
     }
 
-    // Increment invite code usage
-    if (inviteCode) {
-      await supabase.rpc("increment_invite_code_uses", { code_value: inviteCode.toUpperCase() });
-    }
-
-    setLoading(false);
-
-    // If session present → email confirmation is off, go to onboarding
+    // If a session exists (email confirmation off), redeem the promo now for
+    // instant Elite. Otherwise onboarding redeems it from metadata after confirm.
     if (signUpData.session) {
+      if (promoCode) {
+        await redeemPromoCode(promoCode, signUpData.session.access_token);
+      }
+      setLoading(false);
       router.push("/onboarding");
       router.refresh();
       return;
     }
 
+    setLoading(false);
     // Otherwise show "check your email" screen
     setConfirmationEmail(email);
     setConfirmationSent(true);
@@ -206,10 +187,10 @@ export default function SignupForm() {
       />
 
       <Input
-        label="Invite code"
-        name="invite_code"
+        label="Promo code"
+        name="promo_code"
         placeholder="Enter code (optional)"
-        hint="Have an invite code? Enter it for instant access. No code? Join the waitlist."
+        hint="Have a promo code? Enter it for free Elite access."
       />
 
       <Button type="submit" fullWidth disabled={loading}>

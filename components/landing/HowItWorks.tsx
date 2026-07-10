@@ -26,9 +26,9 @@ const STEPS = [
   },
   {
     number: "04",
-    title: "Auto-apply while you sleep",
-    description: "Our Chrome extension fills out applications and submits them. Wake up to interview invitations.",
-    badge: "Autopilot",
+    title: "You review, then it applies",
+    description: "The Chrome extension fills out and submits each application from your own browser — you approve first, so your account stays safe.",
+    badge: "Ban-safe",
     badgeColor: "from-[#0984e3] to-[#6C5CE7]",
   },
 ];

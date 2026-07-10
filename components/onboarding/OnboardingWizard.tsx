@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { redeemPromoCode } from "@/lib/promo";
 import StepPersonalInfo from "./StepPersonalInfo";
 import StepJobPreferences from "./StepJobPreferences";
 import StepReassurance from "./StepReassurance";
@@ -14,13 +15,13 @@ import StepDone from "./StepDone";
 import type { UserProfile } from "@/lib/types";
 
 const STEPS = [
-  { id: 1, title: "Personal Info" },
-  { id: 2, title: "Job Preferences" },
+  { id: 1, title: "Profile" },
+  { id: 2, title: "Preferences" },
   { id: 3, title: "Safety" },
   { id: 4, title: "Platforms" },
   { id: 5, title: "Resume" },
-  { id: 6, title: "ATS Check" },
-  { id: 7, title: "Writing Style" },
+  { id: 6, title: "ATS" },
+  { id: 7, title: "Style" },
   { id: 8, title: "Done" },
 ];
 
@@ -32,7 +33,7 @@ const initialProfile: UserProfile = {
   keywords: [],
   location: "remote",
   job_type: "full-time",
-  platforms: ["remoteok"],
+  platforms: ["indeed"],
   writing_style: "",
   resume_url: null,
   onboarding_completed: false,
@@ -46,25 +47,34 @@ export default function OnboardingWizard() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-
-  // Pre-fill email from auth user
-  useEffect(() => {
-    async function loadUser() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        updateProfile({
-          email: user.email || "",
-          name: user.user_metadata?.first_name || "",
-          last_name: user.user_metadata?.last_name || "",
-        });
-      }
-    }
-    loadUser();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [promoTier, setPromoTier] = useState<string | null>(null);
 
   function updateProfile(updates: Partial<UserProfile>) {
     setProfile((prev) => ({ ...prev, ...updates }));
   }
+
+  // Pre-fill email from auth user + redeem any promo code carried from signup.
+  useEffect(() => {
+    async function loadUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      updateProfile({
+        email: user.email || "",
+        name: user.user_metadata?.first_name || "",
+        last_name: user.user_metadata?.last_name || "",
+      });
+
+      const promo = user.user_metadata?.promo_code;
+      if (promo) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          const result = await redeemPromoCode(promo, session.access_token);
+          if (result.ok && result.tier) setPromoTier(result.tier);
+        }
+      }
+    }
+    loadUser();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function back() {
     if (step > 1) setStep(step - 1);
@@ -140,7 +150,7 @@ export default function OnboardingWizard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="app-ui min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4 py-12">
         {/* Logo + Sign out */}
         <div className="flex items-center justify-between mb-8">
@@ -154,6 +164,21 @@ export default function OnboardingWizard() {
             Sign out
           </a>
         </div>
+
+        {/* Promo unlocked banner */}
+        {promoTier && (
+          <div className="mb-6 p-3.5 rounded-xl bg-green/10 border border-green/20 flex items-center gap-3">
+            <div className="shrink-0 w-8 h-8 rounded-full bg-green/15 flex items-center justify-center">
+              <svg className="w-4 h-4 text-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="text-sm text-text">
+              <span className="font-semibold capitalize">{promoTier} access unlocked</span>
+              {" — "}HireDrop is free for you. Enjoy.
+            </p>
+          </div>
+        )}
 
         {/* Progress */}
         <div className="mb-10">
@@ -224,7 +249,7 @@ export default function OnboardingWizard() {
             </>
           )}
           {step === 6 && (
-            <StepATSCheck onNext={next} onBack={back} />
+            <StepATSCheck onNext={next} onBack={back} hasResume={!!resumeFile} />
           )}
           {step === 7 && (
             <StepWritingStyle profile={profile} updateProfile={updateProfile} onNext={next} onBack={back} />

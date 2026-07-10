@@ -67,6 +67,13 @@ h1, h2, h3 {
   font-family: 'Syne', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+/* App-side surfaces (onboarding, dashboard flows) use clean Inter headings —
+   the expressive Syne display face is reserved for marketing. */
+.app-ui h1, .app-ui h2, .app-ui h3 {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.02em;
+}
+
 /* ===== KEYFRAMES ===== */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(30px); }

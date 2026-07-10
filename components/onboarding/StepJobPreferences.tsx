@@ -34,7 +34,16 @@ export default function StepJobPreferences({ profile, updateProfile, onNext, onB
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (profile.keywords.length === 0) return;
+    // Commit any keyword still sitting in the input so a typed-but-not-Entered
+    // word (e.g. "Marketing") doesn't silently block Continue.
+    let keywords = profile.keywords;
+    const pending = keywordInput.trim().replace(/,$/, "");
+    if (pending && !keywords.includes(pending)) {
+      keywords = [...keywords, pending];
+      updateProfile({ keywords });
+      setKeywordInput("");
+    }
+    if (keywords.length === 0) return;
     onNext();
   }
 
@@ -88,25 +97,36 @@ export default function StepJobPreferences({ profile, updateProfile, onNext, onB
         required
       />
 
-      {/* Job Type radio */}
+      {/* Job Type — selectable option cards */}
       <div className="space-y-1.5">
         <label className="block text-sm font-medium text-text">
           Job type <span className="text-red">*</span>
         </label>
-        <div className="flex gap-4">
-          {JOB_TYPES.map((jt) => (
-            <label key={jt.value} className="flex items-center gap-2 cursor-pointer text-sm text-text">
-              <input
-                type="radio"
-                name="job_type"
-                value={jt.value}
-                checked={profile.job_type === jt.value}
-                onChange={(e) => updateProfile({ job_type: e.target.value })}
-                className="accent-accent"
-              />
-              {jt.label}
-            </label>
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          {JOB_TYPES.map((jt) => {
+            const selected = profile.job_type === jt.value;
+            return (
+              <button
+                key={jt.value}
+                type="button"
+                onClick={() => updateProfile({ job_type: jt.value })}
+                aria-pressed={selected}
+                className={[
+                  "flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition text-center",
+                  selected
+                    ? "border-accent bg-accent-light text-accent"
+                    : "border-border bg-surface text-text hover:border-accent hover:bg-accent-light/40",
+                ].join(" ")}
+              >
+                {selected && (
+                  <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+                {jt.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
