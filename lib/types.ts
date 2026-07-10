@@ -20,6 +20,7 @@ export interface Platform {
   description: string;
   autoApply?: boolean; // supports Chrome Extension auto-apply
   connectable?: boolean; // account-based platform — user logs in / registers to connect
+  discovery?: boolean; // backend can fetch listings from it ("Find jobs from" chips)
   loginUrl?: string; // opens the platform's log-in page
   signupUrl?: string; // opens the platform's create-account page
 }

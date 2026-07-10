@@ -393,8 +393,10 @@ export default function QuickActions({
 
         <span className="text-border text-[10px] text-text2/40">Find jobs from:</span>
 
-        {/* Discovery-only platforms — affect job scraping, no account needed */}
-        {PLATFORMS.filter((p) => !p.autoApply).map((p) => {
+        {/* Discovery-only platforms — the backend can fetch their listings. Boards
+            that are connectable but not yet fetchable (Monster/CareerBuilder/Dice)
+            live only in the connections panel until their scraper/filler lands. */}
+        {PLATFORMS.filter((p) => p.discovery && !p.autoApply).map((p) => {
           const on = platforms.includes(p.id);
           return (
             <button key={p.id} type="button"

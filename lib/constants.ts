@@ -13,15 +13,27 @@ export const PLATFORMS: Platform[] = [
     loginUrl: "https://www.ziprecruiter.com/authn/login?realm=candidates",
     description: "Top US job board with Quick Apply. Extension auto-applies on your behalf." },
   // Account-based platforms — connect now; auto-apply support rolls out per the plan.
-  { id: "glassdoor", name: "Glassdoor", status: "active", requiresLogin: true, connectable: true,
+  { id: "glassdoor", name: "Glassdoor", status: "active", requiresLogin: true, connectable: true, discovery: true,
     loginUrl: "https://www.glassdoor.com/member/profile/login",
     description: "Jobs + company reviews & salaries." },
-  { id: "wellfound", name: "Wellfound", status: "active", requiresLogin: true, connectable: true,
+  { id: "wellfound", name: "Wellfound", status: "active", requiresLogin: true, connectable: true, discovery: true,
     loginUrl: "https://wellfound.com/login", signupUrl: "https://wellfound.com/join",
     description: "Startup & tech jobs." },
+  // Monster and CareerBuilder merged (2024) — they share one identity account
+  // (identity.monster.com), so signing up on either connects you to both.
+  { id: "monster", name: "Monster", status: "active", requiresLogin: true, connectable: true,
+    loginUrl: "https://www.monster.com/profile",
+    description: "Major US job board. Same account works on CareerBuilder." },
+  { id: "careerbuilder", name: "CareerBuilder", status: "active", requiresLogin: true, connectable: true,
+    loginUrl: "https://www.careerbuilder.com/profile/valid-profile-continue?redirectUri=%2F&mode=Login",
+    signupUrl: "https://www.careerbuilder.com/profile/valid-profile-continue?redirectUri=%2F&mode=SignUp",
+    description: "Major US job board. Same account works on Monster." },
+  { id: "dice", name: "Dice", status: "active", requiresLogin: true, connectable: true,
+    loginUrl: "https://www.dice.com/dashboard/login",
+    description: "Tech & IT jobs — engineering, data, cloud." },
   // Public — no account needed to browse/apply.
-  { id: "google", name: "Google Jobs", status: "active", requiresLogin: false, description: "Aggregates listings from across the web." },
-  { id: "remoteok", name: "RemoteOK", status: "active", requiresLogin: false, description: "Remote-only jobs via public API." },
+  { id: "google", name: "Google Jobs", status: "active", requiresLogin: false, discovery: true, description: "Aggregates listings from across the web." },
+  { id: "remoteok", name: "RemoteOK", status: "active", requiresLogin: false, discovery: true, description: "Remote-only jobs via public API." },
 ];
 
 export const LOCATIONS: Location[] = [
