@@ -19,6 +19,9 @@ export interface Platform {
   requiresLogin: boolean;
   description: string;
   autoApply?: boolean; // supports Chrome Extension auto-apply
+  connectable?: boolean; // account-based platform — user logs in / registers to connect
+  loginUrl?: string; // opens the platform's log-in page
+  signupUrl?: string; // opens the platform's create-account page
 }
 
 export interface Location {

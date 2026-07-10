@@ -13,6 +13,7 @@ import StatsCards from "@/components/dashboard/StatsCards";
 import JobsTable from "@/components/dashboard/JobsTable";
 import ApplicationHistory from "@/components/dashboard/ApplicationHistory";
 import QuickActions from "@/components/dashboard/QuickActions";
+import PlatformConnections from "@/components/dashboard/PlatformConnections";
 import SetupChecklist from "@/components/dashboard/SetupChecklist";
 import UsageBanner from "@/components/dashboard/UsageBanner";
 
@@ -90,6 +91,8 @@ export default async function DashboardPage() {
         onboardingComplete={!onboardingIncomplete}
         hasResume={!resumeMissing}
       />
+
+      <PlatformConnections />
 
       <div className="space-y-6">
         {/* Subscription tier + daily usage */}
