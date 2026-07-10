@@ -20,6 +20,18 @@ import { PLATFORMS } from "@/lib/constants";
 const CONNECTABLE = PLATFORMS.filter((p) => p.connectable);
 const PUBLIC = PLATFORMS.filter((p) => !p.connectable);
 
+// Brand accent per platform for the monogram chip — keeps every row visually
+// identical in structure while still instantly recognizable. Hex ≈ brand color.
+const BRAND: Record<string, string> = {
+  indeed: "#2557a7",
+  ziprecruiter: "#1d8649",
+  glassdoor: "#0caa41",
+  wellfound: "#111111",
+  monster: "#6e46ae",
+  careerbuilder: "#0c6dbb",
+  dice: "#eb1c26",
+};
+
 type ConnStatus = "connected" | "logged_out" | undefined;
 
 export default function PlatformConnections() {
@@ -104,7 +116,15 @@ export default function PlatformConnections() {
               const loggedOut = status === "logged_out";
               return (
                 <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span
+                      aria-hidden
+                      className="flex items-center justify-center w-8 h-8 rounded-lg text-sm font-bold shrink-0 select-none"
+                      style={{ backgroundColor: `${BRAND[p.id] || "#6C5CE7"}1a`, color: BRAND[p.id] || "#6C5CE7" }}
+                    >
+                      {p.name[0]}
+                    </span>
+                    <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-text">{p.name}</span>
                       {p.autoApply ? (
@@ -119,6 +139,7 @@ export default function PlatformConnections() {
                       )}
                     </div>
                     <p className="text-xs text-text2/60 truncate">{p.description}</p>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
