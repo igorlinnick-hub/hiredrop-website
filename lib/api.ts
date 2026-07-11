@@ -47,6 +47,22 @@ export function apiPost<T>(path: string, token: string, body: unknown): Promise<
   });
 }
 
+// ── Billing (Stripe) ─────────────────────────────────────────────────────────
+
+export interface BillingUrlResponse {
+  url: string;
+}
+
+/** Start a Stripe Checkout session for a plan; caller redirects to `.url`. */
+export function createCheckout(plan: string, token: string): Promise<BillingUrlResponse> {
+  return apiPost<BillingUrlResponse>("/billing/checkout", token, { plan });
+}
+
+/** Open the Stripe Billing Portal (manage / cancel); caller redirects to `.url`. */
+export function openBillingPortal(token: string): Promise<BillingUrlResponse> {
+  return apiPost<BillingUrlResponse>("/billing/portal", token, {});
+}
+
 // ── Typed response shapes ────────────────────────────────────────────────────
 
 export interface StatsResponse {
@@ -54,7 +70,7 @@ export interface StatsResponse {
   total_applications: number;
   applications_today: number;
   new_today: number;
-  tier: "free" | "pro" | "elite" | "admin";
+  tier: "free" | "pro" | "premium" | "elite" | "admin";
   daily_limit: number;
   remaining_today: number;
   platform_counts: Record<string, number>;

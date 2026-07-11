@@ -8,12 +8,12 @@ const PLANS = [
     name: "Free",
     price: "$0",
     period: "",
-    description: "Try HireDrop with basic features",
+    description: "Try HireDrop, no card required",
     features: [
-      "1 platform (RemoteOK)",
-      "5 applications per day",
+      "Job discovery across boards",
+      "10 applications per day",
       "Basic cover letters",
-      "Email notifications",
+      "ATS keyword match",
     ],
     cta: "Get Started",
     href: "/signup",
@@ -21,28 +21,42 @@ const PLANS = [
   },
   {
     name: "Pro",
-    price: "$16",
+    price: "$19",
     period: "/month",
     description: "Full automation for serious job seekers",
     features: [
-      "All platforms (Indeed, Wellfound, RemoteOK)",
+      "Everything in Free",
+      "Indeed auto-apply (Chrome Extension)",
+      "All platforms",
       "50 applications per day",
       "AI cover letters in your voice",
-      "Chrome Extension auto-apply",
-      "SMS notifications",
-      "Email monitoring",
-      "Priority support",
+      "Email response monitoring",
     ],
     cta: "Start Pro",
     href: "/signup?plan=pro",
     highlighted: true,
+  },
+  {
+    name: "Premium",
+    price: "$29",
+    period: "/month",
+    description: "Maximum interview rate",
+    features: [
+      "Everything in Pro",
+      "AI resume tailored to each job",
+      "ATS-optimized, per-application",
+      "Priority support",
+    ],
+    cta: "Go Premium",
+    href: "/signup?plan=premium",
+    highlighted: false,
   },
 ];
 
 export default function Pricing() {
   return (
     <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-[#F7F7FB]">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <ScrollReveal className="text-center mb-14">
           <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1A2E]" style={{ fontFamily: "'Syne', sans-serif" }}>
             Simple, transparent pricing
@@ -52,7 +66,7 @@ export default function Pricing() {
           </p>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {PLANS.map((plan, i) => (
             <ScrollReveal key={plan.name} delay={i * 0.15}>
               <div

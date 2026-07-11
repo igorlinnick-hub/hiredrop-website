@@ -11,6 +11,7 @@ interface UsageBannerProps {
 const tierColors: Record<string, string> = {
   free: "bg-gray-100 text-gray-600",
   pro: "bg-blue-100 text-blue-700",
+  premium: "bg-indigo-100 text-indigo-700",
   elite: "bg-purple-100 text-purple-700",
   admin: "bg-gradient-to-r from-amber-200 to-yellow-300 text-amber-900",
 };
@@ -76,7 +77,7 @@ export default function UsageBanner({
           </div>
         </div>
 
-        {!isAdmin && tier !== "elite" && (
+        {!isAdmin && (tier === "free" || tier === "pro") && (
           <a
             href="/dashboard/settings?tab=billing"
             className="shrink-0 text-xs font-medium text-accent hover:text-accent2 border border-accent/30 hover:border-accent/60 px-3 py-1.5 rounded-lg transition"

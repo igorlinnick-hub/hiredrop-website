@@ -8,6 +8,7 @@ import Textarea from "@/components/ui/Textarea";
 import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import ResumeATSPanel from "@/components/dashboard/ResumeATSPanel";
+import BillingSection from "@/components/dashboard/BillingSection";
 import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
 import type { UserProfile } from "@/lib/types";
 
@@ -19,7 +20,7 @@ const emptyProfile: UserProfile = {
   keywords: [],
   location: "remote",
   job_type: "full-time",
-  platforms: ["remoteok"],
+  platforms: ["indeed"],
   writing_style: "",
   resume_url: null,
   onboarding_completed: false,
@@ -38,6 +39,14 @@ export default function SettingsPage() {
   useEffect(() => {
     document.title = "Settings — HireDrop";
   }, []);
+
+  // Deep-link from the "Upgrade →" banner lands on ?tab=billing — scroll to it.
+  // Read window.location directly to avoid a useSearchParams Suspense boundary.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "billing") {
+      document.getElementById("billing")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [loading]);
 
   useEffect(() => {
     async function loadProfile() {
@@ -59,7 +68,7 @@ export default function SettingsPage() {
           keywords: data.keywords || [],
           location: data.location || "remote",
           job_type: data.job_type || "full-time",
-          platforms: data.platforms || ["remoteok"],
+          platforms: data.platforms || ["indeed"],
           writing_style: data.writing_style || "",
           resume_url: data.resume_url || null,
           onboarding_completed: data.onboarding_completed || false,
@@ -160,6 +169,9 @@ export default function SettingsPage() {
           <Input label="Email" type="email" value={profile.email} disabled hint="Email cannot be changed here." />
           <Input label="Phone" type="tel" value={profile.phone} onChange={(e) => update({ phone: e.target.value })} />
         </section>
+
+        {/* Billing & Plan */}
+        <BillingSection />
 
         {/* Job Preferences */}
         <section className="bg-surface border border-border rounded-xl p-6 space-y-4">
