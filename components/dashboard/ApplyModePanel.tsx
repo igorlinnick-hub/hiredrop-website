@@ -152,6 +152,11 @@ export default function ApplyModePanel() {
         })}
       </div>
 
+      <p className="text-xs text-text2 leading-relaxed">
+        Strong-match roles get a resume tailored to that job. The more precise your mode, the more
+        of your applications are tailored — Precise tailors nearly every one.
+      </p>
+
       {/* Precise mode: ideal job textarea */}
       {mode === "precise" && (
         <div className="space-y-2">
@@ -166,11 +171,22 @@ export default function ApplyModePanel() {
             onChange={(e) => setIdealDesc(e.target.value)}
             rows={4}
             placeholder="e.g. Senior Social Media Manager, remote, SaaS or tech company, $80k+, managing paid social and organic content, team lead role, no agency work"
-            className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-surface text-text placeholder-text2 focus:outline-none focus:border-accent resize-none"
+            className={`w-full border rounded-xl px-4 py-3 text-sm bg-surface text-text placeholder-text2 focus:outline-none resize-none transition-colors ${
+              idealDesc.trim().length < 20
+                ? "border-yellow-500/60 focus:border-yellow-500"
+                : "border-border focus:border-accent"
+            }`}
           />
-          <p className="text-xs text-text2">
-            {idealDesc.length}/1000 characters
-          </p>
+          <div className="flex items-start justify-between gap-2">
+            {idealDesc.trim().length < 20 ? (
+              <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                Without a description Precise mode behaves like Standard — add at least a sentence about your ideal role.
+              </p>
+            ) : (
+              <span />
+            )}
+            <p className="text-xs text-text2 shrink-0">{idealDesc.length}/1000</p>
+          </div>
         </div>
       )}
 
