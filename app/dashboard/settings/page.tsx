@@ -8,6 +8,7 @@ import Textarea from "@/components/ui/Textarea";
 import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import ResumeATSPanel from "@/components/dashboard/ResumeATSPanel";
+import ApplyModePanel from "@/components/dashboard/ApplyModePanel";
 import BillingSection from "@/components/dashboard/BillingSection";
 import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
 import type { UserProfile } from "@/lib/types";
@@ -274,6 +275,9 @@ export default function SettingsPage() {
 
         {/* Resume & ATS */}
         <ResumeATSPanel />
+
+        {/* Apply Mode */}
+        <ApplyModePanel />
 
         {/* Writing Style */}
         <section className="bg-surface border border-border rounded-xl p-6 space-y-4">

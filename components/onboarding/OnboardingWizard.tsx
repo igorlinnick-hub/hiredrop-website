@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { redeemPromoCode } from "@/lib/promo";
+import { StepIcon } from "./StepIcon";
 import StepPersonalInfo from "./StepPersonalInfo";
 import StepJobPreferences from "./StepJobPreferences";
 import StepReassurance from "./StepReassurance";
@@ -63,6 +64,15 @@ export default function OnboardingWizard() {
         name: user.user_metadata?.first_name || "",
         last_name: user.user_metadata?.last_name || "",
       });
+
+      // Load resume_url so ATS step knows a resume already exists in storage
+      // (covers users who uploaded in a previous session and resumed onboarding)
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("resume_url")
+        .eq("user_id", user.id)
+        .single();
+      if (prof?.resume_url) updateProfile({ resume_url: prof.resume_url });
 
       const promo = user.user_metadata?.promo_code;
       if (promo) {
@@ -220,6 +230,7 @@ export default function OnboardingWizard() {
 
         {/* Step content */}
         <div className="bg-surface border border-border rounded-xl p-6 sm:p-8">
+          <StepIcon step={step} />
           {step === 1 && (
             <StepPersonalInfo profile={profile} updateProfile={updateProfile} onNext={next} />
           )}
@@ -249,7 +260,7 @@ export default function OnboardingWizard() {
             </>
           )}
           {step === 6 && (
-            <StepATSCheck onNext={next} onBack={back} hasResume={!!resumeFile} />
+            <StepATSCheck onNext={next} onBack={back} hasResume={!!resumeFile || !!profile.resume_url} />
           )}
           {step === 7 && (
             <StepWritingStyle profile={profile} updateProfile={updateProfile} onNext={next} onBack={back} />
