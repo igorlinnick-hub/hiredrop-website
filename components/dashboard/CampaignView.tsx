@@ -14,6 +14,16 @@ interface ActivityEntry {
   timestamp: string;
 }
 
+interface HealthSummary {
+  applied: number;
+  skipped_fit: number;
+  skipped_no_resume: number;
+  resume_fail: number;
+  auth_401: number;
+  by_level: { info: number; warn: number; error: number };
+  last_error_msg?: string | null;
+}
+
 interface Props {
   token: string;
 }
@@ -23,6 +33,7 @@ export default function CampaignView({ token: initialToken }: Props) {
   const [screenshotAge, setScreenshotAge] = useState(0);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [stats, setStats] = useState({ applied: 0, found: 0 });
+  const [health, setHealth] = useState<HealthSummary | null>(null);
   const [stopping, setStopping] = useState(false);
   const [stopped, setStopped] = useState(false);
   const [previewWaitSecs, setPreviewWaitSecs] = useState(0);
@@ -68,6 +79,15 @@ export default function CampaignView({ token: initialToken }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const fetchHealth = useCallback(async () => {
+    try {
+      const t = await getToken();
+      const h = await apiGet<HealthSummary>("/activity/summary?window_hours=24", t);
+      setHealth(h);
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const fetchStats = useCallback(async () => {
     try {
       const t = await getToken();
@@ -84,10 +104,12 @@ export default function CampaignView({ token: initialToken }: Props) {
     fetchScreenshot();
     fetchActivity();
     fetchStats();
+    fetchHealth();
 
     const screenshotTimer = setInterval(fetchScreenshot, 400);
     const activityTimer = setInterval(fetchActivity, 3000);
     const statsTimer = setInterval(fetchStats, 5000);
+    const healthTimer = setInterval(fetchHealth, 5000);
     const startTs = Date.now();
     const ageTimer = setInterval(() => {
       if (lastScreenshotTs.current) {
@@ -101,9 +123,10 @@ export default function CampaignView({ token: initialToken }: Props) {
       clearInterval(screenshotTimer);
       clearInterval(activityTimer);
       clearInterval(statsTimer);
+      clearInterval(healthTimer);
       clearInterval(ageTimer);
     };
-  }, [fetchScreenshot, fetchActivity, fetchStats]);
+  }, [fetchScreenshot, fetchActivity, fetchStats, fetchHealth]);
 
   useEffect(() => {
     activityEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -209,6 +232,34 @@ export default function CampaignView({ token: initialToken }: Props) {
           <div className="px-5 py-3.5 border-b border-border shrink-0">
             <h3 className="text-sm font-semibold text-text">Live Activity</h3>
           </div>
+          {/* Health strip (ROADMAP_E2E.md P3): surfaces silent failures — fit skips,
+              resume-attach failures, and auth issues — so "applied to nothing" reads as
+              a real signal, not as "working". Only the failure chips flip red/amber. */}
+          {health && (
+            <div className="px-3 py-2 border-b border-border shrink-0 flex flex-wrap gap-1.5 text-[11px]">
+              <span className="px-2 py-0.5 rounded-full bg-surface2/60 text-text2">
+                Applied <strong className="text-text">{health.applied}</strong>
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-surface2/60 text-text2">
+                Skipped (fit) <strong className="text-text">{health.skipped_fit}</strong>
+              </span>
+              {health.skipped_no_resume > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-yellow/10 text-yellow">
+                  No résumé {health.skipped_no_resume}
+                </span>
+              )}
+              {health.resume_fail > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-red/10 text-red">
+                  Résumé fail {health.resume_fail}
+                </span>
+              )}
+              {health.auth_401 > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-red/10 text-red" title={health.last_error_msg || ""}>
+                  Reconnect needed ({health.auth_401})
+                </span>
+              )}
+            </div>
+          )}
           <div className="flex-1 overflow-y-auto max-h-[520px] p-2 font-mono text-xs space-y-0.5">
             {activity.length === 0 ? (
               <p className="text-text2/40 text-center py-12">
@@ -222,6 +273,8 @@ export default function CampaignView({ token: initialToken }: Props) {
                     "hd-entry flex gap-3 px-3 py-2 rounded-lg",
                     entry.level === "error"
                       ? "bg-red/5 text-red"
+                      : entry.level === "warn"
+                      ? "bg-yellow/5 text-yellow"
                       : "hover:bg-surface2/60 text-text2",
                   ].join(" ")}
                 >
@@ -232,7 +285,7 @@ export default function CampaignView({ token: initialToken }: Props) {
                       second: "2-digit",
                     })}
                   </span>
-                  <span className={entry.level === "error" ? "text-red" : "text-text"}>
+                  <span className={entry.level === "error" ? "text-red" : entry.level === "warn" ? "text-yellow" : "text-text"}>
                     {entry.message}
                   </span>
                 </div>
