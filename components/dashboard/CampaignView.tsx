@@ -220,7 +220,7 @@ export default function CampaignView({ token: initialToken }: Props) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <span>
-          <strong className="text-text font-medium">A second Chrome window will open</strong> — that&apos;s the automation browser. Keep it open (don&apos;t minimize) while the campaign runs so the live preview works here. Only Indeed tabs are captured.
+          <strong className="text-text font-medium">A second Chrome window will open</strong> — that&apos;s the automation browser. Keep it open (don&apos;t minimize) while the campaign runs so the live preview works here. Only the job-application tabs it drives are captured — never your other tabs.
         </span>
       </div>
 
@@ -346,7 +346,7 @@ export default function CampaignView({ token: initialToken }: Props) {
                       </svg>
                       <p className="text-xs text-text2/60 font-medium">Preview not available</p>
                       <p className="text-xs text-text2/40 max-w-[200px]">
-                        The extension may have DevTools open on the Indeed tab, blocking the preview stream.
+                        The extension may have DevTools open on the automation tab, blocking the preview stream.
                         Close DevTools and reload this page.
                       </p>
                     </>
