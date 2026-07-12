@@ -31,15 +31,28 @@ export default function ExtensionTokenSync() {
     let stopped = false;
     let lastPush = 0;
 
-    async function pushToken() {
-      if (stopped || document.hidden) return;
+    async function pushToken(force = false) {
+      // `force` (used on mount) bypasses the document.hidden guard so there is ALWAYS at
+      // least one bootstrap push even if the dashboard loads in a background tab — that
+      // push is what lets the extension mint its durable key (ROADMAP_E2E.md P2). After
+      // the key exists, staleness is moot; the extension stops needing this push.
+      if (stopped || (!force && document.hidden)) return;
       // Debounce: focus + visibilitychange often both fire on a single tab-focus, and the
       // interval can coincide — collapse bursts so we don't push (and ping) twice at once.
       const now = Date.now();
-      if (now - lastPush < 3000) return;
+      if (!force && now - lastPush < 3000) return;
       lastPush = now;
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        let { data: { session } } = await supabase.auth.getSession();
+        // getSession() returns the CACHED session — it can be expired if the tab sat in
+        // the background (autoRefresh throttles when hidden). Force a refresh when the
+        // access token is missing or expiring soon so we never push a stale token (the
+        // root cause of the SW's 401 storm).
+        const expMs = session?.expires_at ? session.expires_at * 1000 : 0;
+        if (!session?.access_token || (expMs && expMs - Date.now() < 120_000)) {
+          const { data: refreshed } = await supabase.auth.refreshSession();
+          if (refreshed?.session) session = refreshed.session;
+        }
         const token = session?.access_token;
         if (token) {
           // No refresh_token on purpose — see component doc.
@@ -50,8 +63,9 @@ export default function ExtensionTokenSync() {
       }
     }
 
-    // Push immediately so landing on the campaign page refreshes the token at once.
-    pushToken();
+    // Push immediately (forced) so landing on the dashboard bootstraps the durable key
+    // even if the tab isn't focused yet.
+    pushToken(true);
 
     // Re-push every 60s. The extension no longer wipes its token on a transient 401
     // (it waits for us), so a frequent push keeps the live preview and backend tracking
