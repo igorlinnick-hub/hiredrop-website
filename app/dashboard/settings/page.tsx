@@ -6,7 +6,6 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import Select from "@/components/ui/Select";
-import Button from "@/components/ui/Button";
 import ResumeATSPanel from "@/components/dashboard/ResumeATSPanel";
 import ApplyModePanel from "@/components/dashboard/ApplyModePanel";
 import BillingSection from "@/components/dashboard/BillingSection";
@@ -157,29 +156,32 @@ export default function SettingsPage() {
     );
   }
 
+  // Bottom-right save action for each editable card — lit up (accent) only when there are
+  // unsaved changes, subtle/gray otherwise. Reused in every profile section.
+  const saveBar = () => (
+    <div className="flex items-center justify-end gap-2 pt-2">
+      {saved && <span className="text-sm text-green whitespace-nowrap">Saved ✓</span>}
+      <button
+        onClick={handleSave}
+        disabled={!dirty || saving}
+        className={[
+          "px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap",
+          dirty && !saving
+            ? "bg-accent text-white hover:opacity-90 shadow-sm"
+            : "bg-surface2 text-text2/40 cursor-default",
+        ].join(" ")}
+      >
+        {saving ? "Saving…" : "Save changes"}
+      </button>
+    </div>
+  );
+
   return (
     <DashboardLayout>
       <div className="max-w-2xl space-y-8">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-text">Profile Settings</h2>
-            <p className="text-sm text-text2 mt-1">Update your information and preferences.</p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {saved && <span className="text-sm text-green whitespace-nowrap">Saved ✓</span>}
-            <button
-              onClick={handleSave}
-              disabled={!dirty || saving}
-              className={[
-                "px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap",
-                dirty && !saving
-                  ? "bg-accent text-white hover:opacity-90 shadow-sm"          // unsaved changes → lit up
-                  : "bg-surface2 text-text2/40 cursor-default",                // nothing to save → subtle/gray
-              ].join(" ")}
-            >
-              {saving ? "Saving…" : "Save changes"}
-            </button>
-          </div>
+        <div>
+          <h2 className="text-xl font-bold text-text">Profile Settings</h2>
+          <p className="text-sm text-text2 mt-1">Update your information and preferences.</p>
         </div>
 
         {error && (
@@ -199,6 +201,7 @@ export default function SettingsPage() {
             <Input label="LinkedIn URL" type="url" value={profile.linkedin_url} onChange={(e) => update({ linkedin_url: e.target.value })} hint="Used to fill LinkedIn fields on company application forms." />
             <Input label="Portfolio / website URL" type="url" value={profile.portfolio_url} onChange={(e) => update({ portfolio_url: e.target.value })} hint="Used for portfolio/website fields." />
           </div>
+          {saveBar()}
         </section>
 
         {/* Billing & Plan */}
@@ -255,6 +258,7 @@ export default function SettingsPage() {
               ))}
             </div>
           </div>
+          {saveBar()}
         </section>
 
         {/* Platforms */}
@@ -301,6 +305,7 @@ export default function SettingsPage() {
               })}
             </div>
           </div>
+          {saveBar()}
         </section>
 
         {/* Resume & ATS */}
@@ -319,15 +324,8 @@ export default function SettingsPage() {
             placeholder="Paste a sample of your writing..."
             hint="AI will match your tone in cover letters."
           />
+          {saveBar()}
         </section>
-
-        {/* Save */}
-        <div className="flex items-center gap-4">
-          <Button onClick={handleSave} disabled={!dirty || saving}>
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
-          {saved && <span className="text-sm text-green">Saved successfully!</span>}
-        </div>
       </div>
     </DashboardLayout>
   );
