@@ -5,14 +5,14 @@ import { ApiError, apiGet, createCheckout, openBillingPortal, type StatsResponse
 import { createClient } from "@/lib/supabase/client";
 
 const PLANS = [
-  { key: "pro", name: "Pro", price: "$19", blurb: "Auto-apply on all platforms, AI cover letters in your voice." },
-  { key: "premium", name: "Premium", price: "$29", blurb: "Everything in Pro + AI resume tailored to each job." },
+  { key: "weekly", name: "Weekly", price: "$9", per: "/wk", blurb: "Everything — auto-apply, AI cover letters, ATS resume tailoring. Pay while you search." },
+  { key: "monthly", name: "Monthly", price: "$29", per: "/mo", blurb: "Same product, billed monthly — better value if your search runs longer." },
 ];
 
 export default function BillingSection() {
   const supabase = createClient();
   const [tier, setTier] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null); // "pro" | "premium" | "portal"
+  const [busy, setBusy] = useState<string | null>(null); // "weekly" | "monthly" | "portal"
   const [error, setError] = useState("");
 
   // Load the current tier so we can mark the active plan / show the manage button.
@@ -80,42 +80,28 @@ export default function BillingSection() {
 
       {error && <div className="p-3 rounded-lg bg-red/10 text-red text-sm">{error}</div>}
 
-      {!isAdmin && (
+      {!isAdmin && !isPaid && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {PLANS.map((p) => {
-            const current = tier === p.key;
-            return (
-              <div
-                key={p.key}
-                className={[
-                  "rounded-lg border p-4 flex flex-col",
-                  current ? "border-accent bg-accent/5" : "border-border",
-                ].join(" ")}
-              >
-                <div className="flex items-baseline justify-between">
-                  <span className="font-semibold text-text">{p.name}</span>
-                  <span className="text-lg font-bold text-text">
-                    {p.price}
-                    <span className="text-xs text-text2 font-normal">/mo</span>
-                  </span>
-                </div>
-                <p className="text-xs text-text2 mt-1 flex-1">{p.blurb}</p>
-                <button
-                  type="button"
-                  disabled={busy !== null || current}
-                  onClick={() => upgrade(p.key)}
-                  className={[
-                    "mt-3 text-sm font-medium py-2 px-4 rounded-lg transition",
-                    current
-                      ? "bg-surface2 text-text2 cursor-default"
-                      : "bg-accent hover:bg-accent-hover text-white disabled:opacity-60",
-                  ].join(" ")}
-                >
-                  {current ? "Current plan" : busy === p.key ? "Redirecting…" : `Choose ${p.name}`}
-                </button>
+          {PLANS.map((p) => (
+            <div key={p.key} className="rounded-lg border border-border p-4 flex flex-col">
+              <div className="flex items-baseline justify-between">
+                <span className="font-semibold text-text">{p.name}</span>
+                <span className="text-lg font-bold text-text">
+                  {p.price}
+                  <span className="text-xs text-text2 font-normal">{p.per}</span>
+                </span>
               </div>
-            );
-          })}
+              <p className="text-xs text-text2 mt-1 flex-1">{p.blurb}</p>
+              <button
+                type="button"
+                disabled={busy !== null}
+                onClick={() => upgrade(p.key)}
+                className="mt-3 text-sm font-medium py-2 px-4 rounded-lg transition bg-accent hover:bg-accent-hover text-white disabled:opacity-60"
+              >
+                {busy === p.key ? "Redirecting…" : `Choose ${p.name}`}
+              </button>
+            </div>
+          ))}
         </div>
       )}
 
