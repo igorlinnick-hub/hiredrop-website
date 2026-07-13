@@ -23,6 +23,8 @@ const emptyProfile: UserProfile = {
   job_type: "full-time",
   platforms: ["indeed"],
   writing_style: "",
+  linkedin_url: "",
+  portfolio_url: "",
   resume_url: null,
   onboarding_completed: false,
 };
@@ -71,6 +73,8 @@ export default function SettingsPage() {
           job_type: data.job_type || "full-time",
           platforms: data.platforms || ["indeed"],
           writing_style: data.writing_style || "",
+          linkedin_url: data.linkedin_url || "",
+          portfolio_url: data.portfolio_url || "",
           resume_url: data.resume_url || null,
           onboarding_completed: data.onboarding_completed || false,
         });
@@ -124,6 +128,8 @@ export default function SettingsPage() {
         job_type: profile.job_type,
         platforms: profile.platforms,
         writing_style: profile.writing_style,
+        linkedin_url: profile.linkedin_url,
+        portfolio_url: profile.portfolio_url,
       })
       .eq("user_id", user.id);
 
@@ -169,6 +175,10 @@ export default function SettingsPage() {
           </div>
           <Input label="Email" type="email" value={profile.email} disabled hint="Email cannot be changed here." />
           <Input label="Phone" type="tel" value={profile.phone} onChange={(e) => update({ phone: e.target.value })} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input label="LinkedIn URL" type="url" value={profile.linkedin_url} onChange={(e) => update({ linkedin_url: e.target.value })} hint="Used to fill LinkedIn fields on company application forms." />
+            <Input label="Portfolio / website URL" type="url" value={profile.portfolio_url} onChange={(e) => update({ portfolio_url: e.target.value })} hint="Used for portfolio/website fields." />
+          </div>
         </section>
 
         {/* Billing & Plan */}

@@ -8,6 +8,8 @@ export interface UserProfile {
   job_type: string;
   platforms: string[];
   writing_style: string;
+  linkedin_url: string;
+  portfolio_url: string;
   resume_url: string | null;
   onboarding_completed: boolean;
 }

@@ -36,6 +36,8 @@ const initialProfile: UserProfile = {
   job_type: "full-time",
   platforms: ["indeed"],
   writing_style: "",
+  linkedin_url: "",
+  portfolio_url: "",
   resume_url: null,
   onboarding_completed: false,
 };
