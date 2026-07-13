@@ -61,10 +61,14 @@ export default function OnboardingWizard() {
     async function loadUser() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      // first_name/last_name = our signup form; given_name/family_name/full_name
+      // = Google OAuth metadata (OAuth users never filled our form).
+      const meta = user.user_metadata || {};
+      const fullName: string = meta.full_name || meta.name || "";
       updateProfile({
         email: user.email || "",
-        name: user.user_metadata?.first_name || "",
-        last_name: user.user_metadata?.last_name || "",
+        name: meta.first_name || meta.given_name || fullName.split(" ")[0] || "",
+        last_name: meta.last_name || meta.family_name || fullName.split(" ").slice(1).join(" ") || "",
       });
 
       // Load resume_url so ATS step knows a resume already exists in storage

@@ -24,6 +24,15 @@ interface HealthSummary {
   last_error_msg?: string | null;
 }
 
+// Pending human hand-off (captcha / security check) reported by the extension
+// via the ping.js bridge (HIREDROP_GET_LIVE_STATE → chrome.storage.captchaWaiting).
+interface CaptchaWaiting {
+  url?: string;
+  site?: string;
+  signal?: string;
+  at?: number;
+}
+
 interface Props {
   token: string;
 }
@@ -37,6 +46,7 @@ export default function CampaignView({ token: initialToken }: Props) {
   const [stopping, setStopping] = useState(false);
   const [stopped, setStopped] = useState(false);
   const [previewWaitSecs, setPreviewWaitSecs] = useState(0);
+  const [captcha, setCaptcha] = useState<CaptchaWaiting | null>(null);
   const lastScreenshotTs = useRef<number>(0);
   const activityEndRef = useRef<HTMLDivElement>(null);
 
@@ -132,6 +142,30 @@ export default function CampaignView({ token: initialToken }: Props) {
     activityEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activity]);
 
+  // Captcha hand-off state, live from the extension via the ping.js bridge
+  // (reads chrome.storage directly — no backend latency, survives SW restarts).
+  // The extension pauses on a captcha and resumes the moment the user clears it;
+  // this banner is the dashboard-side half of that hand-off.
+  useEffect(() => {
+    function onMsg(e: MessageEvent) {
+      if (e.source !== window || !e.data || typeof e.data !== "object") return;
+      if (e.data.type === "HIREDROP_LIVE_STATE" && e.data.ok) {
+        const cw = e.data.captchaWaiting as CaptchaWaiting | null;
+        // Stale-guard: the extension self-stops after 2h of an unsolved captcha —
+        // anything older is a leftover, not an active hand-off.
+        setCaptcha(cw && Date.now() - (cw.at || 0) < 2 * 60 * 60 * 1000 ? cw : null);
+      }
+    }
+    window.addEventListener("message", onMsg);
+    const ask = () => window.postMessage({ type: "HIREDROP_GET_LIVE_STATE" }, "*");
+    ask();
+    const iv = setInterval(ask, 3000);
+    return () => {
+      window.removeEventListener("message", onMsg);
+      clearInterval(iv);
+    };
+  }, []);
+
   async function stopCampaign() {
     setStopping(true);
     try {
@@ -213,6 +247,25 @@ export default function CampaignView({ token: initialToken }: Props) {
           {stopping ? "Stopping…" : "Stop Campaign"}
         </button>
       </div>
+
+      {/* Captcha hand-off CTA — the explicit "your turn" moment. The campaign is
+          paused until the human clears the check; it resumes on its own after. */}
+      {captcha && (
+        <div className="mb-5 flex items-start gap-3 px-4 py-3.5 rounded-xl bg-yellow/10 border border-yellow/30">
+          <svg className="w-5 h-5 text-yellow shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div className="text-sm">
+            <p className="font-semibold text-text">
+              Your turn: solve the captcha &amp; submit
+            </p>
+            <p className="text-xs text-text2 mt-0.5">
+              {captcha.site || "The site"} is asking for a human check. Switch to the automation window, solve it, and hit submit if the form asks for one — we&apos;ve filled everything else. The campaign resumes automatically.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Automation window notice */}
       <div className="mb-5 flex items-start gap-3 px-4 py-3 rounded-xl bg-surface border border-border text-xs text-text2">

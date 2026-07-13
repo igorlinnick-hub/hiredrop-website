@@ -33,9 +33,21 @@ const BRAND: Record<string, string> = {
 };
 
 type ConnStatus = "connected" | "logged_out" | undefined;
+type Conn = { status?: string; checkedAt?: string };
+
+// A login check is only trusted for a week. The extension re-verifies on every
+// visit to the platform, so a fresh status stays fresh in normal use — but a
+// user who logged out (or never returned) shouldn't be flattered with a
+// months-old "Connected".
+const CONN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+function liveStatus(c?: Conn): ConnStatus {
+  if (!c?.status) return undefined;
+  if (c.checkedAt && Date.now() - Date.parse(c.checkedAt) > CONN_TTL_MS) return undefined;
+  return c.status as ConnStatus;
+}
 
 export default function PlatformConnections() {
-  const [connections, setConnections] = useState<Record<string, { status: string }>>({});
+  const [connections, setConnections] = useState<Record<string, Conn>>({});
   const [connReady, setConnReady] = useState(false);
   const [open, setOpen] = useState(true);
 
@@ -66,7 +78,7 @@ export default function PlatformConnections() {
     if (url) window.open(url, "_blank", "noopener");
   }
 
-  const connectedCount = CONNECTABLE.filter((p) => connections[p.id]?.status === "connected").length;
+  const connectedCount = CONNECTABLE.filter((p) => liveStatus(connections[p.id]) === "connected").length;
 
   return (
     <div className="mb-6 rounded-2xl border border-border bg-surface overflow-hidden">
@@ -111,7 +123,7 @@ export default function PlatformConnections() {
 
           <ul className="divide-y divide-border">
             {CONNECTABLE.map((p) => {
-              const status = connections[p.id]?.status as ConnStatus;
+              const status = liveStatus(connections[p.id]);
               const connected = status === "connected";
               const loggedOut = status === "logged_out";
               return (
@@ -127,14 +139,22 @@ export default function PlatformConnections() {
                     <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-text">{p.name}</span>
-                      {p.autoApply ? (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
+                      {/* Honest stage badge — expectations = trust. Never promise
+                          "auto" on a platform where the user finishes the apply. */}
+                      {p.stage === "auto" ? (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20"
+                          title="Extension applies end-to-end. If a captcha appears, it pauses — you solve it, it resumes.">
                           auto-apply
+                        </span>
+                      ) : p.stage === "semi" ? (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-yellow/10 text-yellow border border-yellow/20"
+                          title="Jobs from here feed your board. We fill the application on the employer's site — you finish the last human step: captcha + submit.">
+                          semi-auto · you finish captcha
                         </span>
                       ) : (
                         <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-surface2 text-text2/70 border border-border"
-                          title="Connect now — auto-apply support is rolling out">
-                          auto-apply soon
+                          title="Connect now — auto-apply support is rolling out; connected accounts are ready on day one.">
+                          connect only
                         </span>
                       )}
                     </div>
@@ -187,6 +207,11 @@ export default function PlatformConnections() {
             })}
           </ul>
 
+          {/* Honest expectations line — the one-sentence deal we make with the
+              user. Matches the stage badges above; don't soften it. */}
+          <p className="px-4 py-2.5 text-[11px] text-text2/60 border-t border-border bg-surface2/20">
+            We do the filling; the final human step — captcha + submit on the employer&apos;s site — is yours. That last click keeps your applications real and your accounts safe.
+          </p>
           {PUBLIC.length > 0 && (
             <p className="px-4 py-2.5 text-[11px] text-text2/50 border-t border-border bg-surface2/20">
               No account needed: {PUBLIC.map((p) => p.name).join(", ")} — public listings you apply to directly.

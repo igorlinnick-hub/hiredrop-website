@@ -34,12 +34,30 @@ create policy "Users can update own profile"
   on public.profiles for update
   using (auth.uid() = user_id);
 
--- Auto-create profile when user signs up
+-- Auto-create profile when user signs up.
+-- Copies the signup names into the row so a user who hasn't finished the
+-- onboarding quiz still has a real name on file (applications must never go
+-- out with a blank name). Sources: our signup form writes
+-- raw_user_meta_data.first_name/last_name; Google OAuth provides
+-- given_name/family_name (and full_name/name as a fallback).
+-- Applied to the live DB 2026-07-12.
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (user_id)
-  values (new.id);
+  insert into public.profiles (user_id, name, last_name)
+  values (
+    new.id,
+    coalesce(
+      nullif(new.raw_user_meta_data->>'first_name', ''),
+      nullif(new.raw_user_meta_data->>'given_name', ''),
+      nullif(split_part(coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', ''), ' ', 1), '')
+    ),
+    coalesce(
+      nullif(new.raw_user_meta_data->>'last_name', ''),
+      nullif(new.raw_user_meta_data->>'family_name', ''),
+      nullif(regexp_replace(coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', ''), '^\S+\s*', ''), '')
+    )
+  );
   return new;
 end;
 $$ language plpgsql security definer;

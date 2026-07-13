@@ -36,9 +36,9 @@ export default async function DashboardPage() {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  // Only hard-redirect brand new users (no profile row at all).
-  // Users with a profile row but onboarding_completed=false see a banner
-  // instead of being trapped in a redirect loop.
+  // NOTE: app/dashboard/layout.tsx now hard-gates ALL /dashboard/* routes on
+  // onboarding_completed (fail-closed), so incomplete users never reach this
+  // page. This check and the banner below stay as defense-in-depth.
   if (!profile) {
     redirect("/onboarding");
   }

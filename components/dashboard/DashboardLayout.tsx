@@ -52,6 +52,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleLogout() {
+    // Tell the extension to wipe its user-scoped state (durable key, cached
+    // profile, dedup history, platform statuses) — chrome.storage is
+    // browser-scoped, so without this the extension keeps acting as the
+    // logged-out user for whoever signs in next. Fire-and-forget: ping.js
+    // relays it; if the extension isn't installed, nobody is listening.
+    window.postMessage({ type: "HIREDROP_LOGOUT" }, "*");
     await supabase.auth.signOut();
     router.push("/");
     router.refresh();

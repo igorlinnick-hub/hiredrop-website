@@ -19,7 +19,7 @@ export default function LoginForm() {
     const email = form.get("email") as string;
     const password = form.get("password") as string;
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -30,9 +30,27 @@ export default function LoginForm() {
       return;
     }
 
+    // Route through the onboarding quiz when it hasn't been completed —
+    // mirrors /auth/callback (which only OAuth/email links pass through;
+    // password login used to hardcode /dashboard and skip the quiz entirely).
+    // The /dashboard layout gate enforces this server-side too; checking here
+    // just lands the user on the right page in one hop.
+    let onboarded = false;
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("user_id", signInData.user.id)
+        .maybeSingle();
+      onboarded = !!profile?.onboarding_completed;
+    } catch {
+      // fail-closed: unknown state → onboarding (the wizard bounces completed
+      // users onward via the dashboard gate anyway)
+    }
+
     const params = new URLSearchParams(window.location.search);
     const next = params.get("next");
-    const dest = next && next.startsWith("/") ? next : "/dashboard";
+    const dest = next && next.startsWith("/") ? next : onboarded ? "/dashboard" : "/onboarding";
     const h = window.location.hostname;
     const onWrongDomain = h !== "hiredrop.io" && !h.endsWith(".hiredrop.io");
     // If on a preview URL, navigate to hiredrop.io so the extension can inject

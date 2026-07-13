@@ -23,6 +23,12 @@ export interface Platform {
   autoApply?: boolean; // supports Chrome Extension auto-apply
   connectable?: boolean; // account-based platform — user logs in / registers to connect
   discovery?: boolean; // backend can fetch listings from it ("Find jobs from" chips)
+  // Honest automation stage — drives the badge on the connections panel:
+  //   "auto"    extension applies end-to-end (pauses only for a captcha)
+  //   "semi"    listings feed the board; we fill the employer's ATS form, the
+  //             user finishes the last human step (captcha + submit)
+  //   "connect" login detection only — auto-apply support still rolling out
+  stage?: "auto" | "semi" | "connect";
   loginUrl?: string; // opens the platform's log-in page
   signupUrl?: string; // opens the platform's create-account page
 }
