@@ -149,8 +149,14 @@ export default function PlatformConnections() {
               // the detector hasn't reported back yet. A definitive detector
               // answer (connected / logged_out) always beats the spinner.
               const isChecking = !connected && !loggedOut && !!checking[p.id];
+              // Rows where auto-apply isn't live yet are dimmed with a single
+              // "coming soon" chip — Igor's call (2026-07-13): the three-stage
+              // badges (auto / semi·captcha / connect-only) were too much
+              // information for a user; the honest-expectations footer line
+              // still covers the "you finish captcha + submit" reality.
+              const comingSoon = p.stage !== "auto";
               return (
-                <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                <li key={p.id} className={`flex items-center justify-between gap-3 px-4 py-3 ${comingSoon ? "opacity-60" : ""}`}>
                   <div className="flex items-center gap-3 min-w-0">
                     <span
                       aria-hidden
@@ -162,22 +168,10 @@ export default function PlatformConnections() {
                     <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-text">{p.name}</span>
-                      {/* Honest stage badge — expectations = trust. Never promise
-                          "auto" on a platform where the user finishes the apply. */}
-                      {p.stage === "auto" ? (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20"
-                          title="Extension applies end-to-end. If a captcha appears, it pauses — you solve it, it resumes.">
-                          auto-apply
-                        </span>
-                      ) : p.stage === "semi" ? (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-yellow/10 text-yellow border border-yellow/20"
-                          title="Jobs from here feed your board. We fill the application on the employer's site — you finish the last human step: captcha + submit.">
-                          semi-auto · you finish captcha
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-surface2 text-text2/70 border border-border"
-                          title="Connect now — auto-apply support is rolling out; connected accounts are ready on day one.">
-                          connect only
+                      {comingSoon && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-surface2 text-text2/60 border border-border"
+                          title="Auto-apply for this platform is rolling out — connecting now means it's ready on day one.">
+                          coming soon
                         </span>
                       )}
                     </div>
