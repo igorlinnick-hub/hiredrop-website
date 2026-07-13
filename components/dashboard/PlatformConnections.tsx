@@ -50,6 +50,10 @@ export default function PlatformConnections() {
   const [connections, setConnections] = useState<Record<string, Conn>>({});
   const [connReady, setConnReady] = useState(false);
   const [open, setOpen] = useState(true);
+  // Platforms the user just opened from here — show live "Checking…" feedback
+  // until the extension's detector reports back (the 8s poll picks up the flip)
+  // or a one-minute timer gives up.
+  const [checking, setChecking] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     function onMsg(e: MessageEvent) {
@@ -74,8 +78,15 @@ export default function PlatformConnections() {
     };
   }, []);
 
-  function openUrl(url?: string) {
-    if (url) window.open(url, "_blank", "noopener");
+  function openUrl(platformId: string, url?: string) {
+    if (!url) return;
+    window.open(url, "_blank", "noopener");
+    setChecking((c) => ({ ...c, [platformId]: true }));
+    // Give up on the spinner after a minute — the detector reports within
+    // seconds when the tab is open, so a stale spinner would just mislead.
+    setTimeout(() => {
+      setChecking((c) => (c[platformId] ? { ...c, [platformId]: false } : c));
+    }, 60_000);
   }
 
   const connectedCount = CONNECTABLE.filter((p) => liveStatus(connections[p.id]) === "connected").length;
@@ -120,12 +131,24 @@ export default function PlatformConnections() {
               Install & connect the HireDrop extension to see live connection status. You can still open each platform below to log in or register.
             </p>
           )}
+          {/* Kill the "I connected these before, where did it go?!" confusion:
+              statuses are VERIFIED on each visit to the platform's site, so a
+              platform you're logged into simply hasn't been re-checked yet. */}
+          {connReady && CONNECTABLE.some((p) => !liveStatus(connections[p.id])) && (
+            <p className="px-4 py-2.5 text-xs text-text2/60 bg-accent/5 border-b border-border">
+              Already have an account on a platform? Just open it — if you&apos;re logged in there, the status flips to Connected within a few seconds. No passwords needed.
+            </p>
+          )}
 
           <ul className="divide-y divide-border">
             {CONNECTABLE.map((p) => {
               const status = liveStatus(connections[p.id]);
               const connected = status === "connected";
               const loggedOut = status === "logged_out";
+              // "Checking…" = the user just opened this platform from here and
+              // the detector hasn't reported back yet. A definitive detector
+              // answer (connected / logged_out) always beats the spinner.
+              const isChecking = !connected && !loggedOut && !!checking[p.id];
               return (
                 <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="flex items-center gap-3 min-w-0">
@@ -172,27 +195,38 @@ export default function PlatformConnections() {
                       </span>
                     ) : (
                       <>
-                        {loggedOut && (
+                        {isChecking ? (
+                          <span className="hidden sm:flex items-center gap-1.5 text-[11px] text-accent font-medium mr-0.5"
+                            title="Keep the tab open a few seconds — if you're logged in, we detect it automatically">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                            Checking…
+                          </span>
+                        ) : loggedOut ? (
                           <span className="hidden sm:inline text-[11px] text-yellow font-medium mr-0.5">Not signed in</span>
+                        ) : (
+                          <span className="hidden sm:inline text-[11px] text-text2/40 font-medium mr-0.5"
+                            title="We haven't verified this platform in this browser yet — open it once and the status updates automatically">
+                            not checked yet
+                          </span>
                         )}
                         {/* Platforms with a unified auth page (Indeed, ZipRecruiter, Glassdoor:
                             enter email → logs in OR creates the account) get ONE button; only
                             platforms with a distinct signup page (Wellfound) get two. */}
                         {p.signupUrl ? (
                           <>
-                            <button type="button" onClick={() => openUrl(p.loginUrl)}
+                            <button type="button" onClick={() => openUrl(p.id, p.loginUrl)}
                               className="px-2.5 py-1 text-xs font-semibold rounded-lg border border-border bg-surface
                                 text-text hover:border-accent/40 hover:text-accent transition whitespace-nowrap">
                               Log in <span aria-hidden>↗</span>
                             </button>
-                            <button type="button" onClick={() => openUrl(p.signupUrl)}
+                            <button type="button" onClick={() => openUrl(p.id, p.signupUrl)}
                               className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-accent text-white
                                 hover:bg-accent-hover transition whitespace-nowrap">
                               Sign up
                             </button>
                           </>
                         ) : (
-                          <button type="button" onClick={() => openUrl(p.loginUrl)}
+                          <button type="button" onClick={() => openUrl(p.id, p.loginUrl)}
                             title={`Opens ${p.name} — log in, or create a free account right there`}
                             className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-accent text-white
                               hover:bg-accent-hover transition whitespace-nowrap">
