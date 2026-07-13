@@ -35,6 +35,7 @@ export default function SettingsPage() {
   const [keywordInput, setKeywordInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [dirty, setDirty] = useState(false); // unsaved changes → the Save button lights up
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -87,6 +88,7 @@ export default function SettingsPage() {
   function update(updates: Partial<UserProfile>) {
     setProfile((prev) => ({ ...prev, ...updates }));
     setSaved(false);
+    setDirty(true);
   }
 
   function addKeyword(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -141,6 +143,7 @@ export default function SettingsPage() {
     }
 
     setSaved(true);
+    setDirty(false);
     setTimeout(() => setSaved(false), 3000);
   }
 
@@ -157,9 +160,26 @@ export default function SettingsPage() {
   return (
     <DashboardLayout>
       <div className="max-w-2xl space-y-8">
-        <div>
-          <h2 className="text-xl font-bold text-text">Profile Settings</h2>
-          <p className="text-sm text-text2 mt-1">Update your information and preferences.</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-text">Profile Settings</h2>
+            <p className="text-sm text-text2 mt-1">Update your information and preferences.</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {saved && <span className="text-sm text-green whitespace-nowrap">Saved ✓</span>}
+            <button
+              onClick={handleSave}
+              disabled={!dirty || saving}
+              className={[
+                "px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap",
+                dirty && !saving
+                  ? "bg-accent text-white hover:opacity-90 shadow-sm"          // unsaved changes → lit up
+                  : "bg-surface2 text-text2/40 cursor-default",                // nothing to save → subtle/gray
+              ].join(" ")}
+            >
+              {saving ? "Saving…" : "Save changes"}
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -303,7 +323,7 @@ export default function SettingsPage() {
 
         {/* Save */}
         <div className="flex items-center gap-4">
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={!dirty || saving}>
             {saving ? "Saving..." : "Save Changes"}
           </Button>
           {saved && <span className="text-sm text-green">Saved successfully!</span>}
