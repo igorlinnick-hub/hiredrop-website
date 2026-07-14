@@ -60,10 +60,9 @@ export default function QuickActions({
   const [busy, setBusy] = useState<Busy>(null);
   const [err, setErr] = useState<string | null>(null);
   // Per-platform login state, reported by the extension (Indeed/ZipRecruiter).
-  // connReady flips true once the extension answers — so we don't show "connect"
-  // prompts when the extension isn't installed at all.
+  // Used only for the pre-flight guard in startCampaign — the visible connect
+  // UI lives in the PlatformConnections panel, not in this row.
   const [connections, setConnections] = useState<Record<string, { status: string }>>({});
-  const [connReady, setConnReady] = useState(false);
 
   // Poll /campaign/status every 5s so extension-started campaigns reflect in the UI
   useEffect(() => {
@@ -86,7 +85,6 @@ export default function QuickActions({
     function onMsg(e: MessageEvent) {
       if (e.source !== window || !e.data || typeof e.data !== "object") return;
       if (e.data.type === "HIREDROP_PLATFORM_CONNECTIONS") {
-        setConnReady(true);
         if (e.data.ok) setConnections(e.data.connections || {});
       }
     }
@@ -372,57 +370,32 @@ export default function QuickActions({
 
         <span className="text-[10px] text-text2/40 mr-0.5">Auto-apply on:</span>
 
-        {/* Auto-apply platforms. The radio chip selects which one runs THIS campaign;
-            the connect control next to it is about the ACCOUNT (persistent) — so the
-            user can connect Indeed AND ZipRecruiter independently, then pick which to
-            run. Not connected → a one-click link that opens the platform to log in or
-            create a (free) account; content.js detects it and flips the chip to ✓. */}
+        {/* Auto-apply platforms — a radio: exactly one runs THIS campaign. Account
+            connection (log in / sign up / live status) lives in the
+            PlatformConnections panel above; duplicating connect controls here
+            just cluttered the row. */}
         {PLATFORMS.filter((p) => p.autoApply).map((p) => {
           const on = platforms.includes(p.id);
-          const status = connections[p.id]?.status;
-          const connected = status === "connected";
           return (
-            <span key={p.id} className="inline-flex items-center gap-1">
-              <button type="button"
-                onClick={() => selectAutoApply(p.id)}
-                title={on ? `${p.name} — auto-applies for this campaign` : `Run this campaign on ${p.name}`}
-                className={[
-                  "flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border transition",
-                  on
-                    ? "bg-accent/10 text-accent border-accent/30 font-semibold"
-                    : "bg-surface text-text2/50 border-border/50 hover:border-accent/30 hover:text-text2",
-                ].join(" ")}
-              >
-                {on && <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />}
-                {p.name}
-                {on && <span className="text-[10px] font-normal text-accent/60 ml-0.5">auto-apply</span>}
-              </button>
-
-              {connReady && connected && (
-                <span className="flex items-center text-green" title={`Signed into ${p.name}`}>
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
-                </span>
-              )}
-              {connReady && !connected && (
-                <button type="button" onClick={() => connectPlatform(p.id)}
-                  title={`Open ${p.name} to log in or create a free account`}
-                  className={[
-                    "flex items-center gap-0.5 px-2 py-0.5 text-[11px] font-semibold rounded-full border transition",
-                    status === "logged_out"
-                      ? "bg-yellow/10 text-yellow border-yellow/40 hover:bg-yellow/20"
-                      : "bg-surface text-text2 border-border/60 hover:border-accent/40 hover:text-text",
-                  ].join(" ")}
-                >
-                  connect<span aria-hidden> ↗</span>
-                </button>
-              )}
-            </span>
+            <button key={p.id} type="button"
+              onClick={() => selectAutoApply(p.id)}
+              title={on ? `${p.name} — auto-applies for this campaign` : `Run this campaign on ${p.name}`}
+              className={[
+                "flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border transition",
+                on
+                  ? "bg-accent/10 text-accent border-accent/30 font-semibold"
+                  : "bg-surface text-text2/50 border-border/50 hover:border-accent/30 hover:text-text2",
+              ].join(" ")}
+            >
+              {on && <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />}
+              {p.name}
+            </button>
           );
         })}
 
-        <span className="text-border text-[10px] text-text2/40">Find jobs from:</span>
+        <span className="text-border">·</span>
+
+        <span className="text-[10px] text-text2/40 mr-0.5">Find jobs from:</span>
 
         {/* Discovery-only platforms — the backend can fetch their listings. Boards
             that are connectable but not yet fetchable (Monster/CareerBuilder/Dice)
