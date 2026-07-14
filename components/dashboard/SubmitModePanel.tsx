@@ -108,6 +108,7 @@ export default function SubmitModePanel() {
           );
         })}
       </div>
+      <p className="text-xs text-text2">Daily caps shown are for paid plans. Free plan: 10/day in either mode.</p>
       {saved && <p className="text-sm text-green">Saved ✓</p>}
       {error && <p className="text-sm text-red">{error}</p>}
     </section>
