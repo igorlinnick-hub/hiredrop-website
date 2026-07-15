@@ -21,6 +21,7 @@ export interface Platform {
   requiresLogin: boolean;
   description: string;
   autoApply?: boolean; // supports Chrome Extension auto-apply
+  beta?: boolean; // newly enabled — shown with a "beta" marker on its chip
   connectable?: boolean; // account-based platform — user logs in / registers to connect
   discovery?: boolean; // backend can fetch listings from it ("Find jobs from" chips)
   // Honest automation stage — drives the badge on the connections panel:
