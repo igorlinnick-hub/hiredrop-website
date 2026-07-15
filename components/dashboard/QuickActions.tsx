@@ -63,6 +63,10 @@ export default function QuickActions({
   // Used only for the pre-flight guard in startCampaign — the visible connect
   // UI lives in the PlatformConnections panel, not in this row.
   const [connections, setConnections] = useState<Record<string, { status: string }>>({});
+  // Submit mode (profile.submit_mode): "auto" = fill + send for you; "tap" = you review +
+  // approve each before it sends. Drives the daily cap + cover-letter model + the extension's
+  // review-stop. Editable right here so the choice sits next to Start.
+  const [mode, setMode] = useState<"auto" | "tap">("auto");
 
   // Poll /campaign/status every 5s so extension-started campaigns reflect in the UI
   useEffect(() => {
@@ -78,6 +82,33 @@ export default function QuickActions({
     }, 5000);
     return () => clearInterval(poll);
   }, []);
+
+  // Load the saved submit mode so the toggle reflects the profile.
+  useEffect(() => {
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase.from("profiles").select("submit_mode").eq("user_id", user.id).single();
+        if (data?.submit_mode === "tap") setMode("tap");
+      } catch { /* ignore */ }
+    })();
+  }, []);
+
+  // Persist the mode to the profile (optimistic; revert on failure).
+  async function saveMode(next: "auto" | "tap") {
+    if (next === mode) return;
+    const prev = mode;
+    setMode(next);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setMode(prev); return; }
+      const { error } = await supabase.from("profiles").update({ submit_mode: next }).eq("user_id", user.id);
+      if (error) setMode(prev);
+    } catch { setMode(prev); }
+  }
 
   // Ask the extension for platform login state (via the ping.js bridge) on mount,
   // on tab focus (the user may have just logged in on another tab), and periodically.
@@ -332,6 +363,32 @@ export default function QuickActions({
                 text-text hover:bg-surface2 hover:border-accent/40 disabled:opacity-50 transition whitespace-nowrap">
               {busy === "find" ? "Scanning…" : "Find Jobs"}
             </button>
+
+            {/* Submit-mode toggle — sits next to Start so the choice is obvious.
+                Auto = HireDrop fills + sends for you; Tap = you review + approve each. */}
+            <div className="inline-flex items-center rounded-xl border border-border bg-surface p-0.5"
+              role="group" aria-label="Submit mode">
+              <button type="button" onClick={() => saveMode("auto")} aria-pressed={mode === "auto"}
+                title="Auto — HireDrop fills and sends applications for you"
+                className={["flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition",
+                  mode === "auto" ? "bg-accent text-white shadow-sm" : "text-text2 hover:text-text"].join(" ")}>
+                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M11 2 4 11h4l-1 7 7-9h-4l1-7z" />
+                </svg>
+                Auto
+              </button>
+              <button type="button" onClick={() => saveMode("tap")} aria-pressed={mode === "tap"}
+                title="Tap — you review and approve each application before it sends"
+                className={["flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition",
+                  mode === "tap" ? "bg-accent text-white shadow-sm" : "text-text2 hover:text-text"].join(" ")}>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <path d="M9 11V6a2 2 0 1 1 4 0v5m0-2a2 2 0 1 1 4 0v5a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-2.7l-2-3a2 2 0 0 1 3.3-2.2L7.5 13" />
+                </svg>
+                Tap
+              </button>
+            </div>
+
             <button onClick={startCampaign} disabled={busy !== null}
               className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl
                 bg-accent text-white hover:bg-accent2 disabled:opacity-50 transition shadow-sm whitespace-nowrap">
