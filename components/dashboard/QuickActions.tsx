@@ -446,6 +446,10 @@ export default function QuickActions({
             >
               {on && <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />}
               {p.name}
+              {p.beta && (
+                <span className="ml-0.5 px-1 py-px text-[8px] font-bold uppercase tracking-wide
+                  rounded bg-accent/15 text-accent leading-none">beta</span>
+              )}
             </button>
           );
         })}
