@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import SubmitModeToggle from "@/components/dashboard/SubmitModeToggle";
+import ReviewPanel, { ReviewPending } from "@/components/dashboard/ReviewPanel";
 import { apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 
@@ -48,6 +49,11 @@ export default function CampaignView({ token: initialToken }: Props) {
   const [stopped, setStopped] = useState(false);
   const [previewWaitSecs, setPreviewWaitSecs] = useState(0);
   const [captcha, setCaptcha] = useState<CaptchaWaiting | null>(null);
+  // Tap mode: the extension reports reviewMode + the application awaiting approval
+  // (both live from chrome.storage via the ping.js bridge). In tap mode the right
+  // panel becomes the review card instead of the raw browser preview.
+  const [reviewMode, setReviewMode] = useState(false);
+  const [reviewPending, setReviewPending] = useState<ReviewPending | null>(null);
   const lastScreenshotTs = useRef<number>(0);
   const activityEndRef = useRef<HTMLDivElement>(null);
 
@@ -155,6 +161,11 @@ export default function CampaignView({ token: initialToken }: Props) {
         // Stale-guard: the extension self-stops after 2h of an unsolved captcha —
         // anything older is a leftover, not an active hand-off.
         setCaptcha(cw && Date.now() - (cw.at || 0) < 2 * 60 * 60 * 1000 ? cw : null);
+        setReviewMode(!!e.data.reviewMode);
+        const rp = e.data.reviewPending as ReviewPending | null;
+        // Same stale-guard: a pending review older than the 30-min extension timeout
+        // has already been auto-skipped — don't show a dead card.
+        setReviewPending(rp && Date.now() - (rp.at || 0) < 30 * 60 * 1000 ? rp : null);
       }
     }
     window.addEventListener("message", onMsg);
@@ -183,6 +194,14 @@ export default function CampaignView({ token: initialToken }: Props) {
     } catch {
       setStopping(false);
     }
+  }
+
+  // Send the human's Approve/Skip back to the extension (ping.js → chrome.storage;
+  // content.js in the automation window polls it and submits or skips). Clear the card
+  // optimistically so the panel returns to "filling next" until the next one arrives.
+  function sendReviewDecision(id: string, decision: "approve" | "skip") {
+    window.postMessage({ type: "HIREDROP_REVIEW_DECISION", id, decision }, "*");
+    setReviewPending(null);
   }
 
   if (stopped) {
@@ -354,7 +373,10 @@ export default function CampaignView({ token: initialToken }: Props) {
           </div>
         </div>
 
-        {/* Right — browser screenshot */}
+        {/* Right — in tap mode the review card replaces the raw browser preview */}
+        {reviewMode ? (
+          <ReviewPanel reviewPending={reviewPending} onDecision={sendReviewDecision} />
+        ) : (
         <div className="bg-surface border border-border rounded-xl overflow-hidden">
           <div className="px-5 py-3.5 border-b border-border flex items-center justify-between">
             <h3 className="text-sm font-semibold text-text">Browser Preview</h3>
@@ -416,6 +438,7 @@ export default function CampaignView({ token: initialToken }: Props) {
           </div>
 
         </div>
+        )}
       </div>
     </DashboardLayout>
   );
