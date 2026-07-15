@@ -64,11 +64,11 @@ body {
 
 /* ===== TYPOGRAPHY ===== */
 h1, h2, h3 {
-  font-family: 'Syne', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* App-side surfaces (onboarding, dashboard flows) use clean Inter headings —
-   the expressive Syne display face is reserved for marketing. */
+   the Space Grotesk display face is reserved for marketing. */
 .app-ui h1, .app-ui h2, .app-ui h3 {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   letter-spacing: -0.02em;
@@ -102,6 +102,11 @@ h1, h2, h3 {
 
 @keyframes orbSpin {
   to { transform: rotate(360deg); }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
 }
 
 @keyframes orbShift {
@@ -180,6 +185,28 @@ h1, h2, h3 {
 .feature-card:hover {
   transform: translateY(-4px);
   border-color: #6C5CE7;
+}
+
+/* ===== SOFT DEPTH ===== */
+/* Blurred radial glow blob — subtle premium depth behind sections. Decorative;
+   place inside a `relative overflow-hidden` parent, size + position via style. */
+.glow-purple {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  background: radial-gradient(circle, rgba(108, 92, 231, 0.16), rgba(167, 139, 250, 0.05) 60%, transparent 72%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Consistent, restrained card lift — one hover recipe across the site. */
+.card-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.card-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(108, 92, 231, 0.14);
+  border-color: rgba(108, 92, 231, 0.5);
 }
 
 /* ===== NAV LINK UNDERLINE ===== */

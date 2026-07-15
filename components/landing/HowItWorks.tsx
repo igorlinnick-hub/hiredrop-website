@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import Starfield from "./Starfield";
 
 const STEPS = [
   {
@@ -92,7 +94,7 @@ function Panel2() {
         <div>
           <label className="text-xs text-[#6B6B8A] mb-2 block font-medium">Platforms</label>
           <div className="flex gap-4">
-            {["Indeed", "RemoteOK", "Wellfound"].map((p) => (
+            {["Indeed", "ZipRecruiter", "Company ATS"].map((p) => (
               <span key={p} className="flex items-center gap-1.5 text-xs text-[#1A1A2E]">
                 <span className="w-3.5 h-3.5 rounded bg-[#6C5CE7]" />
                 {p}
@@ -205,9 +207,23 @@ export default function HowItWorks() {
 
   const panels = [<Panel1 key={0} />, <Panel2 key={1} />, <Panel3 key={2} />, <Panel4 key={3} />];
 
+  // Continuous day → night driven by scroll through the whole 400vh section (not
+  // the discrete step index) — so the sky *melts* smoothly instead of switching.
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end end"] });
+  const nightOpacity = useTransform(scrollYProgress, [0.22, 0.9], [0, 1]);
+  const starOpacity = useTransform(scrollYProgress, [0.42, 0.78], [0, 1]);
+  const titleColor = useTransform(scrollYProgress, [0.52, 0.66], ["#1A1A2E", "#ffffff"]);
+  const descColor = useTransform(scrollYProgress, [0.52, 0.66], ["#6B6B8A", "#cbc8db"]);
+  const numColor = useTransform(scrollYProgress, [0.52, 0.66], ["rgba(108,92,231,0.12)", "rgba(255,255,255,0.14)"]);
+
   return (
     <section id="how-it-works" ref={sectionRef} className="relative" style={{ height: "400vh" }}>
       <div className="sticky top-0 h-screen overflow-hidden" style={{ background: "linear-gradient(160deg, #f8f7ff 0%, #f5f3ff 50%, #faf8ff 100%)" }}>
+        {/* smooth night wash — opacity melts in continuously with scroll */}
+        <motion.div className="absolute inset-0 pointer-events-none" style={{ opacity: nightOpacity, background: "linear-gradient(160deg, #1c1930 0%, #14121f 50%, #17142a 100%)" }} />
+        <motion.div className="absolute inset-0 pointer-events-none" style={{ opacity: starOpacity }}>
+          <Starfield />
+        </motion.div>
         {/* Soft cloud shapes — visible but subtle */}
         <div
           className="absolute pointer-events-none"
@@ -258,13 +274,13 @@ export default function HowItWorks() {
                       transform: activeStep === i ? "translateX(0)" : activeStep > i ? "translateX(-20px)" : "translateX(20px)",
                     }}
                   >
-                    <p className="text-7xl font-bold text-[#6C5CE7]/10 mb-2" style={{ fontFamily: "'Syne', sans-serif" }}>
-                      {step.number} <span className="text-3xl text-[#6B6B8A]/30">/ 04</span>
-                    </p>
-                    <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-bold text-[#1A1A2E] mb-4 leading-tight" style={{ fontFamily: "'Syne', sans-serif" }}>
+                    <motion.p className="text-7xl font-bold mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif", color: numColor }}>
+                      {step.number} <span className="text-3xl" style={{ opacity: 0.4 }}>/ 04</span>
+                    </motion.p>
+                    <motion.h2 className="text-3xl sm:text-4xl lg:text-[42px] font-bold mb-4 leading-[1.2] pb-1" style={{ fontFamily: "'Space Grotesk', sans-serif", color: titleColor }}>
                       {step.title}
-                    </h2>
-                    <p className="text-lg text-[#6B6B8A] max-w-md leading-relaxed">{step.description}</p>
+                    </motion.h2>
+                    <motion.p className="text-lg max-w-md leading-relaxed" style={{ color: descColor }}>{step.description}</motion.p>
                   </div>
                 ))}
                 {/* Spacer for layout */}
@@ -322,7 +338,7 @@ export default function HowItWorks() {
           <div key={i} className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
             <StepBadge label={step.badge} gradient={step.badgeColor} />
             <p className="text-sm font-medium text-[#6C5CE7] mb-2">STEP {step.number} / 04</p>
-            <h3 className="text-2xl font-bold text-[#1A1A2E] mb-2 text-center" style={{ fontFamily: "'Syne', sans-serif" }}>{step.title}</h3>
+            <h3 className="text-2xl font-bold text-[#1A1A2E] mb-2 text-center" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{step.title}</h3>
             <p className="text-sm text-[#6B6B8A] mb-6 text-center max-w-sm">{step.description}</p>
             {panels[i]}
           </div>
