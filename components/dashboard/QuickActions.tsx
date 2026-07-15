@@ -421,6 +421,14 @@ export default function QuickActions({
               )}
               {on && <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0" />}
               {p.name}
+              {p.beta && (
+                <span className={[
+                  "text-[9px] font-semibold uppercase tracking-wide px-1.5 py-px rounded-full",
+                  on ? "bg-white/20 text-white" : "bg-accent/10 text-accent",
+                ].join(" ")}>
+                  beta
+                </span>
+              )}
             </button>
           );
         })}
