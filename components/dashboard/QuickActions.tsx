@@ -132,14 +132,28 @@ export default function QuickActions({
     }
   }
 
+  // Persist the platform choice the moment it's clicked — without this a toggle
+  // only sticks if the user happens to press Find Jobs / Start Campaign after.
+  // Failures are silent: find/start re-save the full prefs anyway.
+  async function persistPlatforms(next: string[]) {
+    try {
+      const t = await getFreshToken();
+      await apiPost("/profile/prefs", t, { keywords, location, job_type: jobType, platforms: next });
+    } catch { /* ignore — re-saved on find/start */ }
+  }
+
   // Auto-apply is a radio: picking one auto-apply platform replaces the other.
   function selectAutoApply(id: string) {
-    setPlatforms((p) => [...p.filter((x) => !AUTO_APPLY_IDS.includes(x)), id]);
+    const next = [...platforms.filter((x) => !AUTO_APPLY_IDS.includes(x)), id];
+    setPlatforms(next);
+    void persistPlatforms(next);
   }
 
   // Discovery platforms are an independent multi-select (they only scrape listings).
   function toggleDiscovery(id: string) {
-    setPlatforms((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+    const next = platforms.includes(id) ? platforms.filter((x) => x !== id) : [...platforms, id];
+    setPlatforms(next);
+    void persistPlatforms(next);
   }
 
   // ── save + execute ─────────────────────────────────────────────────────────
@@ -368,10 +382,19 @@ export default function QuickActions({
 
         <span className="text-border">·</span>
 
-        <span className="text-[10px] text-text2/40 mr-0.5">Auto-apply on:</span>
+        <span className="text-[11px] font-medium text-text2/60 mr-0.5">Auto-apply on:</span>
 
-        {/* Auto-apply platforms — a radio: exactly one runs THIS campaign. Account
-            connection (log in / sign up / live status) lives in the
+        {/* Shine sweep across the active auto-apply chip (kept local — the chip
+            is the only user of it). */}
+        <style>{`@keyframes hdChipShine {
+          0% { transform: translateX(-110%); }
+          55%, 100% { transform: translateX(110%); }
+        }`}</style>
+
+        {/* Auto-apply platforms — a radio: exactly ONE platform runs a campaign,
+            so picking one deselects the other. The active chip is filled, glowing
+            and shimmering: this is THE control that decides where applications go.
+            Account connection (log in / sign up / live status) lives in the
             PlatformConnections panel above; duplicating connect controls here
             just cluttered the row. */}
         {PLATFORMS.filter((p) => p.autoApply).map((p) => {
@@ -379,15 +402,24 @@ export default function QuickActions({
           return (
             <button key={p.id} type="button"
               onClick={() => selectAutoApply(p.id)}
-              title={on ? `${p.name} — auto-applies for this campaign` : `Run this campaign on ${p.name}`}
+              title={on
+                ? `${p.name} — this campaign applies here`
+                : `Switch auto-apply to ${p.name} (one platform per campaign)`}
               className={[
-                "flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border transition",
+                "relative overflow-hidden flex items-center gap-2 px-4 py-1.5 text-sm rounded-full border transition",
                 on
-                  ? "bg-accent/10 text-accent border-accent/30 font-semibold"
-                  : "bg-surface text-text2/50 border-border/50 hover:border-accent/30 hover:text-text2",
+                  ? "bg-accent text-white border-accent font-semibold shadow-[0_0_16px_rgba(108,92,231,0.45)]"
+                  : "bg-surface text-text2 border-border font-medium hover:border-accent/50 hover:text-text",
               ].join(" ")}
             >
-              {on && <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />}
+              {on && (
+                <span aria-hidden className="absolute inset-0 pointer-events-none"
+                  style={{
+                    animation: "hdChipShine 2.4s ease-in-out infinite",
+                    background: "linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.45) 50%, transparent 70%)",
+                  }} />
+              )}
+              {on && <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0" />}
               {p.name}
             </button>
           );
@@ -395,7 +427,7 @@ export default function QuickActions({
 
         <span className="text-border">·</span>
 
-        <span className="text-[10px] text-text2/40 mr-0.5">Find jobs from:</span>
+        <span className="text-[11px] font-medium text-text2/60 mr-0.5">Find jobs from:</span>
 
         {/* Discovery-only platforms — the backend can fetch their listings. Boards
             that are connectable but not yet fetchable (Monster/CareerBuilder/Dice)
@@ -407,7 +439,7 @@ export default function QuickActions({
               onClick={() => toggleDiscovery(p.id)}
               title={p.description + " — no account needed, just scrapes listings"}
               className={[
-                "px-3 py-1 text-xs font-medium rounded-full border transition",
+                "px-3.5 py-1.5 text-xs font-medium rounded-full border transition",
                 on
                   ? "bg-surface2 text-text border-border/80"
                   : "bg-surface text-text2/50 border-border/50 hover:border-border hover:text-text2",
