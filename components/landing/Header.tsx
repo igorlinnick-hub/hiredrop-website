@@ -10,7 +10,7 @@ export default function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#E8E8F0]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="text-xl font-bold text-[#1A1A2E]" style={{ fontFamily: "'Syne', sans-serif" }}>
+          <Link href="/" className="text-xl font-bold text-[#1A1A2E]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
             <span className="text-[#6C5CE7]">Hire</span>Drop
           </Link>
 
@@ -49,7 +49,7 @@ export default function Header() {
                 e.currentTarget.style.boxShadow = "none";
               }}
             >
-              Sign Up Free
+              Start applying
             </Link>
           </nav>
 
@@ -87,7 +87,7 @@ export default function Header() {
                 href="/signup"
                 className="bg-[#6C5CE7] text-white text-sm font-medium px-4 py-2 rounded-[10px] text-center"
               >
-                Sign Up Free
+                Start applying
               </Link>
             </div>
           </div>

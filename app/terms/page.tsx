@@ -29,7 +29,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">4. Subscription & Billing</h2>
-              <p>Free accounts have limited features. Pro subscriptions are billed monthly at $16/month. You can cancel at any time. Refunds are handled on a case-by-case basis.</p>
+              <p>HireDrop is billed at $9/week or $29/month — the full product on either plan. You can cancel at any time. Refunds are handled on a case-by-case basis.</p>
             </section>
 
             <section>

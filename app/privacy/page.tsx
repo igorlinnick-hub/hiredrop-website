@@ -36,7 +36,7 @@ export default function PrivacyPage() {
 
             <section>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">5. Third-Party Services</h2>
-              <p>We use Supabase (auth + Postgres + Storage), Anthropic Claude (cover letter generation), Google OAuth (optional sign-in), and the job platforms you connect (Indeed, RemoteOK, Wellfound). We share with each only the data needed for its function.</p>
+              <p>We use Supabase (auth + Postgres + Storage), Anthropic Claude (cover letter generation), Google OAuth (optional sign-in), and the job platforms and application systems you apply through (Indeed, ZipRecruiter, and company applicant-tracking systems such as Greenhouse, Lever, Workday, and Ashby). We share with each only the data needed for its function.</p>
             </section>
 
             <section>

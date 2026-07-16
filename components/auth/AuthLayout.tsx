@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AutoFillDemo from "@/components/illustrations/AutoFillDemo";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -7,6 +8,8 @@ interface AuthLayoutProps {
   footerText: string;
   footerLinkText: string;
   footerLinkHref: string;
+  /** Show the rotating scene carousel beside the form (used on signup). */
+  showcase?: boolean;
 }
 
 export default function AuthLayout({
@@ -16,28 +19,42 @@ export default function AuthLayout({
   footerText,
   footerLinkText,
   footerLinkHref,
+  showcase = false,
 }: AuthLayoutProps) {
+  const form = (
+    <div className="w-full max-w-md">
+      <div className="text-center mb-8">
+        <Link href="/" className="text-2xl font-bold text-text">
+          <span className="text-accent">Hire</span>Drop
+        </Link>
+        <h1 className="mt-6 text-2xl font-bold text-text">{title}</h1>
+        <p className="mt-2 text-sm text-text2">{subtitle}</p>
+      </div>
+
+      <div className="bg-surface border border-border rounded-xl p-8">{children}</div>
+
+      <p className="mt-6 text-center text-sm text-text2">
+        {footerText}{" "}
+        <Link href={footerLinkHref} className="text-accent hover:text-accent2 font-medium">
+          {footerLinkText}
+        </Link>
+      </p>
+    </div>
+  );
+
+  if (!showcase) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-background">
+        {form}
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-background">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-text">
-            <span className="text-accent">Hire</span>Drop
-          </Link>
-          <h1 className="mt-6 text-2xl font-bold text-text">{title}</h1>
-          <p className="mt-2 text-sm text-text2">{subtitle}</p>
-        </div>
-
-        <div className="bg-surface border border-border rounded-xl p-8">
-          {children}
-        </div>
-
-        <p className="mt-6 text-center text-sm text-text2">
-          {footerText}{" "}
-          <Link href={footerLinkHref} className="text-accent hover:text-accent2 font-medium">
-            {footerLinkText}
-          </Link>
-        </p>
+    <div className="min-h-screen grid lg:grid-cols-2 bg-background">
+      <div className="flex items-center justify-center px-4 py-12">{form}</div>
+      <div className="hidden lg:block">
+        <AutoFillDemo />
       </div>
     </div>
   );
