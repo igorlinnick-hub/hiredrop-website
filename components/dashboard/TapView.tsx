@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import FitChoiceModal from "@/components/dashboard/FitChoiceModal";
 import { apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import type { ReviewPending } from "@/components/dashboard/ReviewPanel";
@@ -33,6 +34,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
   const [applied, setApplied] = useState(0);
   const [jobsReady, setJobsReady] = useState(0);
   const [busy, setBusy] = useState<null | "start" | "stop">(null);
+  const [fitOpen, setFitOpen] = useState(false); // launch-time fit picker before Start
   const [acting, setActing] = useState<null | "approve" | "skip">(null);
   const [drag, setDrag] = useState(0);            // live horizontal swipe offset (px)
   const [showLetter, setShowLetter] = useState(false);
@@ -240,7 +242,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
                 cover letter and all. You just Approve or Skip. Nothing sends until you tap Approve.
               </p>
             </div>
-            <button onClick={start} disabled={busy !== null}
+            <button onClick={() => setFitOpen(true)} disabled={busy !== null}
               className="mt-2 flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold
                 bg-accent text-white hover:bg-accent2 disabled:opacity-50 transition shadow-sm">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -368,6 +370,13 @@ export default function TapView({ token: initialToken }: { token: string }) {
           </div>
         )}
       </div>
+
+      {/* Launch-time fit picker → then start the tap session */}
+      <FitChoiceModal
+        open={fitOpen}
+        onClose={() => setFitOpen(false)}
+        onConfirm={() => { setFitOpen(false); start(); }}
+      />
     </DashboardLayout>
   );
 }

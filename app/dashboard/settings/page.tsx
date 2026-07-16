@@ -7,7 +7,6 @@ import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import Select from "@/components/ui/Select";
 import ResumeATSPanel from "@/components/dashboard/ResumeATSPanel";
-import ApplyModePanel from "@/components/dashboard/ApplyModePanel";
 import SubmitModePanel from "@/components/dashboard/SubmitModePanel";
 import BillingSection from "@/components/dashboard/BillingSection";
 import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
@@ -312,8 +311,8 @@ export default function SettingsPage() {
         {/* Resume & ATS */}
         <ResumeATSPanel />
 
-        {/* Apply Mode */}
-        <ApplyModePanel />
+        {/* Apply Mode moved to a launch-time picker (FitChoiceModal on Start) —
+            no longer a Settings panel. */}
 
         {/* Submit Mode (auto / tap) — profile.submit_mode */}
         <SubmitModePanel />

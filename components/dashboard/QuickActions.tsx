@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ApiError, apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
+import FitChoiceModal from "@/components/dashboard/FitChoiceModal";
 
 // Platforms the extension can auto-apply on. Exactly one runs per campaign.
 const AUTO_APPLY_IDS = PLATFORMS.filter((p) => p.autoApply).map((p) => p.id);
@@ -58,6 +59,9 @@ export default function QuickActions({
   const [kwInput, setKwInput] = useState("");
   const [campaignRunning, setCampaignRunning] = useState(initialCampaignRunning);
   const [busy, setBusy] = useState<Busy>(null);
+  // Launch-time fit picker (replaces the Settings Apply-Mode panel): Start opens it,
+  // the pick saves apply_mode, then the campaign actually starts.
+  const [fitOpen, setFitOpen] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   // Per-platform login state, reported by the extension (Indeed/ZipRecruiter).
   // Used only for the pre-flight guard in startCampaign — the visible connect
@@ -421,7 +425,7 @@ export default function QuickActions({
             {/* Primary action is mode-aware: Auto starts the campaign here; Tap opens
                 the dedicated tap page (its own Start lives there). Prevents the "auto
                 started with tap mode" trap. */}
-            <button onClick={mode === "tap" ? goTap : startCampaign} disabled={busy !== null}
+            <button onClick={mode === "tap" ? goTap : () => setFitOpen(true)} disabled={busy !== null}
               className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl
                 bg-accent text-white hover:bg-accent2 disabled:opacity-50 transition shadow-sm whitespace-nowrap">
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
@@ -536,6 +540,13 @@ export default function QuickActions({
 
       {/* Error */}
       {err && <p className="text-xs text-red px-1">{err}</p>}
+
+      {/* Launch-time fit picker → then start */}
+      <FitChoiceModal
+        open={fitOpen}
+        onClose={() => setFitOpen(false)}
+        onConfirm={() => { setFitOpen(false); startCampaign(); }}
+      />
     </div>
   );
 }
