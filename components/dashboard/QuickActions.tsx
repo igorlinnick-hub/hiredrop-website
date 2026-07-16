@@ -110,6 +110,21 @@ export default function QuickActions({
     } catch { setMode(prev); }
   }
 
+  // Tap is its OWN experience: selecting it persists the mode + the current platform
+  // selection, arms the extension's review-stop, and opens the dedicated /dashboard/tap
+  // page (a clean card stack) rather than the auto campaign flow.
+  async function goTap() {
+    setMode("tap");
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) await supabase.from("profiles").update({ submit_mode: "tap" }).eq("user_id", user.id);
+    } catch { /* non-blocking */ }
+    try { await savePrefs(); } catch { /* keep going — tap page falls back to profile */ }
+    window.postMessage({ type: "HIREDROP_SET_REVIEW", on: true }, "*");
+    router.push("/dashboard/tap");
+  }
+
   // Ask the extension for platform login state (via the ping.js bridge) on mount,
   // on tab focus (the user may have just logged in on another tab), and periodically.
   useEffect(() => {
@@ -377,8 +392,8 @@ export default function QuickActions({
                 </svg>
                 Auto
               </button>
-              <button type="button" onClick={() => saveMode("tap")} aria-pressed={mode === "tap"}
-                title="Tap — you review and approve each application before it sends"
+              <button type="button" onClick={goTap} aria-pressed={mode === "tap"}
+                title="Tap — open the tap page: review and approve each application on cards"
                 className={["flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition",
                   mode === "tap" ? "bg-accent text-white shadow-sm" : "text-text2 hover:text-text"].join(" ")}>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2"
@@ -389,7 +404,10 @@ export default function QuickActions({
               </button>
             </div>
 
-            <button onClick={startCampaign} disabled={busy !== null}
+            {/* Primary action is mode-aware: Auto starts the campaign here; Tap opens
+                the dedicated tap page (its own Start lives there). Prevents the "auto
+                started with tap mode" trap. */}
+            <button onClick={mode === "tap" ? goTap : startCampaign} disabled={busy !== null}
               className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl
                 bg-accent text-white hover:bg-accent2 disabled:opacity-50 transition shadow-sm whitespace-nowrap">
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
@@ -397,7 +415,7 @@ export default function QuickActions({
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
                   clipRule="evenodd" />
               </svg>
-              {busy === "start" ? "Starting…" : "Start Campaign"}
+              {mode === "tap" ? "Open Tap" : (busy === "start" ? "Starting…" : "Start Campaign")}
             </button>
           </>
         )}

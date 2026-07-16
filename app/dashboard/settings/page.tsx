@@ -8,7 +8,6 @@ import Textarea from "@/components/ui/Textarea";
 import Select from "@/components/ui/Select";
 import ResumeATSPanel from "@/components/dashboard/ResumeATSPanel";
 import ApplyModePanel from "@/components/dashboard/ApplyModePanel";
-import SubmitModePanel from "@/components/dashboard/SubmitModePanel";
 import BillingSection from "@/components/dashboard/BillingSection";
 import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
 import type { UserProfile } from "@/lib/types";
@@ -314,9 +313,6 @@ export default function SettingsPage() {
 
         {/* Apply Mode */}
         <ApplyModePanel />
-
-        {/* Submit Mode (Auto / Tap) — orthogonal to Apply Mode; drives the daily cap + model */}
-        <SubmitModePanel />
 
         {/* Writing Style */}
         <section className="bg-surface border border-border rounded-xl p-6 space-y-4">

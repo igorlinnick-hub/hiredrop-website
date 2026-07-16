@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import SubmitModeToggle from "@/components/dashboard/SubmitModeToggle";
 import ReviewPanel, { ReviewPending } from "@/components/dashboard/ReviewPanel";
 import { apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
@@ -262,20 +261,15 @@ export default function CampaignView({ token: initialToken }: Props) {
           {" "}jobs ready
         </div>
 
-        {/* Switch Auto/Tap while the campaign runs — flips the extension's review-stop
-            live (via ping.js), so you can start reviewing (or stop reviewing) mid-run. */}
-        <div className="ml-auto flex items-center gap-3">
-          <SubmitModeToggle />
-          <button
-            onClick={stopCampaign}
-            disabled={stopping}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition
-              bg-red/8 text-red border-red/20 hover:bg-red/15 disabled:opacity-50"
-          >
-            <span className="inline-block w-2 h-2 rounded bg-red" />
-            {stopping ? "Stopping…" : "Stop Campaign"}
-          </button>
-        </div>
+        <button
+          onClick={stopCampaign}
+          disabled={stopping}
+          className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition
+            bg-red/8 text-red border-red/20 hover:bg-red/15 disabled:opacity-50"
+        >
+          <span className="inline-block w-2 h-2 rounded bg-red" />
+          {stopping ? "Stopping…" : "Stop Campaign"}
+        </button>
       </div>
 
       {/* Captcha hand-off CTA — the explicit "your turn" moment. The campaign is
