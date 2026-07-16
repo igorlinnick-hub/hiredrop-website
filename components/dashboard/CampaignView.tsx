@@ -98,6 +98,12 @@ export default function CampaignView({ token: initialToken }: Props) {
   // One-shot celebration burst each time the applied counter ticks up.
   const [bumpKey, setBumpKey] = useState(0);
   const prevAppliedRef = useRef<number | null>(null);
+  // 1s clock for the current-step timer next to the status line — if the newest
+  // activity entry is old, the user should see the step is stuck, not "working".
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  // Campaign start (from /campaign/status) — scopes the health summary to THIS
+  // run, so chips don't show a prior run's cross-platform noise.
+  const startedAtRef = useRef<string | null>(null);
 
   // Crossfade: two slots alternate so the outgoing frame stays visible during the fade
   const [slots, setSlots] = useState<[string | null, string | null]>([null, null]);
@@ -141,7 +147,12 @@ export default function CampaignView({ token: initialToken }: Props) {
   const fetchHealth = useCallback(async () => {
     try {
       const t = await getToken();
-      const h = await apiGet<HealthSummary>("/activity/summary?window_hours=24", t);
+      // Scope to the current run when we know its start; a backend that doesn't
+      // support `since` yet just ignores the param and falls back to the window.
+      const since = startedAtRef.current
+        ? `&since=${encodeURIComponent(startedAtRef.current)}`
+        : "";
+      const h = await apiGet<HealthSummary>(`/activity/summary?window_hours=24${since}`, t);
       setHealth(h);
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -150,10 +161,11 @@ export default function CampaignView({ token: initialToken }: Props) {
   const fetchStats = useCallback(async () => {
     try {
       const t = await getToken();
-      const status = await apiGet<{ today_applications: number; jobs_ready: number }>(
+      const status = await apiGet<{ today_applications: number; jobs_ready: number; started_at?: string | null }>(
         "/campaign/status",
         t
       );
+      startedAtRef.current = status.started_at || null;
       setStats({ applied: status.today_applications, found: status.jobs_ready });
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -171,6 +183,7 @@ export default function CampaignView({ token: initialToken }: Props) {
     const healthTimer = setInterval(fetchHealth, 5000);
     const startTs = Date.now();
     const ageTimer = setInterval(() => {
+      setNowTs(Date.now());
       if (lastScreenshotTs.current) {
         setScreenshotAge(Math.floor((Date.now() - lastScreenshotTs.current) / 1000));
       } else {
@@ -421,23 +434,37 @@ export default function CampaignView({ token: initialToken }: Props) {
             )}
           </div>
 
-          {/* Current action — the newest log line, one line only, animated on change */}
+          {/* Current action — the newest log line, one line only, animated on change.
+              The ⏱ timer counts seconds since that line was written: gray = normal,
+              amber = slow, red = probably stuck (a step should never take minutes). */}
           <div className="px-5 pb-5 shrink-0">
             <div className="flex items-center justify-center gap-2 min-h-[20px] text-xs text-text2">
               {activity.length > 0 ? (
-                <span key={activity[0].id} className="hd-status flex items-center gap-2 max-w-full">
-                  <span aria-hidden className="flex gap-0.5 shrink-0">
-                    {[0, 1, 2].map((i) => (
-                      <span key={i} className="hd-dot" style={{ animationDelay: `${i * 0.15}s` }} />
-                    ))}
+                <>
+                  <span key={activity[0].id} className="hd-status flex items-center gap-2 min-w-0">
+                    <span aria-hidden className="flex gap-0.5 shrink-0">
+                      {[0, 1, 2].map((i) => (
+                        <span key={i} className="hd-dot" style={{ animationDelay: `${i * 0.15}s` }} />
+                      ))}
+                    </span>
+                    <span className={[
+                      "truncate",
+                      activity[0].level === "error" ? "text-red" : activity[0].level === "warn" ? "text-yellow" : "",
+                    ].join(" ")}>
+                      {activity[0].message}
+                    </span>
                   </span>
-                  <span className={[
-                    "truncate",
-                    activity[0].level === "error" ? "text-red" : activity[0].level === "warn" ? "text-yellow" : "",
-                  ].join(" ")}>
-                    {activity[0].message}
-                  </span>
-                </span>
+                  {(() => {
+                    const elapsed = Math.max(0, Math.floor((nowTs - Date.parse(activity[0].timestamp)) / 1000));
+                    const tone = elapsed < 60 ? "text-text2/50" : elapsed <= 150 ? "text-yellow" : "text-red";
+                    return (
+                      <span className={`${tone} tabular-nums shrink-0`}
+                        title="Time on the current step — red means it's likely stuck">
+                        ⏱ {elapsed}s
+                      </span>
+                    );
+                  })()}
+                </>
               ) : (
                 <span className="text-text2/40">Waiting for extension to start…</span>
               )}
@@ -447,13 +474,15 @@ export default function CampaignView({ token: initialToken }: Props) {
           {/* Health strip (ROADMAP_E2E.md P3): surfaces silent failures — fit skips,
               resume-attach failures, and auth issues — so "applied to nothing" reads as
               a real signal, not as "working". Only the failure chips flip red/amber.
-              (No "Applied" chip here — the hero owns that number; two windows of the
-              same stat next to each other only read as a bug.) */}
-          {health && (
+              Counts are scoped to THIS run via `since` (see fetchHealth), and a chip at
+              zero simply doesn't render — the whole strip disappears when all is clean. */}
+          {health && (health.skipped_fit > 0 || health.skipped_no_resume > 0 || health.resume_fail > 0 || health.auth_401 > 0) && (
             <div className="px-3 py-2 border-t border-border shrink-0 flex flex-wrap justify-center gap-1.5 text-[11px]">
-              <span className="px-2 py-0.5 rounded-full bg-surface2/60 text-text2">
-                Skipped (fit) <strong className="text-text">{health.skipped_fit}</strong>
-              </span>
+              {health.skipped_fit > 0 && (
+                <span className="px-2 py-0.5 rounded-full bg-surface2/60 text-text2">
+                  Skipped (fit) <strong className="text-text">{health.skipped_fit}</strong>
+                </span>
+              )}
               {health.skipped_no_resume > 0 && (
                 <span className="px-2 py-0.5 rounded-full bg-yellow/10 text-yellow">
                   No résumé {health.skipped_no_resume}
