@@ -167,6 +167,11 @@ export default function CampaignView({ token: initialToken }: Props) {
         // has already been auto-skipped — don't show a dead card.
         setReviewPending(rp && Date.now() - (rp.at || 0) < 30 * 60 * 1000 ? rp : null);
       }
+      // The mode toggle flipped review on/off — reflect it instantly (don't wait for
+      // the next 3s live-state poll), so the panel swaps the moment you pick Tap/Auto.
+      if (e.data.type === "HIREDROP_REVIEW_SET") {
+        setReviewMode(!!e.data.on);
+      }
     }
     window.addEventListener("message", onMsg);
     const ask = () => window.postMessage({ type: "HIREDROP_GET_LIVE_STATE" }, "*");

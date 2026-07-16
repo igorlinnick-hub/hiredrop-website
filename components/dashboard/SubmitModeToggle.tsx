@@ -23,7 +23,13 @@ export default function SubmitModeToggle({ className = "" }: { className?: strin
           .select("submit_mode")
           .eq("user_id", user.id)
           .single();
-        if (data?.submit_mode === "tap") setMode("tap");
+        const m = data?.submit_mode === "tap" ? "tap" : "auto";
+        setMode(m);
+        // Sync the extension's live review flag to the SAVED mode on mount — critical:
+        // without this, a user whose profile is already "tap" (so they never re-click)
+        // could start/continue a campaign with the extension still in auto → it would
+        // auto-submit unreviewed. This also flips the dashboard to the review panel.
+        window.postMessage({ type: "HIREDROP_SET_REVIEW", on: m === "tap" }, "*");
       } catch {
         /* ignore — default stays auto */
       }
