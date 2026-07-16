@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import type { EmailOtpType } from "@supabase/supabase-js";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  // Email links (confirm signup, etc.) carry token_hash instead of a PKCE
+  // code. verifyOtp works on any device — the PKCE code path only works in
+  // the browser that initiated signup, which breaks "sign up on desktop,
+  // open the email on your phone".
+  const tokenHash = searchParams.get("token_hash");
+  const otpType = searchParams.get("type") as EmailOtpType | null;
   // `next` lets non-OAuth flows (e.g. password recovery) route through this
   // handler purely to exchange the code for a session, then land on their
   // own page instead of the default onboarding routing.
@@ -17,7 +24,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if (!code) {
+  if (!code && !(tokenHash && otpType)) {
     return NextResponse.redirect(`${origin}/login`);
   }
 
@@ -40,7 +47,9 @@ export async function GET(request: NextRequest) {
     }
   );
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { error } = tokenHash && otpType
+    ? await supabase.auth.verifyOtp({ type: otpType, token_hash: tokenHash })
+    : await supabase.auth.exchangeCodeForSession(code!);
   if (error) {
     return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`);
   }
