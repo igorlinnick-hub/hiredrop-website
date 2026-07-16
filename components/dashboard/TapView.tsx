@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { apiGet, apiPost } from "@/lib/api";
@@ -34,6 +34,10 @@ export default function TapView({ token: initialToken }: { token: string }) {
   const [jobsReady, setJobsReady] = useState(0);
   const [busy, setBusy] = useState<null | "start" | "stop">(null);
   const [acting, setActing] = useState<null | "approve" | "skip">(null);
+  const [drag, setDrag] = useState(0);            // live horizontal swipe offset (px)
+  const [showLetter, setShowLetter] = useState(false);
+  const dragRef = useRef<{ x: number; y: number; mode: "none" | "swipe" | "scroll" } | null>(null);
+  const dragXRef = useRef(0);
   const [err, setErr] = useState<string | null>(null);
   const startedRef = useRef(false);
 
@@ -143,7 +147,37 @@ export default function TapView({ token: initialToken }: { token: string }) {
     setActing(decision);
     window.postMessage({ type: "HIREDROP_REVIEW_DECISION", id: pending.id, decision }, "*");
     setPending(null); // optimistic — the next card arrives via the bridge
+    setDrag(0); dragXRef.current = 0; setShowLetter(false);
     if (decision === "approve") setApplied((n) => n + 1);
+  }
+
+  // ── Swipe (mobile + desktop drag): right = approve, left = skip. Direction-locked so
+  // vertical scrolling of the description still works (touch-action: pan-y). ──
+  const SWIPE_THRESHOLD = 110;
+  function onPointerDown(e: ReactPointerEvent) {
+    if (acting) return;
+    dragRef.current = { x: e.clientX, y: e.clientY, mode: "none" };
+  }
+  function onPointerMove(e: ReactPointerEvent) {
+    const d = dragRef.current;
+    if (!d) return;
+    const dx = e.clientX - d.x;
+    const dy = e.clientY - d.y;
+    if (d.mode === "none") {
+      if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) d.mode = "swipe";
+      else if (Math.abs(dy) > 8) d.mode = "scroll";
+    }
+    if (d.mode === "swipe") { dragXRef.current = dx; setDrag(dx); }
+  }
+  function onPointerUp() {
+    const d = dragRef.current;
+    dragRef.current = null;
+    if (d && d.mode === "swipe") {
+      if (dragXRef.current > SWIPE_THRESHOLD) return decide("approve");
+      if (dragXRef.current < -SWIPE_THRESHOLD) return decide("skip");
+    }
+    dragXRef.current = 0;
+    setDrag(0); // snap back
   }
 
   const chips = parseSummary(pending?.summary);
@@ -218,12 +252,30 @@ export default function TapView({ token: initialToken }: { token: string }) {
           </div>
         ) : pending ? (
           /* ── A prepared application is waiting for the tap ── */
-          <div className="relative">
+          <div className="relative select-none">
             {/* faux-stack edges for the "deck of cards" feel */}
             <div className="absolute inset-x-3 -bottom-2 h-8 rounded-2xl bg-surface border border-border opacity-60" />
             <div className="absolute inset-x-1.5 -bottom-1 h-8 rounded-2xl bg-surface border border-border opacity-80" />
-            <div className="relative bg-surface border border-border rounded-2xl p-6 shadow-sm"
-              style={{ animation: "tapIn .22s ease" }}>
+
+            <div
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              onPointerCancel={onPointerUp}
+              className="relative bg-surface border border-border rounded-2xl p-6 shadow-sm cursor-grab active:cursor-grabbing"
+              style={{
+                touchAction: "pan-y",
+                transform: `translateX(${drag}px) rotate(${drag * 0.04}deg)`,
+                transition: drag === 0 ? "transform .25s ease" : "none",
+                animation: drag === 0 ? "tapIn .22s ease" : undefined,
+              }}
+            >
+              {/* Swipe-intent overlays */}
+              <div className="pointer-events-none absolute top-5 left-5 px-3 py-1 rounded-lg border-2 border-green text-green font-extrabold text-sm -rotate-12"
+                style={{ opacity: Math.max(0, Math.min(1, drag / SWIPE_THRESHOLD)) }}>APPLY ✓</div>
+              <div className="pointer-events-none absolute top-5 right-5 px-3 py-1 rounded-lg border-2 border-red text-red font-extrabold text-sm rotate-12"
+                style={{ opacity: Math.max(0, Math.min(1, -drag / SWIPE_THRESHOLD)) }}>SKIP</div>
+
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div className="min-w-0">
                   <h2 className="text-xl font-bold text-text leading-snug">{pending.job_title || "Application"}</h2>
@@ -235,21 +287,34 @@ export default function TapView({ token: initialToken }: { token: string }) {
                 </span>
               </div>
 
-              {pending.cover_letter ? (
+              {/* PRIMARY: the job description — what you actually decide on */}
+              {pending.description ? (
                 <div className="mb-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-text2/50 mb-1.5">Cover letter</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-text2/50 mb-1.5">Job description</p>
                   <div className="text-[13px] text-text/90 leading-relaxed whitespace-pre-wrap
-                    bg-surface2/50 border border-border rounded-lg p-4 max-h-[320px] overflow-y-auto">
-                    {pending.cover_letter}
+                    bg-surface2/50 border border-border rounded-lg p-4 max-h-[300px] overflow-y-auto">
+                    {pending.description}
                   </div>
                 </div>
-              ) : pending.description ? (
+              ) : (
+                <p className="text-[13px] text-text2/60 mb-4">No description captured for this posting — check the page directly.</p>
+              )}
+
+              {/* SECONDARY: your generated cover letter, collapsed by default */}
+              {pending.cover_letter && (
                 <div className="mb-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-text2/50 mb-1.5">Role</p>
-                  <div className="text-[13px] text-text2 leading-relaxed bg-surface2/50 border border-border
-                    rounded-lg p-4 max-h-[240px] overflow-y-auto">{pending.description}</div>
+                  <button type="button" onClick={() => setShowLetter((v) => !v)}
+                    className="text-xs font-medium text-accent hover:underline">
+                    {showLetter ? "Hide" : "View"} your cover letter
+                  </button>
+                  {showLetter && (
+                    <div className="mt-2 text-[13px] text-text/80 leading-relaxed whitespace-pre-wrap
+                      bg-surface2/40 border border-border rounded-lg p-4 max-h-[240px] overflow-y-auto">
+                      {pending.cover_letter}
+                    </div>
+                  )}
                 </div>
-              ) : null}
+              )}
 
               {chips.length > 0 && (
                 <div className="mb-4">
@@ -286,6 +351,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
                 </button>
               </div>
             </div>
+            <p className="text-center text-[11px] text-text2/40 mt-3">Swipe → to apply · ← to skip — or use the buttons</p>
           </div>
         ) : (
           /* ── Running, preparing the next card ── */
