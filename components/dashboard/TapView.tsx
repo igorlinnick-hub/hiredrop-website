@@ -59,6 +59,13 @@ export default function TapView({ token: initialToken }: { token: string }) {
         setPending(fresh);
         if (fresh) setActing(null); // a new card arrived — re-enable buttons
       }
+      // Extension's verdict on Start (it runs the backend + builds the queue). Surface
+      // a refusal — e.g. "no zero-touch greenhouse jobs" — instead of sitting on idle.
+      if (e.data.type === "HIREDROP_CAMPAIGN_STARTED") {
+        setBusy(null);
+        if (e.data.ok) setRunning(true);
+        else setErr(e.data.message || e.data.error || "Couldn't start — try again in a moment.");
+      }
     }
     window.addEventListener("message", onMsg);
     const ask = () => window.postMessage({ type: "HIREDROP_GET_LIVE_STATE" }, "*");
@@ -88,7 +95,6 @@ export default function TapView({ token: initialToken }: { token: string }) {
     if (busy) return;
     setBusy("start"); setErr(null);
     try {
-      const t = await getToken();
       // Use the platforms/keywords saved on the profile (the main screen persists them).
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
@@ -104,14 +110,18 @@ export default function TapView({ token: initialToken }: { token: string }) {
         location: prefs.location || "",
         job_type: prefs.job_type || "",
       };
-      await apiPost("/campaign/start", t, filters);
+      // Let the EXTENSION run the campaign — it calls /campaign/start itself and builds
+      // the ATS queue (find-ats). We don't double-call the backend here (that page-side
+      // POST could hang and it left the button stuck). The verdict comes back via
+      // HIREDROP_CAMPAIGN_STARTED (handled in the message listener): ok → running,
+      // else → error shown. busy stays "start" (button shows "Starting…") until then.
       window.postMessage({ type: "HIREDROP_SET_REVIEW", on: true }, "*");
       window.postMessage({ type: "HIREDROP_START_CAMPAIGN", filters }, "*");
-      setRunning(true);
       startedRef.current = true;
+      // Safety net: if the extension never answers (absent/old), clear the spinner.
+      setTimeout(() => setBusy((b) => (b === "start" ? null : b)), 45000);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
-    } finally {
       setBusy(null);
     }
   }
@@ -160,14 +170,14 @@ export default function TapView({ token: initialToken }: { token: string }) {
           </span>
           <span className="font-semibold text-text">Tap to apply</span>
         </div>
-        {running && (
+        {(running || pending) && (
           <div className="text-sm text-text2 ml-1">
             <span className="text-text font-medium">{applied}</span> applied
             <span className="mx-2 text-text2/30">·</span>
             <span className="text-text font-medium">{jobsReady}</span> in queue
           </div>
         )}
-        {running && (
+        {(running || pending) && (
           <button onClick={stop} disabled={busy !== null}
             className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition
               bg-red/8 text-red border-red/20 hover:bg-red/15 disabled:opacity-50">
@@ -178,7 +188,9 @@ export default function TapView({ token: initialToken }: { token: string }) {
       </div>
 
       <div className="max-w-xl mx-auto">
-        {!running ? (
+        {/* Card wins whenever an application is waiting (even if the run was just
+            stopped) → pending ? CARD : running ? PREPARING : IDLE. */}
+        {!running && !pending ? (
           /* ── Idle: start the tap session ── */
           <div className="bg-surface border border-border rounded-2xl p-8 text-center flex flex-col items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-accent/10 text-accent flex items-center justify-center">
