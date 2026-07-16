@@ -1,14 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+
+// /auth/callback bounces failed email confirmations here with ?error=<raw
+// Supabase message>. Translate the known ones — users shouldn't read PKCE
+// internals.
+function humanizeAuthError(raw: string): string {
+  const msg = raw.toLowerCase();
+  if (msg.includes("code verifier") || msg.includes("different browser or device")) {
+    return "That confirmation link only works in the browser you signed up from. Open the email on the same device, or sign in below — we'll send a fresh link if your email still needs confirming.";
+  }
+  if (msg.includes("expired") || msg.includes("invalid")) {
+    return "That confirmation link has expired or was already used. Sign in below — we'll send a fresh link if your email still needs confirming.";
+  }
+  return raw;
+}
 
 export default function LoginForm() {
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // window.location isn't available during prerender — read the error param
+  // after mount instead of via useSearchParams (which would force a Suspense
+  // boundary on the whole login page).
+  useEffect(() => {
+    const urlError = new URLSearchParams(window.location.search).get("error");
+    if (urlError) setError(humanizeAuthError(urlError));
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
