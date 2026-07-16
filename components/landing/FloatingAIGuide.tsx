@@ -14,7 +14,7 @@ const SECTIONS = [
   { id: "features", message: "AI cover letters, multi-platform search — all built in." },
   { id: "chrome-demo", message: "Watch the Chrome extension fill forms automatically!" },
   { id: "stats", message: "Thousands of job seekers saving hours every day." },
-  { id: "pricing", message: "Start free — upgrade when you're ready." },
+  { id: "pricing", message: "Weekly or monthly. Cancel anytime." },
   { id: "faq", message: "Got questions? I've got answers." },
 ];
 

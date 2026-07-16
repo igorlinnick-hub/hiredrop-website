@@ -2,65 +2,73 @@
 
 import { motion } from "framer-motion";
 import ScrollReveal from "./ScrollReveal";
+import Starfield from "./Starfield";
 
 const features = [
   {
-    title: "AI Cover Letters",
-    subtitle: "Powered by Claude",
-    description: "Cover letters that sound like you, not like ChatGPT. Our AI matches your writing style, vocabulary, and tone.",
+    title: "Your account stays safe",
+    subtitle: "Ban-safe by design",
+    description: "Applies from your own browser, at a human pace — the way you would, just faster. No captcha-cracking, no server bots that get accounts flagged.",
     icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6l7-3Z" />
+        <path d="M9 12l2 2 4-4" />
       </svg>
     ),
   },
   {
-    title: "Indeed Auto-Apply",
-    subtitle: "Chrome Extension",
-    description: "Our extension fills forms, uploads your resume, and submits applications. Up to 50 per day on autopilot.",
+    title: "You stay in control",
+    subtitle: "Review before send",
+    description: "Nothing is submitted without your OK. Approve each application before it goes out — or switch to full auto. Your call, not ours.",
     icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M8 12l3 3 5-6" />
       </svg>
     ),
   },
   {
-    title: "Multi-Platform Search",
-    subtitle: "Indeed, RemoteOK, Wellfound + more",
-    description: "Search across multiple job boards at once. New platforms added regularly. One profile, all platforms.",
+    title: "AI cover letters",
+    subtitle: "In your voice",
+    description: "A cover letter written for each role — matched to your tone and the job, not a generic template recruiters ignore.",
     icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       </svg>
     ),
   },
   {
-    title: "SMS Notifications",
-    subtitle: "Real-time alerts",
-    description: "Get notified instantly when you receive a response. Never miss an interview invitation again.",
+    title: "ATS-optimized resume",
+    subtitle: "Passes the screeners",
+    description: "We tailor and format your resume so it reads cleanly in employer systems and gets past the automated ATS filters.",
     icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <path d="M6 3h8l4 4v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1Z" />
+        <path d="M14 3v4h4" />
+        <path d="M8.5 14l2 2 4-4.5" />
       </svg>
     ),
   },
   {
-    title: "Email Monitoring",
-    subtitle: "Automatic tracking",
-    description: "We scan your inbox for interview invitations and application confirmations. Statuses update automatically.",
+    title: "Handles complex ATS",
+    subtitle: "Workday · Greenhouse · Lever",
+    description: "The multi-step application forms that eat your evening — filled out for you, end to end, not just quick one-click boards.",
     icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <rect x="4" y="4" width="7" height="7" rx="1.5" />
+        <rect x="13" y="4" width="7" height="7" rx="1.5" />
+        <rect x="4" y="13" width="7" height="7" rx="1.5" />
+        <rect x="13" y="13" width="7" height="7" rx="1.5" />
       </svg>
     ),
   },
   {
-    title: "Smart Dashboard",
-    subtitle: "Track everything",
-    description: "See all your jobs, applications, and response rates in one place. Filter by status, platform, and date.",
+    title: "Smart job matching",
+    subtitle: "Only worth-it roles",
+    description: "Finds and scores jobs against your profile so you apply where you actually fit — quality targeting, not a blind blast.",
     icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
     ),
   },
@@ -68,28 +76,49 @@ const features = [
 
 export default function Features() {
   return (
-    <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-      <div className="max-w-6xl mx-auto">
-        <ScrollReveal className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1A2E] mb-4" style={{ fontFamily: "'Syne', sans-serif" }}>
+    <section
+      id="features"
+      className="relative py-24 px-4 sm:px-6 lg:px-8"
+      style={{
+        // Night — the destination of the long day→night that begins up in
+        // HowItWorks. Cards float on a starry sky; fades back to daylight at the
+        // bottom for the next section.
+        background: "linear-gradient(180deg, #17142a 0%, #14121f 60%, #14121f 100%)",
+      }}
+    >
+      {/* starry sky across the section, fading out near the bottom */}
+      <div
+        className="absolute inset-0 overflow-hidden pointer-events-none"
+        style={{
+          WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 72%, transparent 92%)",
+          maskImage: "linear-gradient(180deg, #000 0%, #000 72%, transparent 92%)",
+        }}
+      >
+        <Starfield />
+      </div>
+      {/* soft fade back to daylight, into the next section */}
+      <div
+        className="absolute bottom-0 inset-x-0 h-32 pointer-events-none"
+        style={{ background: "linear-gradient(0deg, #F7F7FB 0%, rgba(247,247,251,0.35) 45%, transparent 100%)" }}
+      />
+
+      <div className="relative z-10 max-w-6xl mx-auto">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 pb-2 leading-[1.32]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
             Everything you need to land your next job
           </h2>
-          <p className="text-lg text-[#6B6B8A] max-w-2xl mx-auto">
+          <p className="text-lg text-gray-400 max-w-2xl mx-auto">
             A complete toolkit that handles the tedious parts of job searching so you can focus on what matters.
           </p>
-        </ScrollReveal>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, i) => (
             <ScrollReveal key={feature.title} delay={i * 0.12}>
               <motion.div
-                className="bg-white rounded-[10px] p-6 border border-[#E8E8F0] h-full"
-                style={{ boxShadow: "0 2px 8px rgba(108,92,231,0.06)" }}
-                whileHover={{
-                  y: -4,
-                  borderColor: "#6C5CE7",
-                  boxShadow: "0 8px 24px rgba(108,92,231,0.14)",
-                }}
+                className="bg-white rounded-2xl p-6 border border-[#E8E8F0] h-full"
+                style={{ boxShadow: "0 8px 30px rgba(20,18,31,0.12)" }}
+                whileHover={{ y: -4, borderColor: "#6C5CE7", boxShadow: "0 16px 40px rgba(108,92,231,0.25)" }}
                 transition={{ duration: 0.2 }}
               >
                 <div className="w-12 h-12 bg-[#EEE9FF] rounded-lg flex items-center justify-center text-[#6C5CE7] mb-4">

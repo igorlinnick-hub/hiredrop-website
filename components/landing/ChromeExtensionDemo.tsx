@@ -131,7 +131,7 @@ export default function ChromeExtensionDemo() {
           </div>
           <h2
             className="text-3xl sm:text-4xl font-bold text-[#1A1A2E] mb-4"
-            style={{ fontFamily: "'Syne', sans-serif" }}
+            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             Watch the extension work
           </h2>
@@ -461,8 +461,8 @@ export default function ChromeExtensionDemo() {
         <div className="grid grid-cols-3 gap-4 mt-8 max-w-lg mx-auto">
           {[
             { value: "23 min", label: "saved per application" },
-            { value: "94%", label: "form accuracy" },
-            { value: "50/day", label: "applications limit" },
+            { value: "Your IP", label: "applies from your browser" },
+            { value: "Review", label: "before anything sends" },
           ].map((stat, i) => (
             <div
               key={stat.label}
@@ -473,7 +473,7 @@ export default function ChromeExtensionDemo() {
                 transitionDelay: `${0.8 + i * 0.15}s`,
               }}
             >
-              <p className="text-xl font-bold text-[#1A1A2E]" style={{ fontFamily: "'Syne', sans-serif" }}>
+              <p className="text-xl font-bold text-[#1A1A2E]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                 {stat.value}
               </p>
               <p className="text-[11px] text-[#6B6B8A] mt-0.5">{stat.label}</p>

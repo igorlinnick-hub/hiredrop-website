@@ -4,35 +4,39 @@ import Footer from "@/components/landing/Footer";
 const FAQS = [
   {
     q: "What is HireDrop?",
-    a: "HireDrop is an AI-powered platform that automates your job search. It finds matching jobs across multiple platforms, writes personalized cover letters using AI, and auto-applies via our Chrome extension.",
+    a: "HireDrop is an AI job-application agent. It finds matching roles, tailors your resume and cover letter for each one, and applies from your own browser — the safe way, with you in control.",
+  },
+  {
+    q: "Will this get my account banned?",
+    a: "No. HireDrop applies from your own browser at a human pace — the way you would, just faster. We never crack captchas or run server bots that platforms flag, and built-in daily limits keep everything human-paced.",
   },
   {
     q: "How many applications can I send per day?",
-    a: "Free users can send up to 5 applications per day on RemoteOK. Pro users can send up to 50 applications per day across all supported platforms.",
+    a: "There's a human-paced daily limit that protects your account — up to 30 applications a day (20 per platform). It's about applying to the right roles, not blasting hundreds.",
   },
   {
     q: "Which job platforms are supported?",
-    a: "We currently support Indeed, RemoteOK, and Wellfound. More platforms are being added regularly. Free users have access to RemoteOK only.",
+    a: "Indeed and ZipRecruiter today, plus thousands of company application forms via their ATS (Greenhouse, Lever, Workday, Ashby). More platforms are being added.",
   },
   {
     q: "How does the Chrome extension work?",
-    a: "Our Chrome extension automatically fills out job application forms, uploads your resume, and submits applications on Indeed. It runs in the background while you browse or sleep.",
+    a: "It reads matching listings, fills the application form with your profile, attaches your resume, writes a tailored cover letter, and submits — all from your own browser. By default you review each application before it sends.",
+  },
+  {
+    q: "What are Apply Modes?",
+    a: "You choose how selective the AI is: Broad, Standard, or Precise. Precise applies only to the best-matched roles — quality over volume, so you apply where you actually fit.",
   },
   {
     q: "Are the cover letters really personalized?",
-    a: "Yes! Our AI (powered by Claude) analyzes your writing style, resume, and the specific job description to generate unique cover letters that sound like you wrote them.",
-  },
-  {
-    q: "Can I cancel my subscription anytime?",
-    a: "Yes, you can cancel your Pro subscription at any time from your account settings. Your account will revert to the free plan at the end of your billing period.",
+    a: "Yes. Our AI (powered by Claude) analyzes your writing style, resume, and the specific job description to generate a cover letter that sounds like you wrote it — for every role.",
   },
   {
     q: "Is my data safe?",
-    a: "Absolutely. We use Supabase with row-level security, encrypted storage for resumes, and never sell your personal data to third parties.",
+    a: "Yes. We use Supabase with row-level security, encrypted storage for resumes, and never sell your personal data to third parties.",
   },
   {
-    q: "Do I need an invite code to sign up?",
-    a: "Currently, yes. We're in early access and require an invite code to create an account. If you don't have one, you can join our waitlist and we'll notify you when spots open up.",
+    q: "How much does it cost?",
+    a: "$9/week or $29/month — the full product on both plans, cancel anytime in one click. Weekly suits an active search; monthly is better value if it runs longer. Have a promo code? Enter it at signup for free access.",
   },
 ];
 

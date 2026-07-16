@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 
+// Honest, defensible facts — no fabricated traction or interview multipliers.
 const STATS = [
-  { value: 2400, label: "Job seekers", suffix: "+" },
-  { value: 50, label: "Max apps/day", suffix: "" },
-  { value: 3, label: "More interviews", suffix: "x" },
+  { value: 100, label: "From your own browser", suffix: "%" },
+  { value: 3, label: "Apply Modes for precision", suffix: "" },
+  { value: 0, label: "Captchas cracked — the safe way", suffix: "" },
 ];
 
 function AnimatedNumber({
@@ -42,7 +43,7 @@ function AnimatedNumber({
   return (
     <span
       className="text-5xl font-bold text-[#6C5CE7] block"
-      style={{ fontFamily: "'Syne', sans-serif" }}
+      style={{ fontFamily: "'Space Grotesk', sans-serif" }}
     >
       {active ? current.toLocaleString() : "0"}
       {suffix}

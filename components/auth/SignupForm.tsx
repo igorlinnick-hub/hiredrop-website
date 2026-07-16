@@ -190,7 +190,7 @@ export default function SignupForm() {
         label="Promo code"
         name="promo_code"
         placeholder="Enter code (optional)"
-        hint="Have a promo code? Enter it for free Elite access."
+        hint="Have a promo code? Enter it for free access."
       />
 
       <Button type="submit" fullWidth disabled={loading}>
