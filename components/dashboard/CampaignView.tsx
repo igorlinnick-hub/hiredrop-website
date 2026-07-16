@@ -38,6 +38,43 @@ interface Props {
   token: string;
 }
 
+// ── Hero counter (odometer) ──────────────────────────────────────────────────
+
+const DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+// One rolling digit column: 0–9 stacked vertically, translated to the current
+// digit. On change the column slides — the classic odometer effect.
+function OdometerDigit({ digit }: { digit: number }) {
+  return (
+    <span aria-hidden className="inline-block overflow-hidden align-top" style={{ height: "1em" }}>
+      <span
+        className="block"
+        style={{
+          transform: `translateY(-${digit}em)`,
+          transition: "transform 700ms cubic-bezier(0.23, 1, 0.32, 1)",
+        }}
+      >
+        {DIGITS.map((n) => (
+          <span key={n} className="block" style={{ height: "1em", lineHeight: "1em" }}>{n}</span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
+function OdometerNumber({ value }: { value: number }) {
+  const s = String(value);
+  return (
+    // Columns keyed by distance from the right so the units column keeps its
+    // identity (and its roll animation) when the number gains a digit.
+    <span className="tabular-nums" aria-label={s}>
+      {s.split("").map((ch, i) => (
+        <OdometerDigit key={s.length - i} digit={Number(ch)} />
+      ))}
+    </span>
+  );
+}
+
 export default function CampaignView({ token: initialToken }: Props) {
   const router = useRouter();
   const [screenshotAge, setScreenshotAge] = useState(0);
@@ -55,6 +92,12 @@ export default function CampaignView({ token: initialToken }: Props) {
   const [reviewPending, setReviewPending] = useState<ReviewPending | null>(null);
   const lastScreenshotTs = useRef<number>(0);
   const activityEndRef = useRef<HTMLDivElement>(null);
+  // The raw log is diagnostics, not the show — the hero counter is. Tucked
+  // behind a toggle, closed by default.
+  const [showLog, setShowLog] = useState(false);
+  // One-shot celebration burst each time the applied counter ticks up.
+  const [bumpKey, setBumpKey] = useState(0);
+  const prevAppliedRef = useRef<number | null>(null);
 
   // Crossfade: two slots alternate so the outgoing frame stays visible during the fade
   const [slots, setSlots] = useState<[string | null, string | null]>([null, null]);
@@ -146,7 +189,14 @@ export default function CampaignView({ token: initialToken }: Props) {
 
   useEffect(() => {
     activityEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activity]);
+  }, [activity, showLog]);
+
+  useEffect(() => {
+    if (prevAppliedRef.current !== null && stats.applied > prevAppliedRef.current) {
+      setBumpKey((k) => k + 1);
+    }
+    prevAppliedRef.current = stats.applied;
+  }, [stats.applied]);
 
   // Captcha hand-off state, live from the extension via the ping.js bridge
   // (reads chrome.storage directly — no backend latency, survives SW restarts).
@@ -235,6 +285,46 @@ export default function CampaignView({ token: initialToken }: Props) {
           to   { opacity: 1; transform: translateY(0); }
         }
         .hd-entry { animation: hd-slide-in 0.2s ease both; }
+        /* Ambient radar rings — the campaign is out hunting */
+        @keyframes hd-ring {
+          0%   { width: 70px;  height: 70px;  opacity: 0.5; }
+          100% { width: 300px; height: 300px; opacity: 0; }
+        }
+        .hd-ring {
+          position: absolute;
+          border-radius: 9999px;
+          border: 1.5px solid rgba(108, 92, 231, 0.35);
+          width: 70px; height: 70px;
+          animation: hd-ring 2.6s cubic-bezier(0, 0.55, 0.45, 1) infinite;
+        }
+        /* One-shot green burst when an application lands */
+        @keyframes hd-burst {
+          0%   { transform: translate(-50%, -50%) scale(0.45); opacity: 0.9; }
+          100% { transform: translate(-50%, -50%) scale(2.4);  opacity: 0; }
+        }
+        .hd-burst {
+          position: absolute; left: 50%; top: 50%;
+          width: 110px; height: 110px; border-radius: 9999px;
+          border: 2px solid var(--green);
+          box-shadow: 0 0 28px rgba(0, 184, 148, 0.4);
+          animation: hd-burst 0.9s ease-out both;
+        }
+        /* "Working" dots next to the current action */
+        @keyframes hd-dot {
+          0%, 60%, 100% { transform: translateY(0);    opacity: 0.4; }
+          30%           { transform: translateY(-3px); opacity: 1; }
+        }
+        .hd-dot {
+          display: inline-block; width: 4px; height: 4px;
+          border-radius: 9999px; background: var(--accent);
+          animation: hd-dot 1.2s ease-in-out infinite;
+        }
+        /* Current-action line slides in when the message changes */
+        @keyframes hd-status-in {
+          from { opacity: 0; transform: translateY(5px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .hd-status { animation: hd-status-in 0.35s ease both; }
       `}</style>
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -304,19 +394,63 @@ export default function CampaignView({ token: initialToken }: Props) {
       {/* Split view */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-5">
 
-        {/* Left — activity feed */}
+        {/* Left — live counter hero + current action; raw log behind a toggle */}
         <div className="bg-surface border border-border rounded-xl flex flex-col overflow-hidden">
           <div className="px-5 py-3.5 border-b border-border shrink-0">
             <h3 className="text-sm font-semibold text-text">Live Activity</h3>
           </div>
+
+          {/* Hero: THE number. Radar rings pulse while the campaign hunts; a green
+              burst fires each time the counter ticks up. */}
+          <div className="relative px-5 pt-10 pb-7 text-center overflow-hidden shrink-0">
+            <div aria-hidden className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <span className="hd-ring" />
+              <span className="hd-ring" style={{ animationDelay: "1.3s" }} />
+            </div>
+            <div className="relative inline-block">
+              {bumpKey > 0 && <span key={bumpKey} aria-hidden className="hd-burst pointer-events-none" />}
+              <div className="text-6xl font-bold text-text leading-none">
+                <OdometerNumber value={stats.applied} />
+              </div>
+            </div>
+            <p className="relative mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-text2/60">
+              applications sent today
+            </p>
+            {stats.found > 0 && (
+              <p className="relative mt-1 text-xs text-text2/50">{stats.found} jobs ready in the queue</p>
+            )}
+          </div>
+
+          {/* Current action — the newest log line, one line only, animated on change */}
+          <div className="px-5 pb-5 shrink-0">
+            <div className="flex items-center justify-center gap-2 min-h-[20px] text-xs text-text2">
+              {activity.length > 0 ? (
+                <span key={activity[0].id} className="hd-status flex items-center gap-2 max-w-full">
+                  <span aria-hidden className="flex gap-0.5 shrink-0">
+                    {[0, 1, 2].map((i) => (
+                      <span key={i} className="hd-dot" style={{ animationDelay: `${i * 0.15}s` }} />
+                    ))}
+                  </span>
+                  <span className={[
+                    "truncate",
+                    activity[0].level === "error" ? "text-red" : activity[0].level === "warn" ? "text-yellow" : "",
+                  ].join(" ")}>
+                    {activity[0].message}
+                  </span>
+                </span>
+              ) : (
+                <span className="text-text2/40">Waiting for extension to start…</span>
+              )}
+            </div>
+          </div>
+
           {/* Health strip (ROADMAP_E2E.md P3): surfaces silent failures — fit skips,
               resume-attach failures, and auth issues — so "applied to nothing" reads as
-              a real signal, not as "working". Only the failure chips flip red/amber. */}
+              a real signal, not as "working". Only the failure chips flip red/amber.
+              (No "Applied" chip here — the hero owns that number; two windows of the
+              same stat next to each other only read as a bug.) */}
           {health && (
-            <div className="px-3 py-2 border-b border-border shrink-0 flex flex-wrap gap-1.5 text-[11px]">
-              <span className="px-2 py-0.5 rounded-full bg-surface2/60 text-text2">
-                Applied <strong className="text-text">{health.applied}</strong>
-              </span>
+            <div className="px-3 py-2 border-t border-border shrink-0 flex flex-wrap justify-center gap-1.5 text-[11px]">
               <span className="px-2 py-0.5 rounded-full bg-surface2/60 text-text2">
                 Skipped (fit) <strong className="text-text">{health.skipped_fit}</strong>
               </span>
@@ -337,13 +471,23 @@ export default function CampaignView({ token: initialToken }: Props) {
               )}
             </div>
           )}
-          <div className="flex-1 overflow-y-auto max-h-[520px] p-2 font-mono text-xs space-y-0.5">
-            {activity.length === 0 ? (
-              <p className="text-text2/40 text-center py-12">
-                Waiting for extension to start…
-              </p>
-            ) : (
-              activity.slice().reverse().map((entry) => (
+
+          {/* Raw log — diagnostics on demand */}
+          <button
+            type="button"
+            onClick={() => setShowLog((s) => !s)}
+            className="w-full flex items-center justify-center gap-1.5 px-5 py-2.5 border-t border-border
+              text-[11px] font-medium text-text2/60 hover:text-text2 hover:bg-surface2/40 transition shrink-0"
+          >
+            {showLog ? "Hide activity log" : "Show activity log"}
+            <svg className={`w-3 h-3 transition-transform ${showLog ? "rotate-180" : ""}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {showLog && (
+            <div className="overflow-y-auto max-h-[320px] p-2 font-mono text-xs space-y-0.5 border-t border-border">
+              {activity.slice().reverse().map((entry) => (
                 <div
                   key={entry.id}
                   className={[
@@ -366,10 +510,10 @@ export default function CampaignView({ token: initialToken }: Props) {
                     {entry.message}
                   </span>
                 </div>
-              ))
-            )}
-            <div ref={activityEndRef} />
-          </div>
+              ))}
+              <div ref={activityEndRef} />
+            </div>
+          )}
         </div>
 
         {/* Right — in tap mode the review card replaces the raw browser preview */}

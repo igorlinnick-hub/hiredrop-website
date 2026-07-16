@@ -79,7 +79,9 @@ export default function SubmitModePanel() {
   return (
     <section className="bg-surface border border-border rounded-xl p-6 space-y-4">
       <div>
-        <h3 className="font-semibold text-text">Apply mode</h3>
+        {/* "Submit mode", not "Apply mode" — in Settings this card sits right under
+            ApplyModePanel, which owns that name for fit selectivity (broad/standard/precise). */}
+        <h3 className="font-semibold text-text">Submit mode</h3>
         <p className="text-sm text-text2 mt-1">How your applications get submitted.</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
