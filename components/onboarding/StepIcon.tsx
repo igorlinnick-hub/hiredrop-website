@@ -49,8 +49,16 @@ const ICONS: Record<number, React.ReactNode> = {
       <path d="M13.5 7.5l3 3" />
     </>
   ),
-  // 8 Done — check circle
+  // 8 Plan — card
   8: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 10h18" />
+      <path d="M7 15h4" />
+    </>
+  ),
+  // 9 Done — check circle
+  9: (
     <>
       <circle cx="12" cy="12" r="9" />
       <path d="M8 12l3 3 5-6" />
