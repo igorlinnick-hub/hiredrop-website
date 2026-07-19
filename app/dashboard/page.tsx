@@ -15,6 +15,7 @@ import ApplicationHistory from "@/components/dashboard/ApplicationHistory";
 import QuickActions from "@/components/dashboard/QuickActions";
 import PlatformConnections from "@/components/dashboard/PlatformConnections";
 import SetupChecklist from "@/components/dashboard/SetupChecklist";
+import MobileHandoff from "@/components/dashboard/MobileHandoff";
 import UsageBanner from "@/components/dashboard/UsageBanner";
 
 export const metadata = {
@@ -80,6 +81,9 @@ export default async function DashboardPage() {
         hasResume={!resumeMissing}
         hasKeywords={hasKeywords}
       />
+
+      {/* Phone visitors: honest hand-off — setup works here, applying runs on the computer */}
+      <MobileHandoff campaignRunning={campaignRunning} />
 
       <QuickActions
         token={token}

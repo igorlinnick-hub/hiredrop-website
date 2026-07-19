@@ -42,6 +42,15 @@ export default function TapView({ token: initialToken }: { token: string }) {
   const dragXRef = useRef(0);
   const [err, setErr] = useState<string | null>(null);
   const startedRef = useRef(false);
+  // Bridge liveness: the extension (via ping.js) answers within a tick when it's
+  // installed in THIS browser. null = probing, false = no extension here (phone /
+  // clean browser) → REMOTE mode: cards come from the backend relay instead.
+  const [bridgeAlive, setBridgeAlive] = useState<boolean | null>(null);
+  const remote = bridgeAlive === false;
+  // Fly-out direction after a decision (+1 approve / −1 skip) — the card sails
+  // off-screen in that direction before the next one lands.
+  const [fly, setFly] = useState(0);
+  const [linkState, setLinkState] = useState<null | "sending" | "sent">(null);
 
   const getToken = useCallback(async () => {
     const { data: { session } } = await createClient().auth.getSession();
@@ -59,6 +68,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
     function onMsg(e: MessageEvent) {
       if (e.source !== window || !e.data || typeof e.data !== "object") return;
       if (e.data.type === "HIREDROP_LIVE_STATE" && e.data.ok) {
+        setBridgeAlive(true);
         setRunning(!!e.data.campaignRunning);
         const rp = e.data.reviewPending as ReviewPending | null;
         const fresh = rp && Date.now() - (rp.at || 0) < 30 * 60 * 1000 ? rp : null;
@@ -77,17 +87,66 @@ export default function TapView({ token: initialToken }: { token: string }) {
     const ask = () => window.postMessage({ type: "HIREDROP_GET_LIVE_STATE" }, "*");
     ask();
     const iv = setInterval(ask, 1500);
-    return () => { window.removeEventListener("message", onMsg); clearInterval(iv); };
+    // No answer in 2.5s ⇒ the extension isn't in this browser → remote mode.
+    const probe = setTimeout(() => setBridgeAlive((b) => (b === null ? false : b)), 2500);
+    return () => { window.removeEventListener("message", onMsg); clearInterval(iv); clearTimeout(probe); };
   }, []);
 
+  // REMOTE mode (phone): cards come from the backend relay the desktop extension
+  // publishes to. We render the card and send the decision; the computer submits.
+  useEffect(() => {
+    if (!remote) return;
+    let stopped = false;
+    const poll = async () => {
+      try {
+        const t = await getToken();
+        const r = await apiGet<{ review: (ReviewPending & { status?: string; created_at?: string }) | null }>(
+          "/review/pending",
+          t
+        );
+        if (stopped) return;
+        const rv = r.review;
+        if (rv && rv.status === "pending") {
+          const at = rv.created_at ? Date.parse(rv.created_at) : Date.now();
+          setPending((p) => (p && p.id === rv.id ? p : { ...rv, at }));
+          setActing(null);
+        } else {
+          setPending(null);
+        }
+      } catch { /* relay not deployed yet / offline — keep the idle screen */ }
+    };
+    poll();
+    const iv = setInterval(poll, 3000);
+    return () => { stopped = true; clearInterval(iv); };
+  }, [remote, getToken]);
+
+  // Mobile hand-off: email the desktop link (finish setup / start sessions there).
+  async function sendDesktopLink() {
+    if (linkState) return;
+    setLinkState("sending");
+    try {
+      const t = await getToken();
+      await apiPost("/profile/send-desktop-link", t, {});
+      setLinkState("sent");
+      setTimeout(() => setLinkState(null), 4000);
+    } catch {
+      setLinkState(null);
+    }
+  }
+
   // Applied count + jobs-ready from the backend.
+  const remoteRef = useRef(false);
+  remoteRef.current = remote;
   const refreshStats = useCallback(async () => {
     try {
       const t = await getToken();
       const s = await apiGet<{ today_applications: number; jobs_ready: number; running: boolean }>("/campaign/status", t);
       setApplied(s.today_applications);
       setJobsReady(s.jobs_ready);
-      setRunning((r) => r || s.running);
+      // Bridge mode: LIVE_STATE (1.5s) owns `running`, so only ever raise it here.
+      // Remote mode has no bridge — the backend is the ONLY truth, follow it both
+      // ways or the phone shows "preparing…" forever after the desktop stops.
+      setRunning((r) => (remoteRef.current ? s.running : r || s.running));
     } catch {}
   }, [getToken]);
 
@@ -146,11 +205,25 @@ export default function TapView({ token: initialToken }: { token: string }) {
 
   function decide(decision: "approve" | "skip") {
     if (!pending || acting) return;
+    const id = pending.id;
     setActing(decision);
-    window.postMessage({ type: "HIREDROP_REVIEW_DECISION", id: pending.id, decision }, "*");
-    setPending(null); // optimistic — the next card arrives via the bridge
-    setDrag(0); dragXRef.current = 0; setShowLetter(false);
-    if (decision === "approve") setApplied((n) => n + 1);
+    if (remote) {
+      // Phone → backend relay; the extension polls it and submits on the computer.
+      getToken()
+        .then((t) => apiPost("/review/decision", t, { id, decision: decision === "approve" ? "approved" : "skipped" }))
+        .catch(() => {});
+    } else {
+      window.postMessage({ type: "HIREDROP_REVIEW_DECISION", id, decision }, "*");
+    }
+    // Fly the card off in the decision's direction, then clear (unless a NEWER
+    // card already replaced it while the animation played).
+    setFly(decision === "approve" ? 1 : -1);
+    setTimeout(() => {
+      setFly(0);
+      setDrag(0); dragXRef.current = 0; setShowLetter(false);
+      setPending((p) => (p && p.id === id ? null : p));
+      if (decision === "approve") setApplied((n) => n + 1);
+    }, 280);
   }
 
   // ── Swipe (mobile + desktop drag): right = approve, left = skip. Direction-locked so
@@ -213,7 +286,9 @@ export default function TapView({ token: initialToken }: { token: string }) {
             <span className="text-text font-medium">{jobsReady}</span> in queue
           </div>
         )}
-        {(running || pending) && (
+        {/* Stop needs the in-browser bridge (backend stop alone doesn't halt the
+            extension) — in remote mode the honest answer is "stop it on the computer". */}
+        {(running || pending) && !remote && (
           <button onClick={stop} disabled={busy !== null}
             className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition
               bg-red/8 text-red border-red/20 hover:bg-red/15 disabled:opacity-50">
@@ -224,9 +299,42 @@ export default function TapView({ token: initialToken }: { token: string }) {
       </div>
 
       <div className="max-w-xl mx-auto">
+        {/* Honest remote framing: the computer is the engine, this phone is the remote. */}
+        {remote && (running || pending) && (
+          <div className="mb-4 flex items-start gap-2.5 px-4 py-3 rounded-xl bg-accent/5 border border-accent/20 text-xs text-text2">
+            <span aria-hidden className="text-base leading-none mt-0.5">💻</span>
+            <span>
+              <strong className="text-text font-medium">Prepared on your computer — you approve from here.</strong>{" "}
+              Keep the computer on with Chrome open; to stop the session, use the computer.
+            </span>
+          </div>
+        )}
         {/* Card wins whenever an application is waiting (even if the run was just
             stopped) → pending ? CARD : running ? PREPARING : IDLE. */}
         {!running && !pending ? (
+          remote ? (
+            /* ── Idle on the phone: sessions start on the computer; this screen is
+                  the remote that lights up when a card is ready. ── */
+            <div className="bg-surface border border-border rounded-2xl p-8 text-center flex flex-col items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-accent/10 text-accent flex items-center justify-center text-2xl" aria-hidden>
+                📱
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-text">Your phone is the remote</h2>
+                <p className="text-sm text-text2 mt-1 max-w-sm">
+                  Applications are prepared and submitted by Chrome on your <strong className="text-text">computer</strong>.
+                  Start a Tap session there — the moment a card is ready, it appears here for your Approve or Skip.
+                </p>
+                <p className="text-xs text-text2/60 mt-2">The computer must stay on with Chrome open.</p>
+              </div>
+              <button onClick={sendDesktopLink} disabled={linkState !== null}
+                className="mt-1 px-5 py-2.5 rounded-xl text-sm font-semibold border border-border bg-surface
+                  text-text hover:bg-surface2 hover:border-accent/40 disabled:opacity-60 transition">
+                {linkState === "sent" ? "Sent — check your inbox ✓" : linkState === "sending" ? "Sending…" : "📧 Email me the desktop link"}
+              </button>
+              {applied > 0 && <p className="text-xs text-text2/50">{applied} applied today</p>}
+            </div>
+          ) : (
           /* ── Idle: start the tap session ── */
           <div className="bg-surface border border-border rounded-2xl p-8 text-center flex flex-col items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-accent/10 text-accent flex items-center justify-center">
@@ -252,6 +360,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
             </button>
             {err && <p className="text-xs text-red">{err}</p>}
           </div>
+          )
         ) : pending ? (
           /* ── A prepared application is waiting for the tap ── */
           <div className="relative select-none">
@@ -267,9 +376,16 @@ export default function TapView({ token: initialToken }: { token: string }) {
               className="relative bg-surface border border-border rounded-2xl p-6 shadow-sm cursor-grab active:cursor-grabbing"
               style={{
                 touchAction: "pan-y",
-                transform: `translateX(${drag}px) rotate(${drag * 0.04}deg)`,
-                transition: drag === 0 ? "transform .25s ease" : "none",
-                animation: drag === 0 ? "tapIn .22s ease" : undefined,
+                // Decision → the card sails off-screen in that direction; otherwise
+                // it follows the finger (or sits home awaiting one).
+                transform: fly
+                  ? `translateX(${fly * 130}%) rotate(${fly * 16}deg)`
+                  : `translateX(${drag}px) rotate(${drag * 0.04}deg)`,
+                opacity: fly ? 0 : 1,
+                transition: fly
+                  ? "transform .28s cubic-bezier(.5,0,1,1), opacity .28s ease-in"
+                  : drag === 0 ? "transform .25s ease" : "none",
+                animation: !fly && drag === 0 ? "tapIn .22s ease" : undefined,
               }}
             >
               {/* Swipe-intent overlays */}
