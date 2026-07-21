@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const API_BASE =
@@ -32,33 +32,6 @@ export default function FitChoiceModal({
 }) {
   const [saving, setSaving] = useState<FitMode | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  // Optional salary filter — kept as raw input strings; empty = don't filter.
-  const [salMin, setSalMin] = useState("");
-  const [salMax, setSalMax] = useState("");
-  const [listedOnly, setListedOnly] = useState(false);
-  const salLoadedRef = useRef(false);
-
-  // Prefill from the profile once per mount — otherwise reopening the modal with
-  // empty fields would silently wipe a previously saved range on the next pick.
-  useEffect(() => {
-    if (!open || salLoadedRef.current) return;
-    salLoadedRef.current = true;
-    (async () => {
-      try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        const { data } = await supabase
-          .from("profiles")
-          .select("salary_min, salary_max, salary_listed_only")
-          .eq("user_id", user.id)
-          .single();
-        if (data?.salary_min) setSalMin(String(data.salary_min));
-        if (data?.salary_max) setSalMax(String(data.salary_max));
-        setListedOnly(!!data?.salary_listed_only);
-      } catch { /* columns may not exist yet — leave the fields empty */ }
-    })();
-  }, [open]);
 
   if (!open) return null;
 
@@ -78,22 +51,6 @@ export default function FitChoiceModal({
           cache: "no-store",
         });
         if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
-        // Salary is an OPTIONAL filter — fire-and-forget so it can never block
-        // Start (also tolerates a backend that doesn't have the endpoint yet).
-        const bound = (s: string) => {
-          const n = parseInt(s, 10);
-          return Number.isFinite(n) && n > 0 ? n : null;
-        };
-        fetch(`${API_BASE}/api/v1/profile/salary`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            salary_min: bound(salMin),
-            salary_max: bound(salMax),
-            salary_listed_only: listedOnly,
-          }),
-          cache: "no-store",
-        }).catch(() => {});
       }
       onConfirm(mode);
     } catch (e) {
@@ -142,38 +99,6 @@ export default function FitChoiceModal({
               )}
             </button>
           ))}
-        </div>
-
-        {/* Optional salary filter — saved together with the pick; empty = no filter */}
-        <div className="mt-4 pt-4 border-t border-border">
-          <p className="text-xs font-medium text-text2/70">
-            Salary range <span className="font-normal text-text2/45">(optional, annual USD)</span>
-          </p>
-          <div className="mt-2 flex items-center gap-2">
-            <div className="relative flex-1">
-              <span aria-hidden className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-text2/50">$</span>
-              <input type="number" inputMode="numeric" min={0} step={5000} placeholder="Min"
-                value={salMin} onChange={(e) => setSalMin(e.target.value)} disabled={!!saving}
-                className="w-full pl-6 pr-2.5 py-1.5 text-sm bg-surface2/40 border border-border rounded-lg
-                  text-text placeholder:text-text2/40 focus:outline-none focus:border-accent/50 transition" />
-            </div>
-            <span aria-hidden className="text-text2/40">—</span>
-            <div className="relative flex-1">
-              <span aria-hidden className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-text2/50">$</span>
-              <input type="number" inputMode="numeric" min={0} step={5000} placeholder="Max"
-                value={salMax} onChange={(e) => setSalMax(e.target.value)} disabled={!!saving}
-                className="w-full pl-6 pr-2.5 py-1.5 text-sm bg-surface2/40 border border-border rounded-lg
-                  text-text placeholder:text-text2/40 focus:outline-none focus:border-accent/50 transition" />
-            </div>
-          </div>
-          <button type="button" role="switch" aria-checked={listedOnly} disabled={!!saving}
-            onClick={() => setListedOnly((v) => !v)}
-            className="mt-2.5 flex items-center gap-2 text-xs text-text2 hover:text-text transition">
-            <span className={`relative w-7 h-4 rounded-full transition-colors ${listedOnly ? "bg-accent" : "bg-border"}`}>
-              <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-all ${listedOnly ? "left-3.5" : "left-0.5"}`} />
-            </span>
-            Only jobs that list salary
-          </button>
         </div>
 
         {err && <p className="text-xs text-red mt-3">{err}</p>}
