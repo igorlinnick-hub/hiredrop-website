@@ -6,6 +6,7 @@ import { ApiError, apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
 import FitChoiceModal from "@/components/dashboard/FitChoiceModal";
+import RadiusMap, { type RadiusMiles } from "@/components/dashboard/RadiusMap";
 
 // Platforms the extension can auto-apply on. Exactly one runs per campaign.
 const AUTO_APPLY_IDS = PLATFORMS.filter((p) => p.autoApply).map((p) => p.id);
@@ -22,7 +23,14 @@ interface Props {
   platforms: string[];
   onboardingComplete: boolean;
   hasResume: boolean;
+  // Optional filters (moved out of the launch modal onto the dashboard).
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  salaryListedOnly?: boolean;
+  searchRadiusMiles?: number | null;
 }
+
+const RADIUS_STEPS = [10, 25, 50, 100];
 
 type Busy = "find" | "start" | "stop" | null;
 
@@ -35,6 +43,10 @@ export default function QuickActions({
   platforms: initialPlatforms,
   onboardingComplete,
   hasResume,
+  salaryMin: initialSalaryMin,
+  salaryMax: initialSalaryMax,
+  salaryListedOnly: initialListedOnly,
+  searchRadiusMiles: initialRadius,
 }: Props) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -71,6 +83,15 @@ export default function QuickActions({
   // approve each before it sends. Drives the daily cap + cover-letter model + the extension's
   // review-stop. Editable right here so the choice sits next to Start.
   const [mode, setMode] = useState<"auto" | "tap">("auto");
+
+  // Optional filters (moved out of FitChoiceModal): salary range + non-remote radius.
+  // Salary kept as raw strings (empty = no filter). Prefilled from the profile.
+  const [salMin, setSalMin] = useState(initialSalaryMin != null ? String(initialSalaryMin) : "");
+  const [salMax, setSalMax] = useState(initialSalaryMax != null ? String(initialSalaryMax) : "");
+  const [listedOnly, setListedOnly] = useState(!!initialListedOnly);
+  const [radius, setRadius] = useState<RadiusMiles | null>(
+    initialRadius != null && RADIUS_STEPS.includes(initialRadius) ? (initialRadius as RadiusMiles) : null
+  );
 
   // Poll /campaign/status every 5s so extension-started campaigns reflect in the UI
   useEffect(() => {
@@ -205,6 +226,37 @@ export default function QuickActions({
     setPlatforms(next);
     void persistPlatforms(next);
   }
+
+  // ── optional filters: salary + radius (fire-and-forget, never block Start) ────
+  const boundSalary = (s: string) => {
+    const n = parseInt(s, 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  async function persistSalary(min: string, max: string, listed: boolean) {
+    try {
+      const t = await getFreshToken();
+      await apiPost("/profile/salary", t, {
+        salary_min: boundSalary(min),
+        salary_max: boundSalary(max),
+        salary_listed_only: listed,
+      });
+    } catch { /* optional filter — ignore */ }
+  }
+  function selectRadius(miles: RadiusMiles) {
+    setRadius(miles);
+    (async () => {
+      try {
+        const t = await getFreshToken();
+        await apiPost("/profile/radius", t, { search_radius_miles: miles });
+      } catch { /* optional filter — ignore */ }
+    })();
+  }
+  // Switching to a non-remote location with no radius yet → commit a sensible
+  // default (25 mi) so the highlighted chip reflects what's actually saved.
+  useEffect(() => {
+    if (location !== "remote" && radius == null) selectRadius(25);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location]);
 
   // ── save + execute ─────────────────────────────────────────────────────────
 
@@ -461,6 +513,36 @@ export default function QuickActions({
 
         <span className="text-border">·</span>
 
+        {/* Salary range (optional) — moved here from the launch modal. Empty = no
+            filter; saved fire-and-forget on blur / toggle so it never blocks Start. */}
+        <span className="text-[11px] font-medium text-text2/60">Salary</span>
+        <div className="flex items-center gap-1 rounded-full border border-border bg-surface pl-2 pr-1 py-0.5">
+          <span aria-hidden className="text-[11px] text-text2/50">$</span>
+          <input type="number" inputMode="numeric" min={0} step={5000} placeholder="Min"
+            value={salMin}
+            onChange={(e) => setSalMin(e.target.value)}
+            onBlur={() => persistSalary(salMin, salMax, listedOnly)}
+            className="w-[3.75rem] bg-transparent text-xs text-text placeholder:text-text2/40 outline-none tabular-nums" />
+          <span aria-hidden className="text-text2/30 text-xs">–</span>
+          <span aria-hidden className="text-[11px] text-text2/50">$</span>
+          <input type="number" inputMode="numeric" min={0} step={5000} placeholder="Max"
+            value={salMax}
+            onChange={(e) => setSalMax(e.target.value)}
+            onBlur={() => persistSalary(salMin, salMax, listedOnly)}
+            className="w-[3.75rem] bg-transparent text-xs text-text placeholder:text-text2/40 outline-none tabular-nums" />
+        </div>
+        <button type="button" role="switch" aria-checked={listedOnly}
+          onClick={() => { const next = !listedOnly; setListedOnly(next); persistSalary(salMin, salMax, next); }}
+          title="Only apply to jobs that list a salary"
+          className="flex items-center gap-1.5 text-[11px] text-text2 hover:text-text transition">
+          <span className={`relative w-7 h-4 rounded-full transition-colors ${listedOnly ? "bg-accent" : "bg-border"}`}>
+            <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-all ${listedOnly ? "left-3.5" : "left-0.5"}`} />
+          </span>
+          Listed only
+        </button>
+
+        <span className="text-border">·</span>
+
         <span className="text-[11px] font-medium text-text2/60 mr-0.5">Auto-apply on:</span>
 
         {/* Shine sweep across the active auto-apply chip (kept local — the chip
@@ -537,6 +619,19 @@ export default function QuickActions({
           );
         })}
       </div>
+
+      {/* Search radius — only for non-remote searches. Animated mini-map + a
+          10/25/50/100-mile selector; saved to profile.search_radius_miles. */}
+      {location !== "remote" && (
+        <div className="px-1 max-w-sm" style={{ animation: "hdRadiusIn .25s ease" }}>
+          <style>{`@keyframes hdRadiusIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}`}</style>
+          <RadiusMap
+            value={radius}
+            onChange={selectRadius}
+            areaLabel={LOCATIONS.find((l) => l.value === location)?.label}
+          />
+        </div>
+      )}
 
       {/* Error */}
       {err && <p className="text-xs text-red px-1">{err}</p>}
