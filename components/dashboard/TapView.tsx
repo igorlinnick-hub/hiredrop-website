@@ -54,6 +54,11 @@ export default function TapView({ token: initialToken }: { token: string }) {
   // off-screen in that direction before the next one lands.
   const [fly, setFly] = useState(0);
   const [linkState, setLinkState] = useState<null | "sending" | "sent">(null);
+  // Newest activity line + a 1s clock so the "Preparing" state shows what the
+  // extension is actually doing — and, if nothing happens for a while, says so
+  // instead of spinning forever (the #1 "тапалка is broken" complaint).
+  const [lastAct, setLastAct] = useState<{ message: string; timestamp: string; level: string } | null>(null);
+  const [nowTs, setNowTs] = useState(() => Date.now());
 
   const getToken = useCallback(async () => {
     const { data: { session } } = await createClient().auth.getSession();
@@ -158,6 +163,25 @@ export default function TapView({ token: initialToken }: { token: string }) {
     const iv = setInterval(refreshStats, 5000);
     return () => clearInterval(iv);
   }, [refreshStats]);
+
+  // Live activity — the newest backend log line + a 1s clock. Only while we're
+  // waiting for a card (running, nothing pending) so the "Preparing" state can
+  // show real progress and flag a stall.
+  const fetchLastAct = useCallback(async () => {
+    try {
+      const t = await getToken();
+      const rows = await apiGet<Array<{ message: string; timestamp: string; level: string }>>("/activity?limit=1", t);
+      if (rows && rows[0]) setLastAct(rows[0]);
+    } catch {}
+  }, [getToken]);
+
+  useEffect(() => {
+    if (!running || pending) return;
+    fetchLastAct();
+    const poll = setInterval(fetchLastAct, 3000);
+    const tick = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => { clearInterval(poll); clearInterval(tick); };
+  }, [running, pending, fetchLastAct]);
 
   async function ensureReadyThenFit() {
     if (busy) return;
@@ -498,20 +522,63 @@ export default function TapView({ token: initialToken }: { token: string }) {
             </div>
             <p className="text-center text-[11px] text-text2/40 mt-3">Swipe → to apply · ← to skip — or use the buttons</p>
           </div>
-        ) : (
+        ) : (() => {
           /* ── Running, preparing the next card ── */
+          // Seconds since the extension last logged anything. If it's been quiet
+          // for a while the run is likely stuck (a login wall / captcha / Cloudflare
+          // on the automation window) — say so instead of spinning forever.
+          const sinceAct = lastAct ? Math.max(0, Math.floor((nowTs - Date.parse(lastAct.timestamp)) / 1000)) : null;
+          const stalled = sinceAct != null && sinceAct > 75;
+          return (
           <div className="bg-surface border border-border rounded-2xl p-10 text-center flex flex-col items-center gap-4"
             style={{ minHeight: "min(52vh, 420px)", justifyContent: "center" }}>
-            <div className="w-9 h-9 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
-            <div>
-              <p className="text-sm font-semibold text-text">Preparing your next application…</p>
-              <p className="text-xs text-text2/60 mt-1 max-w-xs">
-                Finding a matching job and writing the cover letter. Its card lands here in a moment.
+            {stalled ? (
+              <div className="w-11 h-11 rounded-full bg-yellow/10 text-yellow flex items-center justify-center">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.5m0 3.5h.01M10.3 4.3 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z" />
+                </svg>
+              </div>
+            ) : (
+              <div className="w-9 h-9 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
+            )}
+
+            <div className="max-w-sm">
+              <p className="text-sm font-semibold text-text">
+                {stalled ? "This is taking longer than usual" : "Preparing your next application…"}
+              </p>
+              <p className="text-xs text-text2/60 mt-1">
+                {stalled
+                  ? "The automation window may be waiting on something — a login, a captcha, or a security check. Bring it to the front and clear whatever it's showing; we'll pick right back up."
+                  : "Finding a matching job and filling it in — cover letter and all. Its card lands here in a moment."}
               </p>
             </div>
+
+            {/* What the extension is actually doing, live — with a step timer */}
+            {lastAct && (
+              <div className="flex items-center gap-2 text-[11px] max-w-full">
+                <span className={[
+                  "truncate",
+                  lastAct.level === "error" ? "text-red" : lastAct.level === "warn" ? "text-yellow" : "text-text2",
+                ].join(" ")}>
+                  {lastAct.message}
+                </span>
+                {sinceAct != null && (
+                  <span className={`shrink-0 tabular-nums ${stalled ? "text-yellow" : "text-text2/40"}`}>· {sinceAct}s</span>
+                )}
+              </div>
+            )}
+
+            {stalled && (
+              <a href="/dashboard/campaign"
+                className="text-xs font-semibold text-accent hover:underline">
+                Open the live view to see what it's stuck on →
+              </a>
+            )}
+
             {applied > 0 && <p className="text-xs text-text2/50">{applied} approved so far</p>}
           </div>
-        )}
+          );
+        })()}
       </div>
 
       <StartReadinessModal
