@@ -6,6 +6,7 @@ import { ApiError, apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
 import FitChoiceModal from "@/components/dashboard/FitChoiceModal";
+import StartReadinessModal, { gateStart, type ReadinessCheck } from "@/components/dashboard/StartReadiness";
 import RadiusMap, { type RadiusMiles } from "@/components/dashboard/RadiusMap";
 
 // Platforms the extension can auto-apply on. Exactly one runs per campaign.
@@ -74,6 +75,10 @@ export default function QuickActions({
   // Launch-time fit picker (replaces the Settings Apply-Mode panel): Start opens it,
   // the pick saves apply_mode, then the campaign actually starts.
   const [fitOpen, setFitOpen] = useState(false);
+  // Start-readiness gate: failed preconditions shown as an "Almost there" checklist
+  // (readiness endpoint + local extension PING) instead of a Start that no-ops.
+  const [readyOpen, setReadyOpen] = useState(false);
+  const [readyChecks, setReadyChecks] = useState<ReadinessCheck[]>([]);
   const [err, setErr] = useState<string | null>(null);
   // Per-platform login state, reported by the extension (Indeed/ZipRecruiter).
   // Used only for the pre-flight guard in startCampaign — the visible connect
@@ -287,6 +292,34 @@ export default function QuickActions({
     } finally { setBusy(null); }
   }
 
+  // Click-Start gate: everything ready -> fit modal -> start; otherwise the checklist.
+  async function ensureReadyThenFit() {
+    if (busy) return;
+    try {
+      const t = await getFreshToken();
+      const r = await gateStart(t);
+      if (r.ready) { setFitOpen(true); return; }
+      setReadyChecks(r.checks);
+      setReadyOpen(true);
+    } catch {
+      // Gate itself failed (network) -> fail-open to the fit modal; the extension's
+      // own start guards still protect the actual run.
+      setFitOpen(true);
+    }
+  }
+
+  // Deep-link actions for the checklist rows.
+  function fixReadiness(fix: string) {
+    setReadyOpen(false);
+    if (fix === "keywords") { inputRef.current?.focus(); return; }
+    if (fix === "tap") { void goTap(); return; }
+    if (fix === "settings") { router.push("/dashboard/settings"); return; }
+    if (fix === "upgrade") { router.push("/dashboard/settings?tab=billing"); return; }
+    if (fix === "onboarding") { router.push("/onboarding"); return; }
+    if (fix === "campaign") { router.push("/dashboard/campaign"); return; }
+    if (fix === "extension") { router.push("/extension"); return; }
+  }
+
   async function startCampaign() {
     if (!onboardingComplete) { setErr("Complete your profile setup first — click \"Start setup\" above."); return; }
     if (!keywords.length) { setErr("Add at least one keyword"); inputRef.current?.focus(); return; }
@@ -477,7 +510,7 @@ export default function QuickActions({
             {/* Primary action is mode-aware: Auto starts the campaign here; Tap opens
                 the dedicated tap page (its own Start lives there). Prevents the "auto
                 started with tap mode" trap. */}
-            <button onClick={mode === "tap" ? goTap : () => setFitOpen(true)} disabled={busy !== null}
+            <button onClick={mode === "tap" ? goTap : ensureReadyThenFit} disabled={busy !== null}
               className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl
                 bg-accent text-white hover:bg-accent2 disabled:opacity-50 transition shadow-sm whitespace-nowrap">
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
@@ -637,6 +670,13 @@ export default function QuickActions({
       {err && <p className="text-xs text-red px-1">{err}</p>}
 
       {/* Launch-time fit picker → then start */}
+      <StartReadinessModal
+        open={readyOpen}
+        onClose={() => setReadyOpen(false)}
+        checks={readyChecks}
+        onFix={fixReadiness}
+      />
+
       <FitChoiceModal
         open={fitOpen}
         onClose={() => setFitOpen(false)}
