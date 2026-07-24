@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { redeemPromoCode } from "@/lib/promo";
+import { getStoredAttribution } from "@/lib/attribution";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 
@@ -45,6 +46,9 @@ export default function SignupForm() {
 
     // Sign up. The promo code rides along in metadata so onboarding can redeem it
     // even when email confirmation is on (no session yet at this point).
+    // First-touch attribution (utm_*/ref) rides the same way — /auth/callback
+    // persists it to profiles after the email is confirmed.
+    const attribution = getStoredAttribution();
     const { data: signUpData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -54,6 +58,7 @@ export default function SignupForm() {
           first_name: firstName,
           last_name: lastName,
           ...(promoCode ? { promo_code: promoCode } : {}),
+          ...(attribution ? { attribution } : {}),
         },
       },
     });
@@ -78,6 +83,15 @@ export default function SignupForm() {
     if (signUpData.session) {
       if (promoCode) {
         await redeemPromoCode(promoCode, signUpData.session.access_token);
+      }
+      // /auth/callback is never visited on this path — persist attribution
+      // directly. Guarded server-side by "attribution is null" (first touch).
+      if (attribution && signUpData.user) {
+        await supabase
+          .from("profiles")
+          .update({ attribution, attributed_at: new Date().toISOString() })
+          .eq("user_id", signUpData.user.id)
+          .is("attribution", null);
       }
       setLoading(false);
       router.push("/onboarding");
