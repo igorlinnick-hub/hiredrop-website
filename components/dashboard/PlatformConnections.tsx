@@ -18,7 +18,11 @@ import { PLATFORMS } from "@/lib/constants";
  */
 
 const CONNECTABLE = PLATFORMS.filter((p) => p.connectable);
-const PUBLIC = PLATFORMS.filter((p) => !p.connectable);
+// Auto-apply platforms that need NO account (Greenhouse today) — full-auto and
+// ready to run out of the box. They earn a real card, not a footnote.
+const READY_AUTO = PLATFORMS.filter((p) => !p.connectable && p.autoApply);
+// Everything else with no account = discovery-only public boards (Google, RemoteOK).
+const PUBLIC = PLATFORMS.filter((p) => !p.connectable && !p.autoApply);
 
 // Brand accent per platform for the monogram chip — keeps every row visually
 // identical in structure while still instantly recognizable. Hex ≈ brand color.
@@ -30,6 +34,7 @@ const BRAND: Record<string, string> = {
   monster: "#6e46ae",
   careerbuilder: "#0c6dbb",
   dice: "#eb1c26",
+  greenhouse: "#1f7a54",
 };
 
 type ConnStatus = "connected" | "logged_out" | undefined;
@@ -221,6 +226,39 @@ export default function PlatformConnections() {
               );
             })}
           </ul>
+
+          {/* No-account, full-auto platforms (Greenhouse): these need no connect
+              step and run zero-touch, so they get a real "ready" row rather than
+              being hidden in the footnote. */}
+          {READY_AUTO.map((p) => (
+            <div key={p.id}
+              className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border bg-green/[0.04]">
+              <div className="flex items-center gap-3 min-w-0">
+                <span aria-hidden
+                  className="flex items-center justify-center w-8 h-8 rounded-lg text-sm font-bold shrink-0 select-none"
+                  style={{ backgroundColor: `${BRAND[p.id] || "#1f7a54"}1a`, color: BRAND[p.id] || "#1f7a54" }}>
+                  {p.name[0]}
+                </span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-text">{p.name}</span>
+                    {p.beta && (
+                      <span className="px-1.5 py-px text-[9px] font-bold uppercase tracking-wide rounded-full
+                        bg-accent/12 text-accent leading-none">beta</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-text2/60 truncate">{p.description}</p>
+                </div>
+              </div>
+              <span className="flex items-center gap-1 text-xs font-semibold text-green shrink-0"
+                title="No account needed — HireDrop applies fully automatically. Just pick it at launch.">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+                Ready
+              </span>
+            </div>
+          ))}
 
           {/* Honest expectations line — the one-sentence deal we make with the
               user. Matches the stage badges above; don't soften it. */}
