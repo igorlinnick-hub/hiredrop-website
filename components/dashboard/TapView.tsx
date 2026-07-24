@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPoi
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import FitChoiceModal from "@/components/dashboard/FitChoiceModal";
+import StartReadinessModal, { gateStart, type ReadinessCheck } from "@/components/dashboard/StartReadiness";
 import { apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import type { ReviewPending } from "@/components/dashboard/ReviewPanel";
@@ -35,6 +36,8 @@ export default function TapView({ token: initialToken }: { token: string }) {
   const [jobsReady, setJobsReady] = useState(0);
   const [busy, setBusy] = useState<null | "start" | "stop">(null);
   const [fitOpen, setFitOpen] = useState(false); // launch-time fit picker before Start
+  const [readyOpen, setReadyOpen] = useState(false); // "Almost there" checklist gate
+  const [readyChecks, setReadyChecks] = useState<ReadinessCheck[]>([]);
   const [acting, setActing] = useState<null | "approve" | "skip">(null);
   const [drag, setDrag] = useState(0);            // live horizontal swipe offset (px)
   const [showLetter, setShowLetter] = useState(false);
@@ -155,6 +158,30 @@ export default function TapView({ token: initialToken }: { token: string }) {
     const iv = setInterval(refreshStats, 5000);
     return () => clearInterval(iv);
   }, [refreshStats]);
+
+  async function ensureReadyThenFit() {
+    if (busy) return;
+    try {
+      const t = await getToken();
+      const r = await gateStart(t);
+      if (r.ready) { setFitOpen(true); return; }
+      setReadyChecks(r.checks);
+      setReadyOpen(true);
+    } catch {
+      setFitOpen(true); // fail-open; the extension's start guards still protect the run
+    }
+  }
+
+  function fixReadiness(fix: string) {
+    setReadyOpen(false);
+    if (fix === "settings") { router.push("/dashboard/settings"); return; }
+    if (fix === "upgrade") { router.push("/dashboard/settings?tab=billing"); return; }
+    if (fix === "onboarding") { router.push("/onboarding"); return; }
+    if (fix === "campaign") { router.push("/dashboard/campaign"); return; }
+    if (fix === "extension") { router.push("/extension"); return; }
+    if (fix === "keywords") { router.push("/dashboard"); return; } // keywords live on the main screen
+    // "tap" can't fail here — this page IS tap mode.
+  }
 
   async function start() {
     if (busy) return;
@@ -350,7 +377,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
                 cover letter and all. You just Approve or Skip. Nothing sends until you tap Approve.
               </p>
             </div>
-            <button onClick={() => setFitOpen(true)} disabled={busy !== null}
+            <button onClick={ensureReadyThenFit} disabled={busy !== null}
               className="mt-2 flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold
                 bg-accent text-white hover:bg-accent2 disabled:opacity-50 transition shadow-sm">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -486,6 +513,13 @@ export default function TapView({ token: initialToken }: { token: string }) {
           </div>
         )}
       </div>
+
+      <StartReadinessModal
+        open={readyOpen}
+        onClose={() => setReadyOpen(false)}
+        checks={readyChecks}
+        onFix={fixReadiness}
+      />
 
       {/* Launch-time fit picker → then start the tap session */}
       <FitChoiceModal
