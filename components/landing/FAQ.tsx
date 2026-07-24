@@ -29,7 +29,11 @@ const QUESTIONS = [
   },
   {
     q: "How much does it cost?",
-    a: "$9/week or $29/month — the full product on both, cancel anytime. Weekly is great while you're actively searching; monthly is better value if it runs longer. Have a promo code? Enter it at signup for free access.",
+    a: "Your first 40 applications are free. After that it's $9/week or $29/month — the full product on both, cancel anytime. Weekly is great while you're actively searching; monthly is better value if it runs longer. Have a promo code? Enter it at signup for free access.",
+  },
+  {
+    q: "Is the free version really free?",
+    a: "Yes — your first 40 applications cost nothing and there's no credit card at signup. That's real auto-apply with AI cover letters, not a demo. The only paid-only feature is ATS resume tailoring. When the 40 are used, you subscribe to keep applying — so you only ever pay after you've watched it work.",
   },
 ];
 
