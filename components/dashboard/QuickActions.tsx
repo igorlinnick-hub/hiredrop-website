@@ -132,6 +132,11 @@ export default function QuickActions({
     if (next === mode) return;
     const prev = mode;
     setMode(next);
+    // Mirror goTap's HIREDROP_SET_REVIEW: switching to Auto must ALSO clear the
+    // extension's stored reviewMode. Without this, only Tap flipped it — so a
+    // user who ran Tap then switched to Auto kept reviewMode=true in the
+    // extension, and the campaign view showed the Tap review panel under Auto.
+    window.postMessage({ type: "HIREDROP_SET_REVIEW", on: next === "tap" }, "*");
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();

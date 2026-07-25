@@ -461,6 +461,22 @@ export default function CampaignView({ token: initialToken }: Props) {
         <div className="flex items-center gap-2 ml-1">
           <span className="inline-block w-2 h-2 rounded-full bg-green animate-pulse" />
           <span className="font-semibold text-text">Campaign Live</span>
+          {/* The mode this run is actually executing — same source (reviewMode) that
+              decides the panel on the right, so the header and panel can never
+              disagree. Removes the "I picked Auto but it says Tap" confusion. */}
+          <span
+            className={[
+              "inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border",
+              reviewMode
+                ? "bg-accent/10 text-accent border-accent/20"
+                : "bg-green/10 text-green border-green/20",
+            ].join(" ")}
+            title={reviewMode
+              ? "Tap mode — you approve each application before it's sent"
+              : "Auto mode — HireDrop fills and sends for you"}
+          >
+            {reviewMode ? "Tap" : "Auto"}
+          </span>
         </div>
 
         <div className="text-sm text-text2">
