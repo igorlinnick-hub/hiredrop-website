@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import FitChoiceModal from "@/components/dashboard/FitChoiceModal";
 import StartReadinessModal, { gateStart, type ReadinessCheck } from "@/components/dashboard/StartReadiness";
 import { apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
@@ -35,7 +34,6 @@ export default function TapView({ token: initialToken }: { token: string }) {
   const [applied, setApplied] = useState(0);
   const [jobsReady, setJobsReady] = useState(0);
   const [busy, setBusy] = useState<null | "start" | "stop">(null);
-  const [fitOpen, setFitOpen] = useState(false); // launch-time fit picker before Start
   const [readyOpen, setReadyOpen] = useState(false); // "Almost there" checklist gate
   const [readyChecks, setReadyChecks] = useState<ReadinessCheck[]>([]);
   const [acting, setActing] = useState<null | "approve" | "skip">(null);
@@ -203,16 +201,20 @@ export default function TapView({ token: initialToken }: { token: string }) {
     return () => { clearInterval(poll); clearInterval(tick); };
   }, [running, pending, fetchLastAct]);
 
-  async function ensureReadyThenFit() {
+  // Tap has NO fit-strictness picker (Broad/Standard/Precise). In tap YOU are the
+  // filter — a bad card is a 1-second swipe, so an AI pre-filter would just add cost
+  // and latency for nothing. Start goes straight to preparing cards once the run is
+  // ready (extension present etc.); a failed precondition still shows the checklist.
+  async function ensureReadyThenStart() {
     if (busy) return;
     try {
       const t = await getToken();
       const r = await gateStart(t);
-      if (r.ready) { setFitOpen(true); return; }
+      if (r.ready) { start(); return; }
       setReadyChecks(r.checks);
       setReadyOpen(true);
     } catch {
-      setFitOpen(true); // fail-open; the extension's start guards still protect the run
+      start(); // fail-open; the extension's start guards still protect the run
     }
   }
 
@@ -452,7 +454,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
                 cover letter and all. You just Approve or Skip. Nothing sends until you tap Approve.
               </p>
             </div>
-            <button onClick={ensureReadyThenFit} disabled={busy !== null}
+            <button onClick={ensureReadyThenStart} disabled={busy !== null}
               className="mt-2 flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold
                 bg-accent text-white hover:bg-accent2 disabled:opacity-50 transition shadow-sm">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -637,13 +639,6 @@ export default function TapView({ token: initialToken }: { token: string }) {
         onClose={() => setReadyOpen(false)}
         checks={readyChecks}
         onFix={fixReadiness}
-      />
-
-      {/* Launch-time fit picker → then start the tap session */}
-      <FitChoiceModal
-        open={fitOpen}
-        onClose={() => setFitOpen(false)}
-        onConfirm={() => { setFitOpen(false); start(); }}
       />
     </DashboardLayout>
   );
