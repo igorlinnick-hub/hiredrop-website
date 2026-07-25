@@ -58,7 +58,9 @@ export default function GradientCTA() {
           Ready to land your<br />next job?
         </h2>
         <p className="text-[#6B6B8A] mb-8">
-          The safe way to apply — $9/week or $29/month. Cancel anytime.
+          Your first 40 applications are free — no card required.
+          <br />
+          Then $9/week or $29/month. Cancel anytime.
         </p>
         <Link
           href="/signup"

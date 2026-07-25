@@ -74,7 +74,8 @@ export default function StepDone({ profile, resumeFile, onBack, onFinish, saving
       <motion.div variants={item} className="text-center space-y-3">
         <h2 className="text-2xl font-bold text-text">You&apos;re set up, {firstName}.</h2>
         <p className="text-sm text-text2 max-w-md mx-auto">
-          Here&apos;s exactly what HireDrop will do for you — safely, and always with you in control.
+          Here&apos;s exactly what HireDrop will do for you — safely, and always with you in control.{" "}
+          <span className="font-semibold text-accent">Your first 40 applications are free.</span>
         </p>
       </motion.div>
 

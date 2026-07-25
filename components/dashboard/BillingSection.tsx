@@ -12,6 +12,7 @@ const PLANS = [
 export default function BillingSection() {
   const supabase = createClient();
   const [tier, setTier] = useState<string | null>(null);
+  const [freeTaste, setFreeTaste] = useState<{ used: number; limit: number } | null>(null);
   const [busy, setBusy] = useState<string | null>(null); // "weekly" | "monthly" | "portal"
   const [error, setError] = useState("");
 
@@ -23,6 +24,9 @@ export default function BillingSection() {
         if (!session?.access_token) return;
         const stats = await apiGet<StatsResponse>("/stats", session.access_token);
         setTier(stats.tier);
+        if (stats.tier === "free" && typeof stats.free_limit === "number") {
+          setFreeTaste({ used: stats.free_used ?? 0, limit: stats.free_limit });
+        }
       } catch {
         // Non-fatal — buttons still work; we just can't highlight the current plan.
       }
@@ -72,9 +76,13 @@ export default function BillingSection() {
         <p className="text-sm text-text2 mt-1">
           {isAdmin
             ? "You're on the Admin plan — unlimited."
-            : tierLabel
-              ? `Current plan: ${tierLabel}.`
-              : "Choose a plan to unlock more applications and features."}
+            : freeTaste
+              ? freeTaste.used >= freeTaste.limit
+                ? `You've used all ${freeTaste.limit} free applications — pick a plan to keep applying.`
+                : `Free taste: ${freeTaste.used} of ${freeTaste.limit} free applications used. Subscribe to keep going past ${freeTaste.limit}.`
+              : tierLabel
+                ? `Current plan: ${tierLabel}.`
+                : "Choose a plan to unlock more applications and features."}
         </p>
       </div>
 

@@ -75,6 +75,10 @@ export interface StatsResponse {
   remaining_today: number;
   platform_counts: Record<string, number>;
   max_per_platform: number;
+  // Free taste (lifetime 40-app cap) — null for paid/admin tiers, and absent
+  // entirely from backends deployed before the feature; treat missing as null.
+  free_used?: number | null;
+  free_limit?: number | null;
 }
 
 export interface CampaignStatusResponse {
@@ -85,6 +89,8 @@ export interface CampaignStatusResponse {
   platform_counts: Record<string, number>;
   limit_per_platform: number;
   jobs_ready: number;
+  free_used?: number | null;
+  free_limit?: number | null;
 }
 
 export interface ApiJob {

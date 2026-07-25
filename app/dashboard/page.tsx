@@ -17,6 +17,7 @@ import PlatformsIndicator from "@/components/dashboard/PlatformsIndicator";
 import SetupChecklist from "@/components/dashboard/SetupChecklist";
 import MobileHandoff from "@/components/dashboard/MobileHandoff";
 import UsageBanner from "@/components/dashboard/UsageBanner";
+import FreeTastePaywall from "@/components/dashboard/FreeTastePaywall";
 
 export const metadata = {
   title: "Dashboard — HireDrop",
@@ -74,8 +75,22 @@ export default async function DashboardPage() {
     admin: "Admin",
   };
 
+  // Free taste exhausted → the paywall moment leads the page (free tier only;
+  // fields are null for paid tiers and absent on a pre-feature backend).
+  const freeTasteExhausted =
+    statsData?.tier === "free" &&
+    typeof statsData.free_limit === "number" &&
+    (statsData.free_used ?? 0) >= statsData.free_limit;
+
   return (
     <DashboardLayout>
+      {freeTasteExhausted && statsData && (
+        <FreeTastePaywall
+          freeUsed={statsData.free_used ?? statsData.free_limit ?? 0}
+          freeLimit={statsData.free_limit ?? 0}
+        />
+      )}
+
       <SetupChecklist
         onboardingComplete={!onboardingIncomplete}
         hasResume={!resumeMissing}
@@ -115,6 +130,8 @@ export default async function DashboardPage() {
             remainingToday={statsData.remaining_today}
             platformCounts={statsData.platform_counts}
             maxPerPlatform={statsData.max_per_platform}
+            freeUsed={statsData.free_used}
+            freeLimit={statsData.free_limit}
           />
         )}
 
