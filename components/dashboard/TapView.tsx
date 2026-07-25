@@ -49,7 +49,6 @@ export default function TapView({ token: initialToken }: { token: string }) {
   // installed in THIS browser. null = probing, false = no extension here (phone /
   // clean browser) → REMOTE mode: cards come from the backend relay instead.
   const [bridgeAlive, setBridgeAlive] = useState<boolean | null>(null);
-  const remote = bridgeAlive === false;
   // Fly-out direction after a decision (+1 approve / −1 skip) — the card sails
   // off-screen in that direction before the next one lands.
   const [fly, setFly] = useState(0);
@@ -59,6 +58,17 @@ export default function TapView({ token: initialToken }: { token: string }) {
   // instead of spinning forever (the #1 "тапалка is broken" complaint).
   const [lastAct, setLastAct] = useState<{ message: string; timestamp: string; level: string } | null>(null);
   const [nowTs, setNowTs] = useState(() => Date.now());
+  // The #1 real cause of "Start does nothing": the extension was reloaded but this
+  // TAB wasn't, so ping.js's context is invalidated and chrome.runtime.sendMessage
+  // silently throws. The bridge reports it (error: "context_invalidated"); when it
+  // does, we tell the user to reload the page instead of leaving them staring at idle.
+  const [staleCtx, setStaleCtx] = useState(false);
+  const startNetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Remote = no extension bridge in THIS browser (a phone). A stale desktop context
+  // also fails the bridge probe, but it isn't a phone — it's a desktop that needs a
+  // reload. staleCtx keeps it in desktop mode so the reconnect banner shows (not the
+  // "your phone is the remote" screen). Declared after staleCtx to avoid a TDZ.
+  const remote = bridgeAlive === false && !staleCtx;
 
   const getToken = useCallback(async () => {
     const { data: { session } } = await createClient().auth.getSession();
@@ -75,8 +85,12 @@ export default function TapView({ token: initialToken }: { token: string }) {
   useEffect(() => {
     function onMsg(e: MessageEvent) {
       if (e.source !== window || !e.data || typeof e.data !== "object") return;
+      // A "context invalidated" from ANY bridge message = the extension was updated
+      // but this tab wasn't reloaded. Flag it so we can prompt a reload.
+      if (e.data.error === "context_invalidated") setStaleCtx(true);
       if (e.data.type === "HIREDROP_LIVE_STATE" && e.data.ok) {
         setBridgeAlive(true);
+        setStaleCtx(false);
         setRunning(!!e.data.campaignRunning);
         const rp = e.data.reviewPending as ReviewPending | null;
         const fresh = rp && Date.now() - (rp.at || 0) < 30 * 60 * 1000 ? rp : null;
@@ -86,9 +100,15 @@ export default function TapView({ token: initialToken }: { token: string }) {
       // Extension's verdict on Start (it runs the backend + builds the queue). Surface
       // a refusal — e.g. "no zero-touch greenhouse jobs" — instead of sitting on idle.
       if (e.data.type === "HIREDROP_CAMPAIGN_STARTED") {
+        if (startNetRef.current) { clearTimeout(startNetRef.current); startNetRef.current = null; }
         setBusy(null);
-        if (e.data.ok) setRunning(true);
-        else setErr(e.data.message || e.data.error || "Couldn't start — try again in a moment.");
+        if (e.data.ok) { setRunning(true); setErr(null); }
+        else if (e.data.error === "context_invalidated") {
+          setStaleCtx(true);
+          setErr(null); // the reload banner says it better than a red line
+        } else {
+          setErr(e.data.message || e.data.error || "Couldn't start — try again in a moment.");
+        }
       }
     }
     window.addEventListener("message", onMsg);
@@ -234,8 +254,20 @@ export default function TapView({ token: initialToken }: { token: string }) {
       window.postMessage({ type: "HIREDROP_SET_REVIEW", on: true }, "*");
       window.postMessage({ type: "HIREDROP_START_CAMPAIGN", filters }, "*");
       startedRef.current = true;
-      // Safety net: if the extension never answers (absent/old), clear the spinner.
-      setTimeout(() => setBusy((b) => (b === "start" ? null : b)), 45000);
+      // Honest safety net: the extension normally confirms via HIREDROP_CAMPAIGN_STARTED
+      // in well under a second. If nothing comes back in 8s, it isn't listening — almost
+      // always a stale content-script context (extension updated, tab not reloaded) or a
+      // dead service worker. Say exactly that instead of silently returning to idle.
+      if (startNetRef.current) clearTimeout(startNetRef.current);
+      startNetRef.current = setTimeout(() => {
+        setBusy((b) => (b === "start" ? null : b));
+        setRunning((r) => {
+          if (!r) {
+            setErr("The HireDrop extension didn't respond. If you just updated it, reload this page (⌘R / Ctrl-R). Otherwise open chrome://extensions and make sure HireDrop is enabled.");
+          }
+          return r;
+        });
+      }, 8000);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
       setBusy(null);
@@ -311,6 +343,25 @@ export default function TapView({ token: initialToken }: { token: string }) {
   return (
     <DashboardLayout>
       <style>{`@keyframes tapIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}`}</style>
+
+      {/* Stale extension context — the single most common "Start does nothing" cause.
+          The extension was updated but this tab still runs the old content script, so
+          messages to it throw. Only a page reload reconnects it. */}
+      {staleCtx && (
+        <div className="mb-5 flex items-center gap-3 px-4 py-3 rounded-xl bg-yellow/10 border border-yellow/30">
+          <svg className="w-5 h-5 text-yellow shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <div className="text-sm flex-1">
+            <p className="font-semibold text-text">Reconnect the extension</p>
+            <p className="text-xs text-text2 mt-0.5">HireDrop was updated — this page is still on the old version. Reload to reconnect, then press Start.</p>
+          </div>
+          <button onClick={() => window.location.reload()}
+            className="shrink-0 px-3 py-1.5 text-xs font-semibold rounded-lg bg-yellow text-white hover:opacity-90 transition">
+            Reload page
+          </button>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
