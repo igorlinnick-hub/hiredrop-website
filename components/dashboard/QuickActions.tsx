@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { ApiError, apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
+import LaunchModal from "@/components/dashboard/LaunchModal";
+import FitModeControl from "@/components/dashboard/FitModeControl";
+import StartReadinessModal, { gateStart, type ReadinessCheck } from "@/components/dashboard/StartReadiness";
+import RadiusMap, { type RadiusMiles } from "@/components/dashboard/RadiusMap";
 
 // Platforms the extension can auto-apply on. Exactly one runs per campaign.
 const AUTO_APPLY_IDS = PLATFORMS.filter((p) => p.autoApply).map((p) => p.id);
@@ -21,7 +25,14 @@ interface Props {
   platforms: string[];
   onboardingComplete: boolean;
   hasResume: boolean;
+  // Optional filters (moved out of the launch modal onto the dashboard).
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  salaryListedOnly?: boolean;
+  searchRadiusMiles?: number | null;
 }
+
+const RADIUS_STEPS = [10, 25, 50, 100];
 
 type Busy = "find" | "start" | "stop" | null;
 
@@ -34,6 +45,10 @@ export default function QuickActions({
   platforms: initialPlatforms,
   onboardingComplete,
   hasResume,
+  salaryMin: initialSalaryMin,
+  salaryMax: initialSalaryMax,
+  salaryListedOnly: initialListedOnly,
+  searchRadiusMiles: initialRadius,
 }: Props) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -44,7 +59,7 @@ export default function QuickActions({
   // A campaign auto-applies on exactly ONE platform (the extension runs it to the
   // daily cap, then stops) — so auto-apply is a radio, not a multi-select. Discovery
   // platforms (Glassdoor/Google/…) are multi-select; they only fetch listings.
-  const [platforms, setPlatforms] = useState<string[]>(() => {
+  const [platforms] = useState<string[]>(() => {
     const stored = initialPlatforms.filter((x) => KNOWN_IDS.includes(x));
     const base = stored.length ? stored : ["indeed", "remoteok"];
     const selectedAuto = base.filter((x) => AUTO_APPLY_IDS.includes(x));
@@ -58,11 +73,31 @@ export default function QuickActions({
   const [kwInput, setKwInput] = useState("");
   const [campaignRunning, setCampaignRunning] = useState(initialCampaignRunning);
   const [busy, setBusy] = useState<Busy>(null);
+  // Launch-time fit picker (replaces the Settings Apply-Mode panel): Start opens it,
+  // the pick saves apply_mode, then the campaign actually starts.
+  const [launchOpen, setLaunchOpen] = useState(false);
+  // Start-readiness gate: failed preconditions shown as an "Almost there" checklist
+  // (readiness endpoint + local extension PING) instead of a Start that no-ops.
+  const [readyOpen, setReadyOpen] = useState(false);
+  const [readyChecks, setReadyChecks] = useState<ReadinessCheck[]>([]);
   const [err, setErr] = useState<string | null>(null);
   // Per-platform login state, reported by the extension (Indeed/ZipRecruiter).
   // Used only for the pre-flight guard in startCampaign — the visible connect
   // UI lives in the PlatformConnections panel, not in this row.
   const [connections, setConnections] = useState<Record<string, { status: string }>>({});
+  // Submit mode (profile.submit_mode): "auto" = fill + send for you; "tap" = you review +
+  // approve each before it sends. Drives the daily cap + cover-letter model + the extension's
+  // review-stop. Editable right here so the choice sits next to Start.
+  const [mode, setMode] = useState<"auto" | "tap">("auto");
+
+  // Optional filters (moved out of FitChoiceModal): salary range + non-remote radius.
+  // Salary kept as raw strings (empty = no filter). Prefilled from the profile.
+  const [salMin, setSalMin] = useState(initialSalaryMin != null ? String(initialSalaryMin) : "");
+  const [salMax, setSalMax] = useState(initialSalaryMax != null ? String(initialSalaryMax) : "");
+  const [listedOnly, setListedOnly] = useState(!!initialListedOnly);
+  const [radius, setRadius] = useState<RadiusMiles | null>(
+    initialRadius != null && RADIUS_STEPS.includes(initialRadius) ? (initialRadius as RadiusMiles) : null
+  );
 
   // Poll /campaign/status every 5s so extension-started campaigns reflect in the UI
   useEffect(() => {
@@ -78,6 +113,48 @@ export default function QuickActions({
     }, 5000);
     return () => clearInterval(poll);
   }, []);
+
+  // Load the saved submit mode so the toggle reflects the profile.
+  useEffect(() => {
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase.from("profiles").select("submit_mode").eq("user_id", user.id).single();
+        if (data?.submit_mode === "tap") setMode("tap");
+      } catch { /* ignore */ }
+    })();
+  }, []);
+
+  // Persist the mode to the profile (optimistic; revert on failure).
+  async function saveMode(next: "auto" | "tap") {
+    if (next === mode) return;
+    const prev = mode;
+    setMode(next);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setMode(prev); return; }
+      const { error } = await supabase.from("profiles").update({ submit_mode: next }).eq("user_id", user.id);
+      if (error) setMode(prev);
+    } catch { setMode(prev); }
+  }
+
+  // Tap is its OWN experience: selecting it persists the mode + the current platform
+  // selection, arms the extension's review-stop, and opens the dedicated /dashboard/tap
+  // page (a clean card stack) rather than the auto campaign flow.
+  async function goTap() {
+    setMode("tap");
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) await supabase.from("profiles").update({ submit_mode: "tap" }).eq("user_id", user.id);
+    } catch { /* non-blocking */ }
+    try { await savePrefs(); } catch { /* keep going — tap page falls back to profile */ }
+    window.postMessage({ type: "HIREDROP_SET_REVIEW", on: true }, "*");
+    router.push("/dashboard/tap");
+  }
 
   // Ask the extension for platform login state (via the ping.js bridge) on mount,
   // on tab focus (the user may have just logged in on another tab), and periodically.
@@ -103,9 +180,9 @@ export default function QuickActions({
     };
   }, []);
 
+  // The auto-apply target defaults to the first auto-apply platform on the profile;
+  // the launch modal lets the user pick today's target explicitly at Start.
   const selectedAutoApply = platforms.find((p) => AUTO_APPLY_IDS.includes(p)) || "indeed";
-  const selectedAutoName = PLATFORMS.find((p) => p.id === selectedAutoApply)?.name || selectedAutoApply;
-  const selectedAutoStatus = connections[selectedAutoApply]?.status;
 
   function connectPlatform(id: string) {
     // Open the platform's auth page directly (a click is a user gesture, so it isn't
@@ -132,29 +209,36 @@ export default function QuickActions({
     }
   }
 
-  // Persist the platform choice the moment it's clicked — without this a toggle
-  // only sticks if the user happens to press Find Jobs / Start Campaign after.
-  // Failures are silent: find/start re-save the full prefs anyway.
-  async function persistPlatforms(next: string[]) {
+  // ── optional filters: salary + radius (fire-and-forget, never block Start) ────
+  const boundSalary = (s: string) => {
+    const n = parseInt(s, 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  async function persistSalary(min: string, max: string, listed: boolean) {
     try {
       const t = await getFreshToken();
-      await apiPost("/profile/prefs", t, { keywords, location, job_type: jobType, platforms: next });
-    } catch { /* ignore — re-saved on find/start */ }
+      await apiPost("/profile/salary", t, {
+        salary_min: boundSalary(min),
+        salary_max: boundSalary(max),
+        salary_listed_only: listed,
+      });
+    } catch { /* optional filter — ignore */ }
   }
-
-  // Auto-apply is a radio: picking one auto-apply platform replaces the other.
-  function selectAutoApply(id: string) {
-    const next = [...platforms.filter((x) => !AUTO_APPLY_IDS.includes(x)), id];
-    setPlatforms(next);
-    void persistPlatforms(next);
+  function selectRadius(miles: RadiusMiles) {
+    setRadius(miles);
+    (async () => {
+      try {
+        const t = await getFreshToken();
+        await apiPost("/profile/radius", t, { search_radius_miles: miles });
+      } catch { /* optional filter — ignore */ }
+    })();
   }
-
-  // Discovery platforms are an independent multi-select (they only scrape listings).
-  function toggleDiscovery(id: string) {
-    const next = platforms.includes(id) ? platforms.filter((x) => x !== id) : [...platforms, id];
-    setPlatforms(next);
-    void persistPlatforms(next);
-  }
+  // Switching to a non-remote location with no radius yet → commit a sensible
+  // default (25 mi) so the highlighted chip reflects what's actually saved.
+  useEffect(() => {
+    if (location !== "remote" && radius == null) selectRadius(25);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location]);
 
   // ── save + execute ─────────────────────────────────────────────────────────
 
@@ -167,9 +251,13 @@ export default function QuickActions({
     throw new Error("Session expired — please log in again");
   }
 
-  async function savePrefs() {
+  async function savePrefsWith(plats: string[]) {
     const t = await getFreshToken();
-    await apiPost("/profile/prefs", t, { keywords, location, job_type: jobType, platforms });
+    await apiPost("/profile/prefs", t, { keywords, location, job_type: jobType, platforms: plats });
+  }
+
+  async function savePrefs() {
+    await savePrefsWith(platforms);
   }
 
   async function findJobs() {
@@ -185,23 +273,58 @@ export default function QuickActions({
     } finally { setBusy(null); }
   }
 
-  async function startCampaign() {
+  // Click-Start gate: everything ready -> LAUNCH modal (pick today's platform) -> start;
+  // otherwise the "Almost there" checklist. Fit strictness is a dashboard control now,
+  // not a per-start popup.
+  async function ensureReadyThenLaunch() {
+    if (busy) return;
+    try {
+      const t = await getFreshToken();
+      const r = await gateStart(t);
+      if (r.ready) { setLaunchOpen(true); return; }
+      setReadyChecks(r.checks);
+      setReadyOpen(true);
+    } catch {
+      setLaunchOpen(true); // fail-open; extension start guards remain the backstop
+    }
+  }
+
+  // Deep-link actions for the checklist rows.
+  function fixReadiness(fix: string) {
+    setReadyOpen(false);
+    if (fix === "keywords") { inputRef.current?.focus(); return; }
+    if (fix === "tap") { void goTap(); return; }
+    if (fix === "settings") { router.push("/dashboard/settings"); return; }
+    if (fix === "upgrade") { router.push("/dashboard/settings?tab=billing"); return; }
+    if (fix === "onboarding") { router.push("/onboarding"); return; }
+    if (fix === "campaign") { router.push("/dashboard/campaign"); return; }
+    if (fix === "extension") { router.push("/extension"); return; }
+  }
+
+  async function startCampaign(overridePlatform?: string) {
+    // Effective platform list: the launch-modal pick (auto-apply target) + any discovery
+    // sources already on the profile. Falls back to state when no override is passed.
+    const effPlatforms = overridePlatform
+      ? [overridePlatform, ...platforms.filter((x) => !AUTO_APPLY_IDS.includes(x))]
+      : platforms;
     if (!onboardingComplete) { setErr("Complete your profile setup first — click \"Start setup\" above."); return; }
     if (!keywords.length) { setErr("Add at least one keyword"); inputRef.current?.focus(); return; }
-    if (!platforms.length) { setErr("Select at least one platform"); return; }
+    if (!effPlatforms.length) { setErr("Select at least one platform"); return; }
     // Auto-apply needs a logged-in account on the target platform. If the extension
     // told us the user is signed out, open the login/sign-up page instead of starting
     // a campaign that would just stall at a login wall.
-    if (selectedAutoStatus === "logged_out") {
-      setErr(`Sign into ${selectedAutoName} first — we opened the login page. Log in or create an account, then start.`);
-      connectPlatform(selectedAutoApply);
+    const tgt = overridePlatform || selectedAutoApply;
+    if (connections[tgt]?.status === "logged_out") {
+      const tgtName = PLATFORMS.find((p) => p.id === tgt)?.name || tgt;
+      setErr(`Sign into ${tgtName} first — we opened the login page. Log in or create an account, then start.`);
+      connectPlatform(tgt);
       return;
     }
     setBusy("start"); setErr(null);
     try {
       const t = await getFreshToken();
-      await savePrefs();
-      await apiPost("/campaign/start", t, { keywords, platforms, location, job_type: jobType });
+      await savePrefsWith(effPlatforms);
+      await apiPost("/campaign/start", t, { keywords, platforms: effPlatforms, location, job_type: jobType });
 
       // Ask the extension to launch, and WAIT for its verdict: it can refuse (e.g.
       // pre-flight found the target platform logged out). Ignoring that left a
@@ -224,7 +347,7 @@ export default function QuickActions({
         window.addEventListener("message", onMsg);
         window.postMessage({
           type: "HIREDROP_START_CAMPAIGN",
-          filters: { keywords, platforms, location, job_type: jobType },
+          filters: { keywords, platforms: effPlatforms, location, job_type: jobType },
         }, "*");
         setTimeout(() => finish(null), 5000);
       });
@@ -346,7 +469,36 @@ export default function QuickActions({
                 text-text hover:bg-surface2 hover:border-accent/40 disabled:opacity-50 transition whitespace-nowrap">
               {busy === "find" ? "Scanning…" : "Find Jobs"}
             </button>
-            <button onClick={startCampaign} disabled={busy !== null}
+
+            {/* Submit-mode toggle — sits next to Start so the choice is obvious.
+                Auto = HireDrop fills + sends for you; Tap = you review + approve each. */}
+            <div className="inline-flex items-center rounded-xl border border-border bg-surface p-0.5"
+              role="group" aria-label="Submit mode">
+              <button type="button" onClick={() => saveMode("auto")} aria-pressed={mode === "auto"}
+                title="Auto — HireDrop fills and sends applications for you"
+                className={["flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition",
+                  mode === "auto" ? "bg-accent text-white shadow-sm" : "text-text2 hover:text-text"].join(" ")}>
+                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M11 2 4 11h4l-1 7 7-9h-4l1-7z" />
+                </svg>
+                Auto
+              </button>
+              <button type="button" onClick={goTap} aria-pressed={mode === "tap"}
+                title="Tap — open the tap page: review and approve each application on cards"
+                className={["flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition",
+                  mode === "tap" ? "bg-accent text-white shadow-sm" : "text-text2 hover:text-text"].join(" ")}>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <path d="M9 11V6a2 2 0 1 1 4 0v5m0-2a2 2 0 1 1 4 0v5a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-2.7l-2-3a2 2 0 0 1 3.3-2.2L7.5 13" />
+                </svg>
+                Tap
+              </button>
+            </div>
+
+            {/* Primary action is mode-aware: Auto starts the campaign here; Tap opens
+                the dedicated tap page (its own Start lives there). Prevents the "auto
+                started with tap mode" trap. */}
+            <button onClick={mode === "tap" ? goTap : ensureReadyThenLaunch} disabled={busy !== null}
               className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl
                 bg-accent text-white hover:bg-accent2 disabled:opacity-50 transition shadow-sm whitespace-nowrap">
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
@@ -354,7 +506,7 @@ export default function QuickActions({
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
                   clipRule="evenodd" />
               </svg>
-              {busy === "start" ? "Starting…" : "Start Campaign"}
+              {mode === "tap" ? "Open Tap" : (busy === "start" ? "Starting…" : "Start Campaign")}
             </button>
           </>
         )}
@@ -382,85 +534,74 @@ export default function QuickActions({
 
         <span className="text-border">·</span>
 
-        <span className="text-[11px] font-medium text-text2/60 mr-0.5">Auto-apply on:</span>
-
-        {/* Shine sweep across the active auto-apply chip (kept local — the chip
-            is the only user of it). */}
-        <style>{`@keyframes hdChipShine {
-          0% { transform: translateX(-110%); }
-          55%, 100% { transform: translateX(110%); }
-        }`}</style>
-
-        {/* Auto-apply platforms — a radio: exactly ONE platform runs a campaign,
-            so picking one deselects the other. The active chip is filled, glowing
-            and shimmering: this is THE control that decides where applications go.
-            Account connection (log in / sign up / live status) lives in the
-            PlatformConnections panel above; duplicating connect controls here
-            just cluttered the row. */}
-        {PLATFORMS.filter((p) => p.autoApply).map((p) => {
-          const on = platforms.includes(p.id);
-          return (
-            <button key={p.id} type="button"
-              onClick={() => selectAutoApply(p.id)}
-              title={on
-                ? `${p.name} — this campaign applies here`
-                : `Switch auto-apply to ${p.name} (one platform per campaign)`}
-              className={[
-                "relative overflow-hidden flex items-center gap-2 px-4 py-1.5 text-sm rounded-full border transition",
-                on
-                  ? "bg-accent text-white border-accent font-semibold shadow-[0_0_16px_rgba(108,92,231,0.45)]"
-                  : "bg-surface text-text2 border-border font-medium hover:border-accent/50 hover:text-text",
-              ].join(" ")}
-            >
-              {on && (
-                <span aria-hidden className="absolute inset-0 pointer-events-none"
-                  style={{
-                    animation: "hdChipShine 2.4s ease-in-out infinite",
-                    background: "linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.45) 50%, transparent 70%)",
-                  }} />
-              )}
-              {on && <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0" />}
-              {p.name}
-              {p.beta && (
-                <span className={[
-                  "text-[9px] font-semibold uppercase tracking-wide px-1.5 py-px rounded-full",
-                  on ? "bg-white/20 text-white" : "bg-accent/10 text-accent",
-                ].join(" ")}>
-                  beta
-                </span>
-              )}
-            </button>
-          );
-        })}
+        {/* Salary range (optional) — moved here from the launch modal. Empty = no
+            filter; saved fire-and-forget on blur / toggle so it never blocks Start. */}
+        <span className="text-[11px] font-medium text-text2/60">Salary</span>
+        <div className="flex items-center gap-1 rounded-full border border-border bg-surface pl-2 pr-1 py-0.5">
+          <span aria-hidden className="text-[11px] text-text2/50">$</span>
+          <input type="number" inputMode="numeric" min={0} step={5000} placeholder="Min"
+            value={salMin}
+            onChange={(e) => setSalMin(e.target.value)}
+            onBlur={() => persistSalary(salMin, salMax, listedOnly)}
+            className="w-[3.75rem] bg-transparent text-xs text-text placeholder:text-text2/40 outline-none tabular-nums" />
+          <span aria-hidden className="text-text2/30 text-xs">–</span>
+          <span aria-hidden className="text-[11px] text-text2/50">$</span>
+          <input type="number" inputMode="numeric" min={0} step={5000} placeholder="Max"
+            value={salMax}
+            onChange={(e) => setSalMax(e.target.value)}
+            onBlur={() => persistSalary(salMin, salMax, listedOnly)}
+            className="w-[3.75rem] bg-transparent text-xs text-text placeholder:text-text2/40 outline-none tabular-nums" />
+        </div>
+        <button type="button" role="switch" aria-checked={listedOnly}
+          onClick={() => { const next = !listedOnly; setListedOnly(next); persistSalary(salMin, salMax, next); }}
+          title="Only apply to jobs that list a salary"
+          className="flex items-center gap-1.5 text-[11px] text-text2 hover:text-text transition">
+          <span className={`relative w-7 h-4 rounded-full transition-colors ${listedOnly ? "bg-accent" : "bg-border"}`}>
+            <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-all ${listedOnly ? "left-3.5" : "left-0.5"}`} />
+          </span>
+          Listed only
+        </button>
 
         <span className="text-border">·</span>
 
-        <span className="text-[11px] font-medium text-text2/60 mr-0.5">Find jobs from:</span>
-
-        {/* Discovery-only platforms — the backend can fetch their listings. Boards
-            that are connectable but not yet fetchable (Monster/CareerBuilder/Dice)
-            live only in the connections panel until their scraper/filler lands. */}
-        {PLATFORMS.filter((p) => p.discovery && !p.autoApply).map((p) => {
-          const on = platforms.includes(p.id);
-          return (
-            <button key={p.id} type="button"
-              onClick={() => toggleDiscovery(p.id)}
-              title={p.description + " — no account needed, just scrapes listings"}
-              className={[
-                "px-3.5 py-1.5 text-xs font-medium rounded-full border transition",
-                on
-                  ? "bg-surface2 text-text border-border/80"
-                  : "bg-surface text-text2/50 border-border/50 hover:border-border hover:text-text2",
-              ].join(" ")}
-            >
-              {p.name}
-            </button>
-          );
-        })}
+        {/* Fit strictness lives here now (Igor 2026-07-16) — a calm, persistent
+            dashboard control instead of a per-launch popup. The platform list left
+            this row entirely; Start asks "where should we apply today?" at launch. */}
+        <FitModeControl />
       </div>
+
+      {/* Search radius — only for non-remote searches. Animated mini-map + a
+          10/25/50/100-mile selector; saved to profile.search_radius_miles. */}
+      {location !== "remote" && (
+        <div className="px-1 max-w-sm" style={{ animation: "hdRadiusIn .25s ease" }}>
+          <style>{`@keyframes hdRadiusIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}`}</style>
+          <RadiusMap
+            value={radius}
+            onChange={selectRadius}
+            areaLabel={LOCATIONS.find((l) => l.value === location)?.label}
+          />
+        </div>
+      )}
 
       {/* Error */}
       {err && <p className="text-xs text-red px-1">{err}</p>}
+
+      {/* Start flow: readiness checklist if something's missing, else the launch
+          platform picker → startCampaign(picked). */}
+      <StartReadinessModal
+        open={readyOpen}
+        onClose={() => setReadyOpen(false)}
+        checks={readyChecks}
+        onFix={fixReadiness}
+      />
+
+      <LaunchModal
+        open={launchOpen}
+        current={selectedAutoApply}
+        connections={connections}
+        onClose={() => setLaunchOpen(false)}
+        onLaunch={(platformId) => { setLaunchOpen(false); void startCampaign(platformId); }}
+      />
     </div>
   );
 }

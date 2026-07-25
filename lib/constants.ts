@@ -16,11 +16,12 @@ export const PLATFORMS: Platform[] = [
   { id: "ziprecruiter", name: "ZipRecruiter", status: "active", requiresLogin: true, autoApply: true, connectable: true, stage: "auto",
     loginUrl: "https://www.ziprecruiter.com/authn/login?realm=candidates",
     description: "Top US job board with Quick Apply. Extension auto-applies on your behalf." },
-  // Greenhouse ATS — pool-driven full-auto (extension walks saved zero-touch apply URLs;
-  // driver + discovery + filler shipped in jobflow PRs #34/#35). Apply pages are public,
-  // so no account/login and no connect row. Beta until the live E2E run is validated.
+  // Greenhouse — company ATS (not a board you log into). The campaign walks saved
+  // apply URLs from the job pool and fills+submits directly; it's near-captcha-free
+  // (Enterprise invisible reCAPTCHA) so it runs full-auto with no account to connect.
+  // No loginUrl / not connectable on purpose. Marked beta until live-validated.
   { id: "greenhouse", name: "Greenhouse", status: "active", requiresLogin: false, autoApply: true, beta: true, stage: "auto",
-    description: "Employer ATS — applies directly on company career pages. No account needed." },
+    description: "Apply on company career sites (Greenhouse ATS) — near-captcha-free, no account needed." },
   // Discovery platforms — their listings feed the board; applications happen on
   // the employer's ATS (Greenhouse/Lever), where we fill and the user finishes.
   { id: "glassdoor", name: "Glassdoor", status: "active", requiresLogin: true, connectable: true, discovery: true, stage: "semi",

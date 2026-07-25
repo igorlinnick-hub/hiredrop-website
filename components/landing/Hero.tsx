@@ -94,6 +94,16 @@ export default function Hero() {
               </a>
             </motion.div>
 
+            {/* Mobile visitors: set the desktop expectation BEFORE signup, not after.
+                Phone = setup + approvals; the applying itself runs in desktop Chrome. */}
+            <motion.p variants={fadeUp} className="sm:hidden -mt-6 mb-8 text-[13px] text-[#6B6B8A] flex items-start gap-2">
+              <span aria-hidden>📱</span>
+              <span>
+                Set up from your phone in 2 minutes — applications run in Chrome on your computer,
+                and you approve them from anywhere.
+              </span>
+            </motion.p>
+
             {/* Trust row — honest, ban-safe (no fabricated counts) */}
             <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-x-5 gap-y-2">
               {["From your own browser", "You review first", "Cancel anytime"].map((t) => (

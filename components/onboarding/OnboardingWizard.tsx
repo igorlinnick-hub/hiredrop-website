@@ -12,6 +12,7 @@ import StepPlatforms from "./StepPlatforms";
 import StepResume from "./StepResume";
 import StepATSCheck from "./StepATSCheck";
 import StepWritingStyle from "./StepWritingStyle";
+import StepPlan from "./StepPlan";
 import StepDone from "./StepDone";
 import type { UserProfile } from "@/lib/types";
 
@@ -23,7 +24,8 @@ const STEPS = [
   { id: 5, title: "Resume" },
   { id: 6, title: "ATS" },
   { id: 7, title: "Style" },
-  { id: 8, title: "Done" },
+  { id: 8, title: "Plan" },
+  { id: 9, title: "Done" },
 ];
 
 const initialProfile: UserProfile = {
@@ -272,6 +274,9 @@ export default function OnboardingWizard() {
             <StepWritingStyle profile={profile} updateProfile={updateProfile} onNext={next} onBack={back} />
           )}
           {step === 8 && (
+            <StepPlan onNext={next} onBack={back} />
+          )}
+          {step === 9 && (
             <>
               {saveError && (
                 <div className="mb-4 p-3 rounded-lg bg-red/10 border border-red/20 text-red text-sm">

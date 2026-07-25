@@ -13,8 +13,9 @@ import StatsCards from "@/components/dashboard/StatsCards";
 import JobsTable from "@/components/dashboard/JobsTable";
 import ApplicationHistory from "@/components/dashboard/ApplicationHistory";
 import QuickActions from "@/components/dashboard/QuickActions";
-import PlatformConnections from "@/components/dashboard/PlatformConnections";
+import PlatformsIndicator from "@/components/dashboard/PlatformsIndicator";
 import SetupChecklist from "@/components/dashboard/SetupChecklist";
+import MobileHandoff from "@/components/dashboard/MobileHandoff";
 import UsageBanner from "@/components/dashboard/UsageBanner";
 
 export const metadata = {
@@ -32,7 +33,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("onboarding_completed, name, resume_url, keywords, location, job_type, platforms")
+    .select("onboarding_completed, name, resume_url, keywords, location, job_type, platforms, salary_min, salary_max, salary_listed_only, search_radius_miles")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -81,6 +82,9 @@ export default async function DashboardPage() {
         hasKeywords={hasKeywords}
       />
 
+      {/* Phone visitors: honest hand-off — setup works here, applying runs on the computer */}
+      <MobileHandoff campaignRunning={campaignRunning} />
+
       <QuickActions
         token={token}
         campaignRunning={campaignRunning}
@@ -90,9 +94,15 @@ export default async function DashboardPage() {
         platforms={profile?.platforms ?? []}
         onboardingComplete={!onboardingIncomplete}
         hasResume={!resumeMissing}
+        salaryMin={profile?.salary_min ?? null}
+        salaryMax={profile?.salary_max ?? null}
+        salaryListedOnly={profile?.salary_listed_only ?? false}
+        searchRadiusMiles={profile?.search_radius_miles ?? null}
       />
 
-      <PlatformConnections />
+      {/* Connections moved to their own /dashboard/platforms tab — here just a
+          compact status pill so the dashboard leads with the filters + campaign. */}
+      <PlatformsIndicator />
 
       <div className="space-y-6">
         {/* Subscription tier + daily usage */}
