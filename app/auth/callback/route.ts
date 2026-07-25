@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { ATTRIBUTION_COOKIE, parseAttributionCookie } from "@/lib/attribution";
 import type { EmailOtpType } from "@supabase/supabase-js";
 
 export async function GET(request: NextRequest) {
@@ -57,6 +58,26 @@ export async function GET(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.redirect(`${origin}/login`);
+  }
+
+  // Persist first-touch attribution (utm/ref params). Sources, in priority order:
+  // signup metadata (email flow) → hd_attribution cookie (Google OAuth flow,
+  // where no client code runs before this route). Guarded by "attribution is
+  // null" so an existing user's re-login never rewrites their first touch.
+  // Best-effort: an error here must never break the login redirect.
+  try {
+    const attribution =
+      (user.user_metadata?.attribution as Record<string, unknown> | undefined) ??
+      parseAttributionCookie(request.cookies.get(ATTRIBUTION_COOKIE)?.value);
+    if (attribution) {
+      await supabase
+        .from("profiles")
+        .update({ attribution, attributed_at: new Date().toISOString() })
+        .eq("user_id", user.id)
+        .is("attribution", null);
+    }
+  } catch {
+    // ignore — attribution is analytics, not auth
   }
 
   let destination: string;
