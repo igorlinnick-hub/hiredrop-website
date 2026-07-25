@@ -93,6 +93,7 @@ export default function ResumeATSPanel() {
   const [answers, setAnswers] = useState<QA[]>([]);
   const [generating, setGenerating] = useState(false);
   const [loadingView, setLoadingView] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -260,6 +261,28 @@ export default function ResumeATSPanel() {
     setLoadingView(false);
   }
 
+  // Fetch a signed URL for the given resume file and trigger a direct download.
+  async function downloadFile(endpoint: string, filename: string) {
+    setDownloading(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      const result = await apiCall(endpoint, token);
+      if (!result.url) throw new Error("File not available");
+      const a = document.createElement("a");
+      a.href = result.url;
+      a.download = filename;
+      a.target = "_blank";
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Download failed");
+    }
+    setDownloading(false);
+  }
+
   async function handleApprove() {
     setApproving(true);
     setError(null);
@@ -332,28 +355,55 @@ export default function ResumeATSPanel() {
 
       {/* What employers actually receive — single source of truth */}
       {hasResume && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-accent/5 border border-accent/20">
-          <div className="w-9 h-9 rounded-lg bg-accent/15 flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+        <div className="p-4 rounded-xl bg-accent/5 border border-accent/20">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-accent/15 flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-text2">Base resume for applications</p>
+              <p className="text-sm font-semibold text-text">
+                {data.atsApproved ? "Your ATS-optimized resume" : "Your original resume"}
+              </p>
+              <p className="text-xs text-text2 mt-0.5">Tailored to strong-match roles when you apply.</p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={data.atsApproved ? handleViewATS : handleViewOriginal}
+              disabled={loadingView}
+            >
+              {loadingView ? "Loading…" : "View"}
+            </Button>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-text2">Sent to employers</p>
-            <p className="text-sm font-semibold text-text">
-              {data.atsApproved
-                ? "Your ATS-optimized resume"
-                : "Your original resume — already ATS-ready"}
-            </p>
+
+          {/* Direct downloads */}
+          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-accent/15">
+            <span className="text-xs text-text2">{downloading ? "Preparing…" : "Download"}</span>
+            <button
+              onClick={() =>
+                downloadFile(
+                  data.atsApproved ? "/profile/ats/resume/url" : "/profile/resume/url",
+                  data.atsApproved ? "resume_ats.pdf" : "resume.pdf"
+                )
+              }
+              disabled={downloading}
+              className="text-sm font-medium text-accent hover:underline disabled:opacity-50"
+            >
+              PDF
+            </button>
+            {hasATS && (
+              <button
+                onClick={() => downloadFile("/profile/ats/resume/docx-url", "resume_ats.docx")}
+                disabled={downloading}
+                className="text-sm font-medium text-accent hover:underline disabled:opacity-50"
+              >
+                Word (.docx)
+              </button>
+            )}
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={data.atsApproved ? handleViewATS : handleViewOriginal}
-            disabled={loadingView}
-          >
-            {loadingView ? "Loading…" : "View"}
-          </Button>
         </div>
       )}
 
@@ -426,8 +476,8 @@ export default function ResumeATSPanel() {
           <p className="text-sm text-text2">
             {hasATS
               ? data.atsApproved
-                ? "This clean version is being sent to employers."
-                : "Generated. Activate it to start using it."
+                ? "This clean version is your baseline — then tailored to each job when you apply."
+                : "Generated. Activate it to make it your baseline."
               : "We'll ask you a few quick questions, then generate a clean version."}
           </p>
 

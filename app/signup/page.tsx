@@ -9,7 +9,7 @@ export default function SignupPage() {
   return (
     <AuthLayout
       title="Create your account"
-      subtitle="Start automating your job search — the safe way"
+      subtitle="Your first 40 applications are free — no card required"
       footerText="Already have an account?"
       footerLinkText="Sign in"
       footerLinkHref="/login"

@@ -58,7 +58,7 @@ export default function Hero() {
               safe. You review before anything sends.
             </motion.p>
 
-            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-start gap-4 mb-10">
+            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-start gap-4 mb-3">
               <Link
                 href="/signup"
                 className="w-full sm:w-auto bg-[#6C5CE7] text-white font-semibold px-8 py-3.5 rounded-[10px] text-lg shadow-lg inline-block text-center"
@@ -93,6 +93,12 @@ export default function Hero() {
                 See How It Works
               </a>
             </motion.div>
+
+            {/* Free-taste microcopy — the conversion nudge lives right under the CTA */}
+            <motion.p variants={fadeUp} className="text-sm text-[#6B6B8A] mb-10">
+              <span className="font-semibold text-[#6C5CE7]">First 40 applications free.</span>{" "}
+              No credit card — subscribe only after you&apos;ve seen it work.
+            </motion.p>
 
             {/* Mobile visitors: set the desktop expectation BEFORE signup, not after.
                 Phone = setup + approvals; the applying itself runs in desktop Chrome. */}

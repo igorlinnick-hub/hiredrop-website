@@ -34,11 +34,34 @@ export default function Pricing() {
       <div className="max-w-4xl mx-auto">
         <ScrollReveal className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-[#1A1A2E] pb-1" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            Pay while you search
+            Try it free. Pay while you search.
           </h2>
           <p className="mt-4 text-lg text-[#6B6B8A] max-w-xl mx-auto">
-            One simple plan — weekly or monthly. Full product, no free-trial games. Cancel anytime in one click.
+            Your first 40 applications are free — no card, no catch. After that, one simple
+            plan, weekly or monthly. Cancel anytime in one click.
           </p>
+        </ScrollReveal>
+
+        {/* Free taste — the top of the funnel, deliberately NOT styled as a third plan */}
+        <ScrollReveal>
+          <div className="max-w-2xl mx-auto mb-8 rounded-2xl border-2 border-dashed border-accent/40 bg-white p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center gap-5">
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-accent uppercase tracking-wide">Start here — free</p>
+              <p className="mt-1.5 text-2xl font-bold text-[#1A1A2E]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                Your first 40 applications, on us
+              </p>
+              <p className="mt-2 text-sm text-[#6B6B8A]">
+                Full auto-apply + AI cover letters. No credit card. See real applications go
+                out before you spend a dollar. (ATS resume tailoring stays a paid feature.)
+              </p>
+            </div>
+            <Link
+              href="/signup"
+              className="shrink-0 bg-accent hover:bg-accent-hover text-white font-semibold px-7 py-3 rounded-[10px] text-center shadow-lg shadow-accent/25 transition"
+            >
+              Apply to 40 jobs free
+            </Link>
+          </div>
         </ScrollReveal>
 
         {/* Two plans */}

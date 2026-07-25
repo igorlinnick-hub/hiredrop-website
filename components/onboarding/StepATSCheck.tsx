@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const API_BASE =
@@ -24,6 +24,7 @@ async function apiPost(path: string, token: string, body?: unknown) {
 
 type State =
   | "no_resume"   // resume skipped — nothing to check
+  | "intro"       // resume present — offer an optional check (no auto backend call)
   | "checking"
   | "pass"        // score >= 80, no action needed
   | "questions"   // score < 80, collecting user answers
@@ -80,7 +81,7 @@ function ScoreRing({ score }: { score: number }) {
 
 export default function StepATSCheck({ onNext, onBack, hasResume = true }: Props) {
   const supabase = createClient();
-  const [state, setState] = useState<State>(hasResume ? "checking" : "no_resume");
+  const [state, setState] = useState<State>(hasResume ? "intro" : "no_resume");
   const [checkResult, setCheckResult] = useState<CheckResult | null>(null);
   const [questions, setQuestions] = useState<string[]>([]);
   const [answers, setAnswers] = useState<QA[]>([]);
@@ -94,40 +95,38 @@ export default function StepATSCheck({ onNext, onBack, hasResume = true }: Props
     return session.access_token;
   }, [supabase]);
 
-  useEffect(() => {
-    if (!hasResume) return; // no resume uploaded — skip the backend check entirely
-    async function run() {
-      try {
-        const token = await getToken();
-        const result = await apiPost("/profile/ats/check", token);
-        setCheckResult(result);
+  // Opt-in: the backend ATS check (a paid Claude call) only runs when the user
+  // asks for it — never automatically on mount. Saves cost and avoids an
+  // unwanted step for people who don't care about ATS.
+  const runCheck = useCallback(async () => {
+    setState("checking");
+    setError(null);
+    try {
+      const token = await getToken();
+      const result = await apiPost("/profile/ats/check", token);
+      setCheckResult(result);
 
-        // Backend decides: no design blockers AND score over threshold.
-        // Fall back to score-only if an older backend doesn't return `passes`.
-        const ok = typeof result.passes === "boolean"
-          ? result.passes
-          : result.score >= ATS_PASS_THRESHOLD;
-        if (ok) {
-          setState("pass");
-        } else {
-          // Load questions in parallel
-          try {
-            const qResult = await apiPost("/profile/ats/questions", token);
-            const qs: string[] = qResult.questions || [];
-            setQuestions(qs);
-            setAnswers(qs.map((q: string) => ({ question: q, answer: "" })));
-          } catch {
-            setQuestions([]);
-          }
-          setState("questions");
+      const ok = typeof result.passes === "boolean"
+        ? result.passes
+        : result.score >= ATS_PASS_THRESHOLD;
+      if (ok) {
+        setState("pass");
+      } else {
+        try {
+          const qResult = await apiPost("/profile/ats/questions", token);
+          const qs: string[] = qResult.questions || [];
+          setQuestions(qs);
+          setAnswers(qs.map((q: string) => ({ question: q, answer: "" })));
+        } catch {
+          setQuestions([]);
         }
-      } catch (e: unknown) {
-        setError(e instanceof Error ? e.message : "Check failed");
-        setState("questions"); // still show continue option
+        setState("questions");
       }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Check failed");
+      setState("questions"); // still show continue option
     }
-    run();
-  }, [getToken, hasResume]);
+  }, [getToken]);
 
   function updateAnswer(i: number, value: string) {
     setAnswers(prev => prev.map((a, idx) => idx === i ? { ...a, answer: value } : a));
@@ -196,6 +195,44 @@ export default function StepATSCheck({ onNext, onBack, hasResume = true }: Props
           >
             Continue
           </button>
+          <button onClick={onBack} className="text-xs text-text2 hover:text-text transition">Back</button>
+        </div>
+      )}
+
+      {/* ── Intro (optional check, no auto backend call) ── */}
+      {state === "intro" && (
+        <div className="flex flex-col items-center text-center gap-5 py-8">
+          <div className="w-14 h-14 rounded-full bg-accent-light flex items-center justify-center">
+            <svg className="w-7 h-7 text-accent" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 3h8l4 4v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1Z" />
+              <circle cx="11" cy="12" r="2.5" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 16l2.5 2.5" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-xl font-bold text-text">Check your resume against ATS?</p>
+            <p className="text-sm text-text2 mt-1 max-w-sm mx-auto">
+              Optional — see how your resume scores with the automated filters employers use, and
+              generate a clean version if needed. You can also do this anytime in Settings.
+            </p>
+            <p className="text-xs text-text2 mt-2 max-w-sm mx-auto">
+              Either way, when you apply we tailor your resume to each job automatically.
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3">
+            <button
+              onClick={runCheck}
+              className="bg-accent text-white rounded-xl px-6 py-3 font-medium hover:bg-accent/90 transition"
+            >
+              Check my resume
+            </button>
+            <button
+              onClick={onNext}
+              className="border border-border text-text2 rounded-xl px-6 py-3 hover:text-text transition"
+            >
+              Skip for now
+            </button>
+          </div>
           <button onClick={onBack} className="text-xs text-text2 hover:text-text transition">Back</button>
         </div>
       )}

@@ -6,6 +6,10 @@ interface UsageBannerProps {
   remainingToday: number;
   platformCounts: Record<string, number>;
   maxPerPlatform: number;
+  // Free taste (lifetime 40-app cap): null/undefined for paid tiers or a
+  // backend that predates the feature — the row simply doesn't render then.
+  freeUsed?: number | null;
+  freeLimit?: number | null;
 }
 
 const tierColors: Record<string, string> = {
@@ -24,10 +28,19 @@ export default function UsageBanner({
   remainingToday,
   platformCounts,
   maxPerPlatform,
+  freeUsed,
+  freeLimit,
 }: UsageBannerProps) {
   const isAdmin = tier === "admin";
   const pct = dailyLimit > 0 ? Math.min(100, (usedToday / dailyLimit) * 100) : 0;
   const barColor = pct >= 90 ? "bg-red-500" : pct >= 70 ? "bg-amber-400" : "bg-accent";
+
+  // Lifetime free taste — only meaningful on the free tier with a live backend.
+  const hasFreeTaste = tier === "free" && typeof freeLimit === "number" && freeLimit > 0;
+  const fUsed = hasFreeTaste ? Math.min(freeUsed ?? 0, freeLimit) : 0;
+  const fLeft = hasFreeTaste ? Math.max(0, freeLimit - fUsed) : 0;
+  const fPct = hasFreeTaste ? Math.min(100, (fUsed / freeLimit) * 100) : 0;
+  const freeBarColor = fLeft === 0 ? "bg-red-500" : fLeft <= 8 ? "bg-amber-400" : "bg-accent";
 
   return (
     <div className="bg-surface border border-border rounded-xl p-5">
@@ -86,6 +99,32 @@ export default function UsageBanner({
           </a>
         )}
       </div>
+
+      {/* Free taste: lifetime 40-app progress — the number a free user actually lives by */}
+      {hasFreeTaste && (
+        <div className="mt-4 pt-4 border-t border-border">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-medium text-text2">Free applications</span>
+            <span className="text-sm font-semibold text-text">
+              {fUsed} / {freeLimit} used
+            </span>
+            <span
+              className={[
+                "text-sm font-medium ml-auto",
+                fLeft === 0 ? "text-red-500" : fLeft <= 8 ? "text-amber-500" : "text-green",
+              ].join(" ")}
+            >
+              {fLeft === 0 ? "All used — subscribe to keep applying" : `${fLeft} left`}
+            </span>
+          </div>
+          <div className="w-full bg-surface2 rounded-full h-2">
+            <div
+              className={["h-2 rounded-full transition-all duration-500", freeBarColor].join(" ")}
+              style={{ width: `${fPct}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Per-platform usage (hidden for admins — no limit to track) */}
       {!isAdmin && Object.keys(platformCounts).length > 0 && (
