@@ -75,12 +75,15 @@ function OdometerNumber({ value }: { value: number }) {
   );
 }
 
-// Log lines arrive with decorative emoji prepended by the extension/backend
-// (⏩, 🔓, 🎯 …). They read as chatty/AI-generated in a premium UI, so we strip
-// every pictograph at render and let typography + the glass status row carry the
-// meaning instead. One place, so no producer needs to change.
+// Log lines arrive with decorative symbols prepended by the extension/backend
+// (⏭ ✓ ⚠ ✅ → 🔓 🎯 …). They read as chatty/AI-generated in a premium UI, so we
+// strip them at render and let typography + the glass status row carry the meaning.
+// Ranges beyond \p{Extended_Pictographic}: Arrows (U+2190–21FF: → ↗ ↩) and
+// Dingbats (U+2700–27BF: ✓ ✅ ✗) aren't classified as pictographic. General
+// Punctuation (U+2000–206F) is deliberately NOT touched, so em-dash, en-dash,
+// ellipsis and curly quotes survive. One place, so no producer needs to change.
 const EMOJI_RE =
-  /[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u{1F3FB}-\u{1F3FF}️‍]/gu;
+  /[\p{Extended_Pictographic}\u{2190}-\u{21FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{1F3FB}-\u{1F3FF}️‍]/gu;
 function stripEmoji(s: string): string {
   return (s || "").replace(EMOJI_RE, "").replace(/\s{2,}/g, " ").trim();
 }
