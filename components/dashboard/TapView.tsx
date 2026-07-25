@@ -62,6 +62,9 @@ export default function TapView({ token: initialToken }: { token: string }) {
   // does, we tell the user to reload the page instead of leaving them staring at idle.
   const [staleCtx, setStaleCtx] = useState(false);
   const startNetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // When a Start was last fired — the grace window during which we keep an optimistic
+  // running=true before the backend has registered the fresh campaign.
+  const lastStartRef = useRef<number>(0);
   // When the CURRENT run started (running flipped true). The stall timer measures
   // against this, NOT against the newest activity row — a leftover row from a run
   // days ago must never read as "the current step has been going 345927s".
@@ -93,7 +96,13 @@ export default function TapView({ token: initialToken }: { token: string }) {
       if (e.data.type === "HIREDROP_LIVE_STATE" && e.data.ok) {
         setBridgeAlive(true);
         setStaleCtx(false);
-        setRunning(!!e.data.campaignRunning);
+        // NOTE: we do NOT set `running` from the extension's campaignRunning flag here.
+        // That flag gets stuck true after a stalled run (never cleared), which pinned
+        // the page on "preparing…" forever with no Start button. The backend
+        // (/campaign/status, refreshStats) is the single source of truth for running —
+        // it goes false within ~150s of the extension's pings stopping. We only RAISE
+        // running from the extension flag as instant feedback right after a Start.
+        if (e.data.campaignRunning && Date.now() - lastStartRef.current < 15000) setRunning(true);
         const rp = e.data.reviewPending as ReviewPending | null;
         const fresh = rp && Date.now() - (rp.at || 0) < 30 * 60 * 1000 ? rp : null;
         setPending(fresh);
@@ -173,10 +182,16 @@ export default function TapView({ token: initialToken }: { token: string }) {
       const s = await apiGet<{ today_applications: number; jobs_ready: number; running: boolean }>("/campaign/status", t);
       setApplied(s.today_applications);
       setJobsReady(s.jobs_ready);
-      // Bridge mode: LIVE_STATE (1.5s) owns `running`, so only ever raise it here.
-      // Remote mode has no bridge — the backend is the ONLY truth, follow it both
-      // ways or the phone shows "preparing…" forever after the desktop stops.
-      setRunning((r) => (remoteRef.current ? s.running : r || s.running));
+      // The backend is the single source of truth for `running` (both directions).
+      // It reflects a live campaign within ~150s of the extension's heartbeat; when it
+      // says false, any extension-side "running" is a stale phantom and must be cleared
+      // so the Start screen returns. Grace window: don't lower it in the first 15s after
+      // a Start, before the backend has registered the fresh campaign.
+      setRunning((r) => {
+        if (s.running) return true;
+        if (Date.now() - lastStartRef.current < 15000) return r;
+        return false;
+      });
     } catch {}
   }, [getToken]);
 
@@ -242,6 +257,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
   async function start() {
     if (busy) return;
     setBusy("start"); setErr(null);
+    lastStartRef.current = Date.now(); // open the grace window (keep optimistic running)
     try {
       // Use the platforms/keywords saved on the profile (the main screen persists them).
       const supabase = createClient();
