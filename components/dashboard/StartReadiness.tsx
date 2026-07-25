@@ -17,8 +17,14 @@ export interface Readiness {
 }
 
 // Server-known preconditions, straight from the single source of truth.
+// Raced against a timeout so a slow/hung readiness call can never leave Start doing
+// nothing — on timeout we fail-open (ready), and the extension's own start guards
+// remain the real backstop.
 export async function fetchReadiness(token: string): Promise<Readiness> {
-  return apiGet<Readiness>("/campaign/readiness", token);
+  return Promise.race([
+    apiGet<Readiness>("/campaign/readiness", token),
+    new Promise<Readiness>((resolve) => setTimeout(() => resolve({ ready: true, checks: [] }), 6000)),
+  ]);
 }
 
 // The one precondition the server CANNOT know: is the extension installed on THIS
