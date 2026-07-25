@@ -62,6 +62,10 @@ export default function TapView({ token: initialToken }: { token: string }) {
   // does, we tell the user to reload the page instead of leaving them staring at idle.
   const [staleCtx, setStaleCtx] = useState(false);
   const startNetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // When the CURRENT run started (running flipped true). The stall timer measures
+  // against this, NOT against the newest activity row — a leftover row from a run
+  // days ago must never read as "the current step has been going 345927s".
+  const runningSinceRef = useRef<number | null>(null);
   // Remote = no extension bridge in THIS browser (a phone). A stale desktop context
   // also fails the bridge probe, but it isn't a phone — it's a desktop that needs a
   // reload. staleCtx keeps it in desktop mode so the reconnect banner shows (not the
@@ -200,6 +204,12 @@ export default function TapView({ token: initialToken }: { token: string }) {
     const tick = setInterval(() => setNowTs(Date.now()), 1000);
     return () => { clearInterval(poll); clearInterval(tick); };
   }, [running, pending, fetchLastAct]);
+
+  // Stamp when the current run began, so the stall timer is relative to THIS run.
+  useEffect(() => {
+    if (running && runningSinceRef.current == null) runningSinceRef.current = Date.now();
+    else if (!running) runningSinceRef.current = null;
+  }, [running]);
 
   // Tap has NO fit-strictness picker (Broad/Standard/Precise). In tap YOU are the
   // filter — a bad card is a 1-second swipe, so an AI pre-filter would just add cost
@@ -577,11 +587,16 @@ export default function TapView({ token: initialToken }: { token: string }) {
           </div>
         ) : (() => {
           /* ── Running, preparing the next card ── */
-          // Seconds since the extension last logged anything. If it's been quiet
-          // for a while the run is likely stuck (a login wall / captcha / Cloudflare
-          // on the automation window) — say so instead of spinning forever.
-          const sinceAct = lastAct ? Math.max(0, Math.floor((nowTs - Date.parse(lastAct.timestamp)) / 1000)) : null;
-          const stalled = sinceAct != null && sinceAct > 75;
+          // An activity row older than this is a leftover from a PRIOR run, not the
+          // current step — never show it or time against it (that was the 345927s bug).
+          const FRESH_MS = 180_000;
+          const actAge = lastAct ? nowTs - Date.parse(lastAct.timestamp) : null;
+          const lastActFresh = actAge != null && actAge >= 0 && actAge < FRESH_MS;
+          const sinceAct = lastActFresh ? Math.floor(actAge! / 1000) : null;
+          const runningFor = runningSinceRef.current ? nowTs - runningSinceRef.current : 0;
+          // Stuck = a fresh line that then went quiet (>75s), OR this run has been going
+          // a while (>90s) with NO fresh activity at all. A stale row can't trigger it.
+          const stalled = (lastActFresh && sinceAct! > 75) || (!lastActFresh && runningFor > 90_000);
           return (
           <div className="bg-surface border border-border rounded-2xl p-10 text-center flex flex-col items-center gap-4"
             style={{ minHeight: "min(52vh, 420px)", justifyContent: "center" }}>
@@ -606,8 +621,9 @@ export default function TapView({ token: initialToken }: { token: string }) {
               </p>
             </div>
 
-            {/* What the extension is actually doing, live — with a step timer */}
-            {lastAct && (
+            {/* What the extension is actually doing, live — with a step timer. Only a
+                FRESH row is the current step; a stale one from a past run is hidden. */}
+            {lastActFresh && lastAct && (
               <div className="flex items-center gap-2 text-[11px] max-w-full">
                 <span className={[
                   "truncate",
