@@ -72,11 +72,6 @@ export default function StepDone({ profile, resumeFile, onBack, onFinish, saving
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-7">
       <motion.div variants={item} className="text-center space-y-3">
-        <div className="w-16 h-16 mx-auto rounded-full bg-green/10 flex items-center justify-center">
-          <svg className="w-8 h-8 text-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
         <h2 className="text-2xl font-bold text-text">You&apos;re set up, {firstName}.</h2>
         <p className="text-sm text-text2 max-w-md mx-auto">
           Here&apos;s exactly what HireDrop will do for you — safely, and always with you in control.

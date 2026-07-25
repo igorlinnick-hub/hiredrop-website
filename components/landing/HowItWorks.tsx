@@ -46,7 +46,7 @@ function StepBadge({ label, gradient }: { label: string; gradient: string }) {
 
 function Panel1() {
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/60 p-10 max-w-[440px] w-full" style={{ boxShadow: "0 12px 40px rgba(108,92,231,0.1)" }}>
+    <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/60 p-6 sm:p-10 max-w-[440px] w-full" style={{ boxShadow: "0 12px 40px rgba(108,92,231,0.1)" }}>
       <StepBadge label="Profile" gradient="from-[#6C5CE7] to-[#a78bfa]" />
       <p className="text-base font-semibold text-[#1A1A2E] mb-5">Upload Resume</p>
       <div className="border-2 border-dashed border-[#6C5CE7]/30 rounded-xl p-10 text-center bg-[#f5f3ff]/50">
@@ -71,7 +71,7 @@ function Panel1() {
 function Panel2() {
   const chips = ["Marketing Manager", "Growth Lead", "Content Strategy", "Remote", "USA", "Full-time"];
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/60 p-10 max-w-[440px] w-full" style={{ boxShadow: "0 12px 40px rgba(108,92,231,0.1)" }}>
+    <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/60 p-6 sm:p-10 max-w-[440px] w-full" style={{ boxShadow: "0 12px 40px rgba(108,92,231,0.1)" }}>
       <StepBadge label="Filters" gradient="from-[#00B894] to-[#55efc4]" />
       <p className="text-base font-semibold text-[#1A1A2E] mb-5">Job Preferences</p>
       <div className="space-y-5">
@@ -110,7 +110,7 @@ function Panel2() {
 function Panel3() {
   const text = "Dear Hiring Manager,\n\nI'm excited to apply for the Marketing Manager role. With 5+ years driving data-driven campaigns that grew pipeline by 340%...";
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/60 p-10 max-w-[440px] w-full" style={{ boxShadow: "0 12px 40px rgba(108,92,231,0.1)" }}>
+    <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/60 p-6 sm:p-10 max-w-[440px] w-full" style={{ boxShadow: "0 12px 40px rgba(108,92,231,0.1)" }}>
       <StepBadge label="AI Engine" gradient="from-[#6C5CE7] to-[#fd79a8]" />
       <div className="flex items-center justify-between mb-5">
         <p className="text-base font-semibold text-[#1A1A2E]">AI Cover Letter</p>
@@ -141,7 +141,7 @@ function Panel3() {
 
 function Panel4() {
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/60 p-10 max-w-[440px] w-full" style={{ boxShadow: "0 12px 40px rgba(108,92,231,0.1)" }}>
+    <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/60 p-6 sm:p-10 max-w-[440px] w-full" style={{ boxShadow: "0 12px 40px rgba(108,92,231,0.1)" }}>
       <StepBadge label="Autopilot" gradient="from-[#0984e3] to-[#6C5CE7]" />
       <div className="flex items-center justify-between mb-5">
         <p className="text-base font-semibold text-[#1A1A2E]">Today&apos;s Results</p>
@@ -217,8 +217,9 @@ export default function HowItWorks() {
   const numColor = useTransform(scrollYProgress, [0.52, 0.66], ["rgba(108,92,231,0.12)", "rgba(255,255,255,0.14)"]);
 
   return (
-    <section id="how-it-works" ref={sectionRef} className="relative" style={{ height: "400vh" }}>
-      <div className="sticky top-0 h-screen overflow-hidden" style={{ background: "linear-gradient(160deg, #f8f7ff 0%, #f5f3ff 50%, #faf8ff 100%)" }}>
+    <section id="how-it-works" ref={sectionRef} className="relative lg:h-[400vh]">
+      {/* Desktop: 400vh sticky-scroll day→night. Hidden on mobile (uses the stacked fallback below). */}
+      <div className="sticky top-0 h-screen overflow-hidden hidden lg:block" style={{ background: "linear-gradient(160deg, #f8f7ff 0%, #f5f3ff 50%, #faf8ff 100%)" }}>
         {/* smooth night wash — opacity melts in continuously with scroll */}
         <motion.div className="absolute inset-0 pointer-events-none" style={{ opacity: nightOpacity, background: "linear-gradient(160deg, #1c1930 0%, #14121f 50%, #17142a 100%)" }} />
         <motion.div className="absolute inset-0 pointer-events-none" style={{ opacity: starOpacity }}>
@@ -332,17 +333,23 @@ export default function HowItWorks() {
         ))}
       </div>
 
-      {/* Mobile fallback: stacked cards */}
-      <div className="lg:hidden absolute top-0 left-0 right-0">
-        {STEPS.map((step, i) => (
-          <div key={i} className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
-            <StepBadge label={step.badge} gradient={step.badgeColor} />
-            <p className="text-sm font-medium text-[#6C5CE7] mb-2">STEP {step.number} / 04</p>
-            <h3 className="text-2xl font-bold text-[#1A1A2E] mb-2 text-center" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{step.title}</h3>
-            <p className="text-sm text-[#6B6B8A] mb-6 text-center max-w-sm">{step.description}</p>
-            {panels[i]}
-          </div>
-        ))}
+      {/* Mobile: clean stacked steps in normal flow (desktop sticky-scroll is hidden on mobile). */}
+      <div
+        className="lg:hidden px-4 py-16"
+        style={{ background: "linear-gradient(160deg, #f8f7ff 0%, #f5f3ff 50%, #faf8ff 100%)" }}
+      >
+        <p className="text-sm font-medium text-[#6C5CE7] mb-12 tracking-wider text-center">HOW IT WORKS</p>
+        <div className="space-y-16">
+          {STEPS.map((step, i) => (
+            <div key={i} className="flex flex-col items-center text-center">
+              <StepBadge label={step.badge} gradient={step.badgeColor} />
+              <p className="text-xs font-semibold text-[#6C5CE7] mb-2 tracking-wide">STEP {step.number} / 04</p>
+              <h3 className="text-2xl font-bold text-[#1A1A2E] mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{step.title}</h3>
+              <p className="text-sm text-[#6B6B8A] mb-6 max-w-sm">{step.description}</p>
+              {panels[i]}
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
