@@ -75,6 +75,25 @@ function OdometerNumber({ value }: { value: number }) {
   );
 }
 
+// Log lines arrive with decorative emoji prepended by the extension/backend
+// (⏩, 🔓, 🎯 …). They read as chatty/AI-generated in a premium UI, so we strip
+// every pictograph at render and let typography + the glass status row carry the
+// meaning instead. One place, so no producer needs to change.
+const EMOJI_RE =
+  /[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u{1F3FB}-\u{1F3FF}️‍]/gu;
+function stripEmoji(s: string): string {
+  return (s || "").replace(EMOJI_RE, "").replace(/\s{2,}/g, " ").trim();
+}
+
+// Elapsed-on-current-step, rendered compactly. Raw seconds ("346090s") looks
+// broken for a stale line left over from a run days ago — roll up to m/h/d.
+function formatElapsed(sec: number): string {
+  if (sec < 90) return `${sec}s`;
+  if (sec < 3600) return `${Math.floor(sec / 60)}m`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)}h`;
+  return `${Math.floor(sec / 86400)}d`;
+}
+
 export default function CampaignView({ token: initialToken }: Props) {
   const router = useRouter();
   const [screenshotAge, setScreenshotAge] = useState(0);
@@ -298,46 +317,134 @@ export default function CampaignView({ token: initialToken }: Props) {
           to   { opacity: 1; transform: translateY(0); }
         }
         .hd-entry { animation: hd-slide-in 0.2s ease both; }
-        /* Ambient radar rings — the campaign is out hunting */
-        @keyframes hd-ring {
-          0%   { width: 70px;  height: 70px;  opacity: 0.5; }
-          100% { width: 300px; height: 300px; opacity: 0; }
+
+        /* ── Glass hero ─────────────────────────────────────────────────────
+           A frosted "crystal" plate holds the counter. The glass reads through
+           three layers: a slow prismatic aura behind it (gives the blur
+           something to refract), a diagonal light sheen that sweeps across, and
+           an inner top highlight. Palette stays on-brand: violet with a faint
+           green refraction at the edges. */
+        .hd-plate {
+          position: relative;
+          padding: 18px 36px;
+          border-radius: 24px;
+          background: linear-gradient(155deg, rgba(255,255,255,0.72), rgba(255,255,255,0.30));
+          border: 1px solid rgba(255,255,255,0.75);
+          box-shadow:
+            0 18px 40px -18px rgba(108,92,231,0.35),
+            inset 0 1px 0 rgba(255,255,255,0.9),
+            inset 0 -16px 30px -22px rgba(108,92,231,0.30);
+          -webkit-backdrop-filter: blur(14px) saturate(160%);
+          backdrop-filter: blur(14px) saturate(160%);
         }
-        .hd-ring {
+        /* Clips only the sheen to the plate's rounded corners; the plate itself
+           keeps overflow visible so the tick ripple can burst past its edge. */
+        .hd-plate-clip {
+          position: absolute; inset: 0; border-radius: inherit;
+          overflow: hidden; pointer-events: none;
+        }
+        .dark .hd-plate {
+          background: linear-gradient(155deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02));
+          border: 1px solid rgba(255,255,255,0.14);
+          box-shadow:
+            0 20px 44px -18px rgba(0,0,0,0.65),
+            inset 0 1px 0 rgba(255,255,255,0.18),
+            inset 0 -16px 30px -22px rgba(108,92,231,0.40);
+        }
+
+        /* Prismatic aura — slowly rotating so the refraction never sits still */
+        @keyframes hd-aura {
+          0%   { transform: rotate(0deg)   scale(1); }
+          50%  { transform: rotate(180deg) scale(1.08); }
+          100% { transform: rotate(360deg) scale(1); }
+        }
+        .hd-aura {
           position: absolute;
-          border-radius: 9999px;
-          border: 1.5px solid rgba(108, 92, 231, 0.35);
-          width: 70px; height: 70px;
-          animation: hd-ring 2.6s cubic-bezier(0, 0.55, 0.45, 1) infinite;
+          width: 240px; height: 200px; border-radius: 9999px;
+          background: conic-gradient(from 0deg,
+            rgba(108,92,231,0.30), rgba(167,139,250,0.22),
+            rgba(0,184,148,0.16), rgba(167,139,250,0.22), rgba(108,92,231,0.30));
+          filter: blur(48px);
+          opacity: 0.75;
+          animation: hd-aura 18s linear infinite;
         }
-        /* One-shot green burst when an application lands */
-        @keyframes hd-burst {
-          0%   { transform: translate(-50%, -50%) scale(0.45); opacity: 0.9; }
-          100% { transform: translate(-50%, -50%) scale(2.4);  opacity: 0; }
+        .dark .hd-aura { opacity: 0.55; }
+
+        /* Light sheen sweeping across the plate — a single glint per cycle */
+        @keyframes hd-sheen {
+          0%   { transform: translateX(-240%) skewX(-18deg); }
+          32%  { transform: translateX(320%)  skewX(-18deg); }
+          100% { transform: translateX(320%)  skewX(-18deg); }
         }
-        .hd-burst {
+        .hd-sheen {
+          position: absolute; top: -20%; bottom: -20%; left: 0;
+          width: 42%;
+          background: linear-gradient(105deg, transparent, rgba(255,255,255,0.70), transparent);
+          animation: hd-sheen 5.5s ease-in-out infinite;
+          pointer-events: none;
+        }
+        .dark .hd-sheen { background: linear-gradient(105deg, transparent, rgba(255,255,255,0.16), transparent); }
+
+        /* Glass digits — solid + legible by default; a subtle violet gradient
+           fill only where the engine supports clipping it to the glyphs, with an
+           embossed highlight so they read as cut crystal either way. */
+        .hd-glass-num {
+          color: var(--text);
+          filter: drop-shadow(0 8px 16px rgba(108,92,231,0.22));
+          text-shadow: 0 1px 0 rgba(255,255,255,0.65);
+        }
+        .dark .hd-glass-num { text-shadow: 0 1px 0 rgba(255,255,255,0.10); }
+        @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+          .hd-glass-num {
+            background: linear-gradient(180deg, var(--text) 42%, var(--accent) 130%);
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: none;
+          }
+          .dark .hd-glass-num {
+            background: linear-gradient(180deg, #f2f0ff 40%, var(--accent2) 130%);
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+          }
+        }
+
+        /* Crystalline ripple when the counter ticks up — a thin glass ring with
+           a prismatic edge instead of the old flat green burst. */
+        @keyframes hd-ripple {
+          0%   { transform: translate(-50%,-50%) scale(0.4); opacity: 0.95; }
+          100% { transform: translate(-50%,-50%) scale(2.3); opacity: 0; }
+        }
+        .hd-ripple {
           position: absolute; left: 50%; top: 50%;
-          width: 110px; height: 110px; border-radius: 9999px;
-          border: 2px solid var(--green);
-          box-shadow: 0 0 28px rgba(0, 184, 148, 0.4);
-          animation: hd-burst 0.9s ease-out both;
+          width: 130px; height: 130px; border-radius: 9999px;
+          border: 1.5px solid rgba(167,139,250,0.75);
+          box-shadow: 0 0 26px rgba(108,92,231,0.4), inset 0 0 20px rgba(0,184,148,0.28);
+          animation: hd-ripple 1s ease-out both;
         }
-        /* "Working" dots next to the current action */
-        @keyframes hd-dot {
-          0%, 60%, 100% { transform: translateY(0);    opacity: 0.4; }
-          30%           { transform: translateY(-3px); opacity: 1; }
+
+        /* "Working" beads — tiny glass spheres with a light source, glowing in
+           sequence instead of the old bouncing dots. */
+        @keyframes hd-bead {
+          0%, 70%, 100% { opacity: 0.35; transform: scale(0.85); }
+          35%           { opacity: 1;    transform: scale(1.12); }
         }
-        .hd-dot {
-          display: inline-block; width: 4px; height: 4px;
-          border-radius: 9999px; background: var(--accent);
-          animation: hd-dot 1.2s ease-in-out infinite;
+        .hd-bead {
+          display: inline-block; width: 6px; height: 6px; border-radius: 9999px;
+          background: radial-gradient(circle at 30% 28%, rgba(255,255,255,0.95), var(--accent) 78%);
+          box-shadow: 0 0 7px rgba(108,92,231,0.45), inset 0 0 2px rgba(255,255,255,0.8);
+          animation: hd-bead 1.4s ease-in-out infinite;
         }
+
         /* Current-action line slides in when the message changes */
         @keyframes hd-status-in {
           from { opacity: 0; transform: translateY(5px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         .hd-status { animation: hd-status-in 0.35s ease both; }
+
+        @media (prefers-reduced-motion: reduce) {
+          .hd-aura, .hd-sheen, .hd-bead, .hd-ripple { animation: none; }
+        }
       `}</style>
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -413,54 +520,70 @@ export default function CampaignView({ token: initialToken }: Props) {
             <h3 className="text-sm font-semibold text-text">Live Activity</h3>
           </div>
 
-          {/* Hero: THE number. Radar rings pulse while the campaign hunts; a green
-              burst fires each time the counter ticks up. */}
-          <div className="relative px-5 pt-10 pb-7 text-center overflow-hidden shrink-0">
+          {/* Hero: THE number on a frosted crystal plate. A prismatic aura
+              refracts behind it; a light sheen sweeps across; a crystalline
+              ripple fires each time the counter ticks up. */}
+          <div className="relative px-5 pt-11 pb-8 text-center overflow-hidden shrink-0">
             <div aria-hidden className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <span className="hd-ring" />
-              <span className="hd-ring" style={{ animationDelay: "1.3s" }} />
+              <span className="hd-aura" />
             </div>
-            <div className="relative inline-block">
-              {bumpKey > 0 && <span key={bumpKey} aria-hidden className="hd-burst pointer-events-none" />}
-              <div className="text-6xl font-bold text-text leading-none">
-                <OdometerNumber value={stats.applied} />
+            <div className="relative flex flex-col items-center">
+              <div className="hd-plate">
+                {bumpKey > 0 && <span key={bumpKey} aria-hidden className="hd-ripple pointer-events-none" />}
+                <div className="hd-glass-num relative text-[4.25rem] font-bold leading-none">
+                  <OdometerNumber value={stats.applied} />
+                </div>
+                <span aria-hidden className="hd-plate-clip"><span className="hd-sheen" /></span>
               </div>
+              <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-text2/60">
+                applications sent today
+              </p>
+              {stats.found > 0 && (
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs text-text2/50">
+                  <span aria-hidden className="hd-bead" style={{ width: 5, height: 5 }} />
+                  {stats.found} jobs ready in the queue
+                </p>
+              )}
             </div>
-            <p className="relative mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-text2/60">
-              applications sent today
-            </p>
-            {stats.found > 0 && (
-              <p className="relative mt-1 text-xs text-text2/50">{stats.found} jobs ready in the queue</p>
-            )}
           </div>
 
           {/* Current action — the newest log line, one line only, animated on change.
-              The ⏱ timer counts seconds since that line was written: gray = normal,
-              amber = slow, red = probably stuck (a step should never take minutes). */}
+              The clock counts time since that line was written: gray = normal,
+              amber = slow, red = probably stuck (a step should never take minutes).
+              A very old line (a run left over from days ago) shows muted, not red —
+              it isn't a stuck step, just stale history. */}
           <div className="px-5 pb-5 shrink-0">
             <div className="flex items-center justify-center gap-2 min-h-[20px] text-xs text-text2">
               {activity.length > 0 ? (
                 <>
                   <span key={activity[0].id} className="hd-status flex items-center gap-2 min-w-0">
-                    <span aria-hidden className="flex gap-0.5 shrink-0">
+                    <span aria-hidden className="flex gap-1 shrink-0">
                       {[0, 1, 2].map((i) => (
-                        <span key={i} className="hd-dot" style={{ animationDelay: `${i * 0.15}s` }} />
+                        <span key={i} className="hd-bead" style={{ animationDelay: `${i * 0.18}s` }} />
                       ))}
                     </span>
                     <span className={[
                       "truncate",
                       activity[0].level === "error" ? "text-red" : activity[0].level === "warn" ? "text-yellow" : "",
                     ].join(" ")}>
-                      {activity[0].message}
+                      {stripEmoji(activity[0].message)}
                     </span>
                   </span>
                   {(() => {
                     const elapsed = Math.max(0, Math.floor((nowTs - Date.parse(activity[0].timestamp)) / 1000));
-                    const tone = elapsed < 60 ? "text-text2/50" : elapsed <= 150 ? "text-yellow" : "text-red";
+                    const tone =
+                      elapsed < 60 ? "text-text2/50"
+                      : elapsed <= 150 ? "text-yellow"
+                      : elapsed <= 900 ? "text-red"
+                      : "text-text2/40";
                     return (
-                      <span className={`${tone} tabular-nums shrink-0`}
+                      <span className={`${tone} tabular-nums shrink-0 inline-flex items-center gap-1`}
                         title="Time on the current step — red means it's likely stuck">
-                        ⏱ {elapsed}s
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="9" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5v4.7l3 1.8" />
+                        </svg>
+                        {formatElapsed(elapsed)}
                       </span>
                     );
                   })()}
@@ -536,7 +659,7 @@ export default function CampaignView({ token: initialToken }: Props) {
                     })}
                   </span>
                   <span className={entry.level === "error" ? "text-red" : entry.level === "warn" ? "text-yellow" : "text-text"}>
-                    {entry.message}
+                    {stripEmoji(entry.message)}
                   </span>
                 </div>
               ))}
