@@ -47,6 +47,13 @@ export function apiPost<T>(path: string, token: string, body: unknown): Promise<
   });
 }
 
+export function apiPatch<T>(path: string, token: string, body: unknown): Promise<T> {
+  return request<T>(path, token, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
 // ── Billing (Stripe) ─────────────────────────────────────────────────────────
 
 export interface BillingUrlResponse {
