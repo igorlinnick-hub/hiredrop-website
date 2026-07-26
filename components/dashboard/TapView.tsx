@@ -48,6 +48,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
   const [fly, setFly] = useState(0);
   const dragRef = useRef<{ x: number; y: number; mode: "none" | "swipe" | "scroll" } | null>(null);
   const dragXRef = useRef(0);
+  const autoStartedRef = useRef(false); // kicked the background executor on first approve?
 
   const [bridgeAlive, setBridgeAlive] = useState<boolean | null>(null);
   const remote = bridgeAlive === false;
@@ -234,12 +235,23 @@ export default function TapView({ token: initialToken }: { token: string }) {
     if (!cur || acting) return;
     setActing(decision);
     decidedRef.current.add(cur.id);
-    // Optimistic PATCH — tapping must never wait on the network.
-    getToken()
+    // Optimistic PATCH — the card flies off instantly; the write rides in the background.
+    const patch = getToken()
       .then((t) => apiPatch(`/jobs/${cur.id}/status`, t, { status: decision === "approve" ? "approved" : "skipped" }))
       .catch(() => {});
+    if (decision === "approve") {
+      setApprovedCount((n) => n + 1);
+      // Kick the background executor on the FIRST approval so applying starts without a
+      // separate "Start" click. Desktop only (the phone can't drive the computer's
+      // extension). Await the PATCH first so the extension sees this job as approved
+      // when it builds the queue — otherwise its footgun guard ("swipe first") trips.
+      // Later approvals are picked up by the executor's rebuild + idle-refill.
+      if (!remote && !running && !autoStartedRef.current) {
+        autoStartedRef.current = true;
+        patch.then(() => start());
+      }
+    }
     setFly(decision === "approve" ? 1 : -1);
-    if (decision === "approve") setApprovedCount((n) => n + 1);
     setTimeout(() => {
       setFly(0);
       setDrag(0); dragXRef.current = 0;
