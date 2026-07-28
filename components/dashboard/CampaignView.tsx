@@ -46,16 +46,19 @@ const DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 // digit. On change the column slides — the classic odometer effect.
 function OdometerDigit({ digit }: { digit: number }) {
   return (
-    <span aria-hidden className="inline-block overflow-hidden align-top" style={{ height: "1em" }}>
+    // Fixed 1em window; the 0–9 column slides so the current digit sits inside it.
+    <span aria-hidden className="inline-flex overflow-hidden align-bottom" style={{ height: "1em", lineHeight: 1 }}>
       <span
-        className="block"
+        className="flex flex-col"
         style={{
           transform: `translateY(-${digit}em)`,
           transition: "transform 700ms cubic-bezier(0.23, 1, 0.32, 1)",
         }}
       >
         {DIGITS.map((n) => (
-          <span key={n} className="block" style={{ height: "1em", lineHeight: "1em" }}>{n}</span>
+          // Center each glyph in its 1em cell so it's never clipped by the window
+          // (baseline alignment left only a sliver of the digit showing).
+          <span key={n} className="flex items-center justify-center" style={{ height: "1em", lineHeight: 1 }}>{n}</span>
         ))}
       </span>
     </span>
