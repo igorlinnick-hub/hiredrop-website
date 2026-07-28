@@ -139,13 +139,6 @@ export default async function DashboardPage() {
           totalJobs={statsData?.total_jobs ?? 0}
           totalApplications={statsData?.total_applications ?? 0}
           applicationsToday={statsData?.applications_today ?? 0}
-          responseRate={
-            applicationsData.length > 0
-              ? applicationsData.filter((a) =>
-                  ["received", "interview", "interview_invite", "hired", "rejected"].includes(a.status)
-                ).length / applicationsData.length
-              : 0
-          }
         />
 
         <div id="jobs">
