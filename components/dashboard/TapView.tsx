@@ -73,7 +73,21 @@ export default function TapView({ token: initialToken }: { token: string }) {
       if (e.source !== window || !e.data || typeof e.data !== "object") return;
       if (e.data.type === "HIREDROP_LIVE_STATE" && e.data.ok) {
         setBridgeAlive(true);
+        sessionStorage.removeItem("hd_ctx_reload"); // healthy again — re-arm the auto-heal
         setRunning((r) => r || !!e.data.campaignRunning);
+      }
+      // Extension was reloaded/updated: the old content script in THIS tab is orphaned —
+      // it answers but can't reach chrome.storage. Without this branch the probe times
+      // out and a DESKTOP user gets the "your phone is the remote" screen (Igor
+      // 2026-07-27). One auto-refresh re-injects a live bridge; the sessionStorage
+      // guard prevents a reload loop if something is genuinely broken.
+      if (e.data.type === "HIREDROP_LIVE_STATE" && !e.data.ok && e.data.error === "context_invalidated") {
+        setBridgeAlive(true); // the extension IS here — never flip to phone-remote
+        if (!sessionStorage.getItem("hd_ctx_reload")) {
+          sessionStorage.setItem("hd_ctx_reload", String(Date.now()));
+          location.reload();
+        }
+        return;
       }
       if (e.data.type === "HIREDROP_CAMPAIGN_STARTED") {
         setBusy(null);
