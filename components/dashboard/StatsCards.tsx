@@ -75,10 +75,10 @@ export default function StatsCards({
         }
       />
       <StatCard
-        label="Applications Sent"
+        label="Total Applied"
         value={totalApplications}
         href="#history"
-        hint="View application history →"
+        hint="All-time — view application history →"
         icon={
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}

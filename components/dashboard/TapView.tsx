@@ -132,17 +132,35 @@ export default function TapView({ token: initialToken }: { token: string }) {
   }, []);
 
   const decidedRef = useRef<Set<string>>(new Set()); // ids already swiped this session
+  // Empty deck must TRIGGER discovery, not just wait for it — "Finding more jobs…" used to
+  // be a lie (nothing on the page called discovery; the pool only grew when an auto-ATS run
+  // happened to). POST /jobs/find-ats is safe to fire-and-forget since PR #64: it returns
+  // immediately and sweeps boards in a backend thread (10-min server cooldown + in-progress
+  // guard). Client throttle keeps us from re-posting on every 8s deck poll.
+  const findAtsAtRef = useRef(0);
+  const triggerDiscovery = useCallback(async () => {
+    const now = Date.now();
+    if (now - findAtsAtRef.current < 5 * 60 * 1000) return;
+    findAtsAtRef.current = now;
+    try {
+      const t = await getToken();
+      await apiPost("/jobs/find-ats", t, {});
+    } catch { /* cooldown / offline — the next empty-deck poll retries after the throttle */ }
+  }, [getToken]);
+
   const loadDeck = useCallback(async () => {
     try {
       const t = await getToken();
       const jobs = await apiGet<Job[]>("/jobs", t);
       setDeck((prev) => {
         const top = prev[0]?.id;
-        return buildDeck(jobs, top).filter((j) => !decidedRef.current.has(j.id));
+        const next = buildDeck(jobs, top).filter((j) => !decidedRef.current.has(j.id));
+        if (next.length === 0) triggerDiscovery();
+        return next;
       });
     } catch { /* keep whatever we have */ }
     finally { setDeckLoaded(true); }
-  }, [getToken, buildDeck]);
+  }, [getToken, buildDeck, triggerDiscovery]);
 
   useEffect(() => {
     loadDeck();
