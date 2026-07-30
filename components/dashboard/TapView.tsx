@@ -240,6 +240,15 @@ export default function TapView({ token: initialToken }: { token: string }) {
         location: prefs.location || "",
         job_type: prefs.job_type || "",
       };
+      // Using the tapalka = TAP mode. Persist submit_mode=tap so the extension builds the
+      // by-link POOL from the jobs you swiped/approved — NOT the AUTO platform search-walk.
+      // Without this, submit_mode stayed 'auto' and a swipe kicked an Indeed auto-walk
+      // (→ Cloudflare "Additional Verification Required", 0 applied) instead of applying the
+      // cards you swiped (live 2026-07-30). Symmetric with the auto flow persisting 'auto'.
+      try {
+        const { data: { user: u } } = await supabase.auth.getUser();
+        if (u) await supabase.from("profiles").update({ submit_mode: "tap" }).eq("user_id", u.id);
+      } catch { /* non-fatal — extension also has a swipe-first guard */ }
       window.postMessage({ type: "HIREDROP_SET_REVIEW", on: false }, "*");
       window.postMessage({ type: "HIREDROP_START_CAMPAIGN", filters }, "*");
       setTimeout(() => setBusy((b) => (b === "start" ? null : b)), 45000);
