@@ -46,8 +46,15 @@ const DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 // digit. On change the column slides — the classic odometer effect.
 function OdometerDigit({ digit }: { digit: number }) {
   return (
-    // Fixed 1em window; the 0–9 column slides so the current digit sits inside it.
-    <span aria-hidden className="inline-flex overflow-hidden align-bottom" style={{ height: "1em", lineHeight: 1 }}>
+    // Fixed window sized to ONE digit: height 1em (vertical roll clip) AND width 1ch
+    // (a tabular digit's advance). Without an explicit width the inline-flex window
+    // collapsed to a sliver and overflow-hidden clipped the digit horizontally — the
+    // counter rendered as a thin vertical stroke instead of a number (Igor 2026-07-30).
+    <span
+      aria-hidden
+      className="inline-block overflow-hidden align-bottom tabular-nums"
+      style={{ height: "1em", width: "1ch", lineHeight: 1 }}
+    >
       <span
         className="flex flex-col"
         style={{
@@ -56,9 +63,15 @@ function OdometerDigit({ digit }: { digit: number }) {
         }}
       >
         {DIGITS.map((n) => (
-          // Center each glyph in its 1em cell so it's never clipped by the window
-          // (baseline alignment left only a sliver of the digit showing).
-          <span key={n} className="flex items-center justify-center" style={{ height: "1em", lineHeight: 1 }}>{n}</span>
+          // Each glyph fills a 1em-tall, full-width cell, centered — the 1ch window
+          // width guarantees the whole digit shows; only the vertical roll is clipped.
+          <span
+            key={n}
+            className="flex items-center justify-center"
+            style={{ height: "1em", width: "100%", lineHeight: 1 }}
+          >
+            {n}
+          </span>
         ))}
       </span>
     </span>
