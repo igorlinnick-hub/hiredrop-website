@@ -13,12 +13,14 @@ import type { Job } from "@/lib/types";
 // backend MAX_PER_PLATFORM). Keeps a swipe spree from lining up 80 applies.
 const MAX_PER_PLATFORM = 15;
 
-// Platforms the background executor can actually apply to from an approved swipe
-// today. Greenhouse = full-auto, Lever = fills + you clear the captcha. Indeed &
-// others apply via the auto-mode search walk, not by direct link yet — so we don't
-// put them in the swipe deck (a card you Approve must result in a real apply, not a
-// no-op). Indeed joins the deck once apply-by-link lands (see TAP_INSTANT_PLAN.md).
-const TAP_APPLY_PLATFORMS = ["greenhouse", "lever"];
+// Platforms the background executor can actually apply to from an approved swipe today.
+// A card you Approve MUST result in a real apply, not a no-op — so this list mirrors what
+// the extension's buildApprovedAtsQueue() will actually walk (ATS_PLATFORMS + verified
+// natives). Greenhouse = full-auto; Lever = fills + you clear the captcha; Indeed = apply-
+// by-link (CF-warmed, verified live #68 — now poolable, see POOL_NATIVE_VERIFIED). Held
+// out: ZipRecruiter (ephemeral /co/…?lk= URLs, by-link unverified) and Ashby (React form
+// not yet live-verified) — adding either here without the executor side = a dead swipe.
+const TAP_APPLY_PLATFORMS = ["greenhouse", "lever", "indeed"];
 
 // Dedicated Tap ("тапалка") surface — an INSTANT swipe deck over the job pool.
 // (Igor 2026-07-25) The old flow filled one form, waited for the tap, then filled the
