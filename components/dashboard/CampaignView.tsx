@@ -114,6 +114,11 @@ export default function CampaignView({ token: initialToken }: Props) {
   // (both live from chrome.storage via the ping.js bridge). In tap mode the right
   // panel becomes the review card instead of the raw browser preview.
   const [reviewMode, setReviewMode] = useState(false);
+  // The RUN's actual mode from the profile (campaign/status). The header chip must reflect
+  // THIS, not reviewMode: the tapalka runs submit_mode=tap with reviewMode=false (a swipe IS
+  // the review → auto-submit), so a reviewMode-based chip wrongly read "Auto" during a real
+  // tap run and looked like it "switched to auto" after a few applies (Igor 2026-07-30).
+  const [submitMode, setSubmitMode] = useState<"auto" | "tap">("auto");
   const [reviewPending, setReviewPending] = useState<ReviewPending | null>(null);
   const lastScreenshotTs = useRef<number>(0);
   const activityEndRef = useRef<HTMLDivElement>(null);
@@ -186,12 +191,13 @@ export default function CampaignView({ token: initialToken }: Props) {
   const fetchStats = useCallback(async () => {
     try {
       const t = await getToken();
-      const status = await apiGet<{ today_applications: number; jobs_ready: number; started_at?: string | null }>(
+      const status = await apiGet<{ today_applications: number; jobs_ready: number; started_at?: string | null; submit_mode?: string }>(
         "/campaign/status",
         t
       );
       startedAtRef.current = status.started_at || null;
       setStats({ applied: status.today_applications, found: status.jobs_ready });
+      if (status.submit_mode) setSubmitMode(status.submit_mode === "tap" ? "tap" : "auto");
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -467,21 +473,22 @@ export default function CampaignView({ token: initialToken }: Props) {
         <div className="flex items-center gap-2 ml-1">
           <span className="inline-block w-2 h-2 rounded-full bg-green animate-pulse" />
           <span className="font-semibold text-text">Campaign Live</span>
-          {/* The mode this run is actually executing — same source (reviewMode) that
-              decides the panel on the right, so the header and panel can never
-              disagree. Removes the "I picked Auto but it says Tap" confusion. */}
+          {/* The RUN's mode from the profile (submit_mode), NOT reviewMode: the tapalka runs
+              submit_mode=tap with reviewMode=false (swipe = the review → auto-submit), so a
+              reviewMode chip wrongly showed "Auto" mid-tap-run. Chip = submit_mode is accurate
+              for all three cases (auto / tapalka-swipe / legacy review-each). */}
           <span
             className={[
               "inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border",
-              reviewMode
+              submitMode === "tap"
                 ? "bg-accent/10 text-accent border-accent/20"
                 : "bg-green/10 text-green border-green/20",
             ].join(" ")}
-            title={reviewMode
-              ? "Tap mode — you approve each application before it's sent"
+            title={submitMode === "tap"
+              ? "Tap mode — applies the jobs you swipe/approve"
               : "Auto mode — HireDrop fills and sends for you"}
           >
-            {reviewMode ? "Tap" : "Auto"}
+            {submitMode === "tap" ? "Tap" : "Auto"}
           </span>
         </div>
 
