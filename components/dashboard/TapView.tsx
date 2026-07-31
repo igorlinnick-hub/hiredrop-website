@@ -17,10 +17,11 @@ const MAX_PER_PLATFORM = 15;
 // A card you Approve MUST result in a real apply, not a no-op — so this list mirrors what
 // the extension's buildApprovedAtsQueue() will actually walk (ATS_PLATFORMS + verified
 // natives). Greenhouse = full-auto; Lever = fills + you clear the captcha; Indeed = apply-
-// by-link (CF-warmed, verified live #68 — now poolable, see POOL_NATIVE_VERIFIED). Held
-// out: ZipRecruiter (ephemeral /co/…?lk= URLs, by-link unverified) and Ashby (React form
-// not yet live-verified) — adding either here without the executor side = a dead swipe.
-const TAP_APPLY_PLATFORMS = ["greenhouse", "lever", "indeed"];
+// by-link (CF-warmed, verified live #68); Ashby = full-auto, form-fill verified on a live
+// board + _systemfield_name fix (jobflow #77), invisible reCAPTCHA (zero-touch like GH).
+// Held out: ZipRecruiter (ephemeral /co/…?lk= URLs, by-link unverified) — adding it without
+// the executor side = a dead swipe; ZR stays auto-only.
+const TAP_APPLY_PLATFORMS = ["greenhouse", "lever", "indeed", "ashby"];
 
 // Brand accent per platform for the monogram chip on each card — the deck mixes platforms
 // (Igor: "не одна платформа, а сразу несколько в рандомном порядке"), so every card must show
