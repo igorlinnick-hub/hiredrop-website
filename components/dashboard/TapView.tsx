@@ -22,6 +22,18 @@ const MAX_PER_PLATFORM = 15;
 // not yet live-verified) — adding either here without the executor side = a dead swipe.
 const TAP_APPLY_PLATFORMS = ["greenhouse", "lever", "indeed"];
 
+// Brand accent per platform for the monogram chip on each card — the deck mixes platforms
+// (Igor: "не одна платформа, а сразу несколько в рандомном порядке"), so every card must show
+// WHICH platform it's from at a glance. Hex ≈ brand color; matches PlatformConnections.tsx.
+const BRAND: Record<string, string> = {
+  indeed: "#2557a7",
+  greenhouse: "#1f7a54",
+  lever: "#5522e8",
+  ashby: "#4b4ef0",
+  ziprecruiter: "#1d8649",
+  remoteok: "#e64a19",
+};
+
 // Dedicated Tap ("тапалка") surface — an INSTANT swipe deck over the job pool.
 // (Igor 2026-07-25) The old flow filled one form, waited for the tap, then filled the
 // next — so you waited ~30-60s between every card. Now cards come straight from the
@@ -106,8 +118,11 @@ export default function TapView({ token: initialToken }: { token: string }) {
   }, []);
 
   // ── The deck: pool jobs to swipe ──────────────────────────────────────────
-  // status "new" only (untouched), best fit first, then per-platform cap so one
-  // board can't dominate the stack. Preserves any card currently on top.
+  // status "new" only (untouched). Igor's principle: NOT one platform at a time — the deck
+  // is SEVERAL platforms mixed in random order. So we group by platform (best-fit first
+  // within each), cap per platform, then round-robin interleave across platforms in a
+  // RANDOMISED platform order → consecutive cards come from different boards, sequence feels
+  // random, and no single board dominates the stack. Preserves any card currently on top.
   const buildDeck = useCallback((jobs: Job[], keepTopId?: string): Job[] => {
     const fresh = jobs.filter(
       (j) =>
@@ -115,15 +130,26 @@ export default function TapView({ token: initialToken }: { token: string }) {
         (j.link || (j as { apply_url?: string }).apply_url) &&
         TAP_APPLY_PLATFORMS.includes(j.platform)
     );
-    fresh.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
-    const perPlatform: Record<string, number> = {};
+    const shuffle = <T,>(arr: T[]): T[] => {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const k = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[k]] = [arr[k], arr[i]];
+      }
+      return arr;
+    };
+    // Group by platform; best-fit first inside each; cap so one board can't flood the deck.
+    const byPlatform: Record<string, Job[]> = {};
+    for (const j of fresh) (byPlatform[j.platform || "other"] ||= []).push(j);
+    const queues = shuffle(Object.keys(byPlatform)).map((p) =>
+      byPlatform[p].sort((a, b) => (b.score ?? -1) - (a.score ?? -1)).slice(0, MAX_PER_PLATFORM)
+    );
+    // Round-robin interleave → mixed platforms, no long single-platform runs.
     const out: Job[] = [];
-    for (const j of fresh) {
-      const p = j.platform || "other";
-      const c = perPlatform[p] || 0;
-      if (c >= MAX_PER_PLATFORM) continue;
-      perPlatform[p] = c + 1;
-      out.push(j);
+    for (let round = 0, more = true; more; round++) {
+      more = false;
+      for (const q of queues) {
+        if (round < q.length) { out.push(q[round]); more = true; }
+      }
     }
     // Don't yank the card out from under the user's thumb mid-swipe.
     if (keepTopId && out[0]?.id !== keepTopId) {
@@ -332,10 +358,12 @@ export default function TapView({ token: initialToken }: { token: string }) {
   }
 
   const card = deck[0];
-  const platformName = useMemo(
-    () => (card ? PLATFORMS.find((p) => p.id === card.platform)?.name || card.platform : ""),
-    [card]
-  );
+  const platformName = useMemo(() => {
+    if (!card) return "";
+    const p = card.platform || "";
+    return PLATFORMS.find((x) => x.id === p)?.name || (p ? p[0].toUpperCase() + p.slice(1) : "");
+  }, [card]);
+  const brandColor = card ? BRAND[card.platform] || "#6C5CE7" : "#6C5CE7";
   const hasSession = running || deck.length > 0 || approvedCount > 0;
 
   return (
@@ -410,12 +438,23 @@ export default function TapView({ token: initialToken }: { token: string }) {
                 style={{ opacity: Math.max(0, Math.min(1, -drag / SWIPE_THRESHOLD)) }}>SKIP</div>
 
               <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="min-w-0">
-                  <h2 className="text-xl font-bold text-text leading-snug">{card.title || "Untitled role"}</h2>
-                  <p className="text-sm text-text2 mt-0.5">
-                    {card.company || "—"}
-                    {platformName && <span className="text-text2/50"> · {platformName}</span>}
-                  </p>
+                <div className="flex items-start gap-3 min-w-0">
+                  {/* Platform monogram — the deck mixes boards, so each card flags its own */}
+                  <span
+                    aria-label={platformName}
+                    title={platformName}
+                    className="flex items-center justify-center w-9 h-9 rounded-lg text-sm font-bold shrink-0 select-none mt-0.5"
+                    style={{ backgroundColor: `${brandColor}1a`, color: brandColor }}
+                  >
+                    {platformName ? platformName[0].toUpperCase() : "?"}
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="text-xl font-bold text-text leading-snug">{card.title || "Untitled role"}</h2>
+                    <p className="text-sm text-text2 mt-0.5">
+                      {card.company || "—"}
+                      {platformName && <span className="text-text2/50"> · {platformName}</span>}
+                    </p>
+                  </div>
                 </div>
                 {typeof card.score === "number" && (
                   <span className={[
