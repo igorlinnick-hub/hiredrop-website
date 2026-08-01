@@ -147,6 +147,11 @@ export default function PlatformConnections() {
             </p>
           )}
 
+          {/* Type A — log-in platforms (we apply AS you via your session). See
+              PLATFORM_STATUS_MODEL.md: this group uses Connect/Connected, not Ready. */}
+          <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text2/50">
+            Your accounts — log in so we apply as you
+          </p>
           <ul className="divide-y divide-border">
             {CONNECTABLE.map((p) => {
               const status = liveStatus(connections[p.id]);
@@ -229,9 +234,13 @@ export default function PlatformConnections() {
             })}
           </ul>
 
-          {/* No-account, full-auto platforms (Greenhouse): these need no connect
-              step and run zero-touch, so they get a real "ready" row rather than
-              being hidden in the footnote. */}
+          {/* Type B — no-account guest-apply ATS (we fill as a guest). See
+              PLATFORM_STATUS_MODEL.md: this group is "Ready" — nothing to connect. */}
+          {READY_AUTO.length > 0 && (
+            <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text2/50 border-t border-border">
+              No account needed — ready now
+            </p>
+          )}
           {READY_AUTO.map((p) => (
             <div key={p.id}
               className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border bg-green/[0.04]">
