@@ -35,6 +35,8 @@ const BRAND: Record<string, string> = {
   careerbuilder: "#0c6dbb",
   dice: "#eb1c26",
   greenhouse: "#1f7a54",
+  lever: "#5522e8",
+  ashby: "#4b4ef0",
 };
 
 type ConnStatus = "connected" | "logged_out" | undefined;

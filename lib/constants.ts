@@ -22,6 +22,13 @@ export const PLATFORMS: Platform[] = [
   // No loginUrl / not connectable on purpose. Marked beta until live-validated.
   { id: "greenhouse", name: "Greenhouse", status: "active", requiresLogin: false, autoApply: true, beta: true, stage: "auto",
     description: "Apply on company career sites (Greenhouse ATS) — near-captcha-free, no account needed." },
+  // Lever + Ashby — same model as Greenhouse: guest-apply company ATS, no account to
+  // connect. The campaign/tap deck walks their saved apply URLs and fills+submits directly.
+  // (Lever's per-company hCaptcha = the one human step; Ashby is invisible-reCAPTCHA zero-touch.)
+  { id: "lever", name: "Lever", status: "active", requiresLogin: false, autoApply: true, beta: true, stage: "auto",
+    description: "Apply on company career sites (Lever ATS) — no account needed; you clear the captcha." },
+  { id: "ashby", name: "Ashby", status: "active", requiresLogin: false, autoApply: true, beta: true, stage: "auto",
+    description: "Apply on company career sites (Ashby ATS) — near-captcha-free, no account needed." },
   // Discovery platforms — their listings feed the board; applications happen on
   // the employer's ATS (Greenhouse/Lever), where we fill and the user finishes.
   { id: "glassdoor", name: "Glassdoor", status: "active", requiresLogin: true, connectable: true, discovery: true, stage: "semi",
