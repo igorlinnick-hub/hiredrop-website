@@ -16,6 +16,12 @@ export const PLATFORMS: Platform[] = [
   { id: "ziprecruiter", name: "ZipRecruiter", status: "active", requiresLogin: true, autoApply: true, connectable: true, stage: "auto",
     loginUrl: "https://www.ziprecruiter.com/authn/login?realm=candidates",
     description: "Top US job board with Quick Apply. Extension auto-applies on your behalf." },
+  // LinkedIn — Easy Apply only (the 1-click subset; NOT full-LinkedIn nav, which is anti-bot
+  // heavy). Type A log-in. stage "connect" = coming soon until the Easy Apply handler ships +
+  // passes a careful live test (PLATFORMS_MASTER_PLAN.md Phase 2); flip to "auto" then.
+  { id: "linkedin", name: "LinkedIn", status: "active", requiresLogin: true, connectable: true, stage: "connect",
+    loginUrl: "https://www.linkedin.com/login",
+    description: "Easy Apply — the 1-click roles. #1 US professional network." },
   // Greenhouse — company ATS (not a board you log into). The campaign walks saved
   // apply URLs from the job pool and fills+submits directly; it's near-captcha-free
   // (Enterprise invisible reCAPTCHA) so it runs full-auto with no account to connect.
@@ -29,26 +35,10 @@ export const PLATFORMS: Platform[] = [
     description: "Apply on company career sites (Lever ATS) — no account needed; you clear the captcha." },
   { id: "ashby", name: "Ashby", status: "active", requiresLogin: false, autoApply: true, beta: true, stage: "auto",
     description: "Apply on company career sites (Ashby ATS) — near-captcha-free, no account needed." },
-  // Discovery platforms — their listings feed the board; applications happen on
-  // the employer's ATS (Greenhouse/Lever), where we fill and the user finishes.
-  { id: "glassdoor", name: "Glassdoor", status: "active", requiresLogin: true, connectable: true, discovery: true, stage: "semi",
-    loginUrl: "https://www.glassdoor.com/member/profile/login",
-    description: "Jobs + company reviews & salaries." },
-  { id: "wellfound", name: "Wellfound", status: "active", requiresLogin: true, connectable: true, discovery: true, stage: "semi",
-    loginUrl: "https://wellfound.com/login", signupUrl: "https://wellfound.com/join",
-    description: "Startup & tech jobs." },
-  // Monster and CareerBuilder merged (2024) — they share one identity account
-  // (identity.monster.com), so signing up on either connects you to both.
-  { id: "monster", name: "Monster", status: "active", requiresLogin: true, connectable: true, stage: "connect",
-    loginUrl: "https://www.monster.com/profile",
-    description: "Major US job board. Same account works on CareerBuilder." },
-  { id: "careerbuilder", name: "CareerBuilder", status: "active", requiresLogin: true, connectable: true, stage: "connect",
-    loginUrl: "https://www.careerbuilder.com/profile/valid-profile-continue?redirectUri=%2F&mode=Login",
-    signupUrl: "https://www.careerbuilder.com/profile/valid-profile-continue?redirectUri=%2F&mode=SignUp",
-    description: "Major US job board. Same account works on Monster." },
-  { id: "dice", name: "Dice", status: "active", requiresLogin: true, connectable: true, stage: "connect",
-    loginUrl: "https://www.dice.com/dashboard/login",
-    description: "Tech & IT jobs — engineering, data, cloud." },
+  // REMOVED 2026-08-01 (PLATFORMS_MASTER_PLAN.md §1 "УБИРАЕМ"): Glassdoor (redundant with
+  // Indeed, scrape dead), Monster + CareerBuilder (legacy/dying), Dice (tech-only niche),
+  // Wellfound (startup niche, scraper dead/SPA → parking lot). Their apply routes through ATS
+  // we already handle; keeping them as dead "coming soon" rows just misled users.
   // Public — no account needed to browse/apply.
   { id: "google", name: "Google Jobs", status: "active", requiresLogin: false, discovery: true, description: "Aggregates listings from across the web." },
   { id: "remoteok", name: "RemoteOK", status: "active", requiresLogin: false, discovery: true, description: "Remote-only jobs via public API." },
