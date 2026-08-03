@@ -8,6 +8,7 @@ import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
 import LaunchModal from "@/components/dashboard/LaunchModal";
 import StartReadinessModal, { gateStart, type ReadinessCheck } from "@/components/dashboard/StartReadiness";
 import RadiusMap, { type RadiusMiles } from "@/components/dashboard/RadiusMap";
+import LaunchModeCards from "@/components/dashboard/LaunchModeCards";
 
 // Platforms the extension can auto-apply on. Exactly one runs per campaign.
 const AUTO_APPLY_IDS = PLATFORMS.filter((p) => p.autoApply).map((p) => p.id);
@@ -388,7 +389,13 @@ export default function QuickActions({
   const jobTypeLabel = JOB_TYPES.find((j) => j.value === jobType)?.label ?? jobType;
 
   return (
-    <div className="mb-6 space-y-2">
+    <div className="mb-6 space-y-3">
+
+      {/* How you apply — the primary choice, up top as two big cards. Hidden while a
+          campaign is running (mode is a pre-launch decision). */}
+      {!campaignRunning && (
+        <LaunchModeCards mode={mode} onAuto={() => saveMode("auto")} onTap={goTap} />
+      )}
 
       {/* ── Main search bar ── */}
       <div className="flex gap-2 items-stretch">
@@ -470,31 +477,6 @@ export default function QuickActions({
                 text-text hover:bg-surface2 hover:border-accent/40 disabled:opacity-50 transition whitespace-nowrap">
               {busy === "find" ? "Scanning…" : "Find Jobs"}
             </button>
-
-            {/* Submit-mode toggle — sits next to Start so the choice is obvious.
-                Auto = HireDrop fills + sends for you; Tap = you review + approve each. */}
-            <div className="inline-flex items-center rounded-xl border border-border bg-surface p-0.5"
-              role="group" aria-label="Submit mode">
-              <button type="button" onClick={() => saveMode("auto")} aria-pressed={mode === "auto"}
-                title="Auto — HireDrop fills and sends applications for you"
-                className={["flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition",
-                  mode === "auto" ? "bg-accent text-white shadow-sm" : "text-text2 hover:text-text"].join(" ")}>
-                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M11 2 4 11h4l-1 7 7-9h-4l1-7z" />
-                </svg>
-                Auto
-              </button>
-              <button type="button" onClick={goTap} aria-pressed={mode === "tap"}
-                title="Tap — open the tap page: review and approve each application on cards"
-                className={["flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition",
-                  mode === "tap" ? "bg-accent text-white shadow-sm" : "text-text2 hover:text-text"].join(" ")}>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2"
-                  strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                  <path d="M9 11V6a2 2 0 1 1 4 0v5m0-2a2 2 0 1 1 4 0v5a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-2.7l-2-3a2 2 0 0 1 3.3-2.2L7.5 13" />
-                </svg>
-                Tap
-              </button>
-            </div>
 
             {/* Primary action is mode-aware: Auto starts the campaign here; Tap opens
                 the dedicated tap page (its own Start lives there). Prevents the "auto
