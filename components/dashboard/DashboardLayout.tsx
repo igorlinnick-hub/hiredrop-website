@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import ExtensionTokenSync from "@/components/dashboard/ExtensionTokenSync";
+import FitModeMenu from "@/components/dashboard/FitModeMenu";
 
 const NAV_ITEMS = [
   {
@@ -88,6 +89,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            <FitModeMenu />
             <ThemeToggle dark={dark} onToggle={toggleTheme} />
             <ProfileMenu email={email} onLogout={handleLogout} />
           </div>
@@ -96,7 +98,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
         {/* Nav tabs */}
-        <nav className="flex gap-1 mb-8 border-b border-border">
+        <nav className="flex flex-wrap gap-1.5 mb-8">
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href;
             return (
@@ -104,10 +106,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 key={item.href}
                 href={item.href}
                 className={[
-                  "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition",
+                  "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition",
                   active
-                    ? "border-accent text-accent"
-                    : "border-transparent text-text2 hover:text-text hover:border-border",
+                    ? "nav-active bg-accent/10 text-accent"
+                    : "text-text2 hover:text-text hover:bg-surface2/70",
                 ].join(" ")}
               >
                 {item.icon}
