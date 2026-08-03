@@ -5,9 +5,10 @@ import { createClient } from "@/lib/supabase/client";
 
 // submit_mode is orthogonal to apply_mode (broad/standard/precise = fit threshold).
 // "auto" = HireDrop fills + submits for you (default, capped for cost/ban-safety).
-// "tap"  = you approve each application before it's sent → you keep control, solve any
-//          captcha, and we can apply to far more per day (see PLAN §3: human review lets
-//          us use a cheaper model, so the higher cap stays profitable).
+// "tap"  = you approve each application before it's sent → you keep control and solve any
+//          captcha. SAME 30/day cap as auto (2026-08-02: tap is the QUALITY/control lane,
+//          not a volume lane — see memory project_tap_mode). Its edge is control + a cheaper
+//          cover-letter model, NOT more volume; every application is still tailored.
 type SubmitMode = "auto" | "tap";
 
 const OPTIONS: { id: SubmitMode; label: string; tagline: string; detail: string; cap: string }[] = [
@@ -21,9 +22,9 @@ const OPTIONS: { id: SubmitMode; label: string; tagline: string; detail: string;
   {
     id: "tap",
     label: "Tap",
-    tagline: "Review each, apply to more",
-    detail: "You approve every application in one tap before it's sent — keep control, solve any captcha yourself, and apply to far more per day. Best for keeping your accounts safe.",
-    cap: "Up to 100/day",
+    tagline: "Review each before it's sent",
+    detail: "You approve every application in one tap before it's sent — stay in control, solve any captcha yourself, and every resume is tailored to the job. Best for keeping your accounts safe.",
+    cap: "Up to 30/day",
   },
 ];
 

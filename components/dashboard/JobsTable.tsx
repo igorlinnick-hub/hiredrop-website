@@ -12,6 +12,25 @@ const statusColor: Record<string, "blue" | "yellow" | "green" | "red"> = {
   rejected: "red",
 };
 
+// Clean status marks — replace the old emoji labels ("Interview 🎉").
+const ICONS: Record<string, React.ReactNode> = {
+  all: <path d="M4 6h16M4 12h16M4 18h16" />,
+  new: <path d="M12 3l1.7 5.1L19 9.8l-4.3 1.4L12 16l-1.7-4.8L6 9.8l5.3-1.7z" />,
+  applied: <path d="M22 2 11 13M22 2l-7 20-4-9-9-4z" />,
+  interview: <><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M8 2.5v4M16 2.5v4M3 9.5h18M9.5 14.5l2 2 3.5-3.5" /></>,
+  rejected: <><circle cx="12" cy="12" r="9" /><path d="M15 9l-6 6M9 9l6 6" /></>,
+};
+
+// Curated, relevant tabs only. "interview" merges the two interview statuses;
+// "received" is dropped (its rows still appear under All). Zero-count status tabs
+// are hidden so the bar shows only what actually exists.
+const STATUS_TABS: { value: string; label: string; match?: string[] }[] = [
+  { value: "new", label: "New" },
+  { value: "applied", label: "Applied" },
+  { value: "interview", label: "Interview", match: ["interview", "interview_invite"] },
+  { value: "rejected", label: "Rejected" },
+];
+
 interface JobsTableProps {
   jobs: Job[];
 }
@@ -20,7 +39,11 @@ export default function JobsTable({ jobs }: JobsTableProps) {
   const [filter, setFilter] = useState("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  const filtered = filter === "all" ? jobs : jobs.filter((j) => j.status === filter);
+  const activeTab = STATUS_TABS.find((t) => t.value === filter);
+  const filtered =
+    filter === "all" ? jobs
+    : activeTab?.match ? jobs.filter((j) => activeTab.match!.includes(j.status))
+    : jobs.filter((j) => j.status === filter);
 
   function toggleExpand(id: string) {
     setExpanded((prev) => {
@@ -32,18 +55,24 @@ export default function JobsTable({ jobs }: JobsTableProps) {
 
   return (
     <div className="bg-surface border border-border rounded-xl">
-      <div className="p-5 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h3 className="font-semibold text-text">Job Listings</h3>
-        <div className="flex gap-1">
-          <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>
-            All ({jobs.length})
-          </FilterButton>
-          {JOB_STATUSES.map((s) => {
-            const count = jobs.filter((j) => j.status === s.value).length;
+      <div className="p-4 sm:p-5 border-b border-border flex flex-col sm:flex-row sm:items-center gap-3">
+        <h3 className="font-semibold text-text shrink-0">Job Listings</h3>
+        <div className="sm:ml-auto flex items-center gap-1 overflow-x-auto -mx-1 px-1 min-w-0">
+          <Pill active={filter === "all"} onClick={() => setFilter("all")} icon={ICONS.all} label="All" count={jobs.length} />
+          {STATUS_TABS.map((t) => {
+            const count = t.match
+              ? jobs.filter((j) => t.match!.includes(j.status)).length
+              : jobs.filter((j) => j.status === t.value).length;
+            if (count === 0) return null;
             return (
-              <FilterButton key={s.value} active={filter === s.value} onClick={() => setFilter(s.value)}>
-                {s.label} ({count})
-              </FilterButton>
+              <Pill
+                key={t.value}
+                active={filter === t.value}
+                onClick={() => setFilter(t.value)}
+                icon={ICONS[t.value]}
+                label={t.label}
+                count={count}
+              />
             );
           })}
         </div>
@@ -182,24 +211,35 @@ function ScoreBadge({ score, verdict }: { score?: number; verdict?: string }) {
   );
 }
 
-function FilterButton({
+function Pill({
   active,
   onClick,
-  children,
+  icon,
+  label,
+  count,
 }: {
   active: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  icon: React.ReactNode;
+  label: string;
+  count: number;
 }) {
   return (
     <button
       onClick={onClick}
       className={[
-        "px-3 py-1 text-xs rounded-full transition",
-        active ? "bg-accent text-white" : "text-text2 hover:bg-surface2",
+        "flex items-center gap-1.5 shrink-0 px-3 py-1.5 text-xs font-medium rounded-full transition",
+        active ? "bg-accent/10 text-accent" : "text-text2 hover:text-text hover:bg-surface2/70",
       ].join(" ")}
     >
-      {children}
+      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.7}
+        viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+        {icon}
+      </svg>
+      {label}
+      <span className={["text-[11px] tabular-nums", active ? "text-accent/70" : "text-text2/45"].join(" ")}>
+        {count}
+      </span>
     </button>
   );
 }

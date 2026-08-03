@@ -60,7 +60,7 @@ export const JOB_STATUSES: JobStatus[] = [
   { value: "new", label: "New", color: "blue" },
   { value: "applied", label: "Applied", color: "yellow" },
   { value: "received", label: "Received", color: "blue" },
-  { value: "interview", label: "Interview 🎉", color: "green" },
-  { value: "interview_invite", label: "Interview 🎉", color: "green" },
+  { value: "interview", label: "Interview", color: "green" },
+  { value: "interview_invite", label: "Interview", color: "green" },
   { value: "rejected", label: "Rejected", color: "red" },
 ];
