@@ -78,9 +78,9 @@ export default function JobsTable({ jobs }: JobsTableProps) {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-auto max-h-[72vh] hd-scroll">
         <table className="w-full text-sm">
-          <thead>
+          <thead className="sticky top-0 z-10 bg-surface">
             <tr className="border-b border-border text-left text-text2">
               <th className="px-5 py-3 font-medium w-6"></th>
               <th className="px-5 py-3 font-medium">Title</th>
