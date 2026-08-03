@@ -51,6 +51,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const supabase = createClient();
   const [email, setEmail] = useState("");
+  // Night mode is scoped to the dashboard subtree (not the whole site — the marketing
+  // pages use hardcoded light surfaces). Set in an effect (not the initializer) so SSR
+  // and first client render agree; the swap is one frame on this authed page.
+  const [dark, setDark] = useState(false);
 
   useEffect(() => {
     async function loadUser() {
@@ -58,7 +62,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (user) setEmail(user.email || "");
     }
     loadUser();
+    try { setDark(localStorage.getItem("hd_theme") === "dark"); } catch { /* noop */ }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function toggleTheme() {
+    setDark((d) => {
+      const next = !d;
+      try { localStorage.setItem("hd_theme", next ? "dark" : "light"); } catch { /* noop */ }
+      return next;
+    });
+  }
 
   async function handleLogout() {
     // Tell the extension to wipe its user-scoped state (durable key, cached
@@ -73,7 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={["min-h-screen bg-background hd-dash-root", dark ? "dark" : ""].join(" ")}>
       {/* Keeps the extension's token fresh while any dashboard page is open. */}
       <ExtensionTokenSync />
       {/* Top bar */}
@@ -83,8 +96,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="text-accent">Hire</span>Drop
           </Link>
 
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-text2">{email}</span>
+          <div className="flex items-center gap-3 sm:gap-4">
+            <ThemeToggle dark={dark} onToggle={toggleTheme} />
+            <span className="hidden sm:inline text-sm text-text2">{email}</span>
             <button
               onClick={handleLogout}
               className="text-sm text-text2 hover:text-text transition"
@@ -121,5 +135,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </div>
     </div>
+  );
+}
+
+// Day/night switch. Shows the mode you'll switch TO (moon in day, sun at night).
+// The `.dark .theme-toggle` rule in globals.css gives it a neon edge when night is on.
+function ThemeToggle({ dark, onToggle }: { dark: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={dark ? "Switch to day mode" : "Switch to night mode"}
+      title={dark ? "Day mode" : "Night mode"}
+      className="theme-toggle inline-flex items-center justify-center w-9 h-9 rounded-full border border-border
+        text-text2 hover:text-accent hover:border-accent/50 transition"
+    >
+      {dark ? (
+        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.7}
+          viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+        </svg>
+      ) : (
+        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.7}
+          viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z" />
+        </svg>
+      )}
+    </button>
   );
 }

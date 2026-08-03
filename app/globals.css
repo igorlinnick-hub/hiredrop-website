@@ -238,3 +238,55 @@ h1, h2, h3 {
   opacity: 1;
   transform: translateX(0);
 }
+
+/* ============================================================
+   NIGHT MODE — NEON (scoped to the dashboard's .dark subtree)
+   Same brand palette (purple #6C5CE7 / green #00B894), just lit.
+   The dark token values live in `.dark {…}` above; this only adds
+   the glow + a soft ambient so it reads premium, not flat-dark.
+   ============================================================ */
+.dark { color-scheme: dark; }
+
+/* Soft ambient purple wash at the top of the dashboard for depth. */
+.hd-dash-root.dark {
+  background-image:
+    radial-gradient(1100px 420px at 50% -140px, rgba(108, 92, 231, 0.14), transparent 70%),
+    radial-gradient(700px 300px at 100% 0%, rgba(0, 184, 148, 0.06), transparent 70%);
+  background-attachment: fixed;
+}
+
+/* Solid-accent surfaces (primary buttons, active Fit pill) — neon halo.
+   Light accent chips use bg-accent/10, which is a different class, so they
+   stay calm; only full-strength accent glows. */
+.dark .bg-accent {
+  box-shadow: 0 0 20px -4px rgba(124, 108, 255, 0.65), inset 0 0 0 1px rgba(140, 125, 255, 0.25);
+}
+.dark .bg-accent:hover {
+  box-shadow: 0 0 26px -2px rgba(124, 108, 255, 0.8), inset 0 0 0 1px rgba(150, 135, 255, 0.35);
+}
+
+/* Accent text (brand wordmark, active nav, links) — faint glow. */
+.dark .text-accent { text-shadow: 0 0 14px rgba(124, 108, 255, 0.5); }
+
+/* Green = live / connected → mint neon. */
+.dark .text-green { text-shadow: 0 0 14px rgba(0, 184, 148, 0.55); }
+.dark .bg-green { box-shadow: 0 0 18px -4px rgba(0, 184, 148, 0.6); }
+
+/* Active nav tab underline picks up a glow. */
+.dark nav a.border-accent { box-shadow: 0 3px 14px -4px rgba(124, 108, 255, 0.7); }
+
+/* Cards get an accent-lit edge on hover in the dark. */
+.dark .card-lift:hover {
+  box-shadow: 0 16px 44px rgba(108, 92, 231, 0.3);
+  border-color: rgba(124, 108, 255, 0.55);
+}
+
+/* Day/night toggle — subtle glow when night is active. */
+.dark .theme-toggle {
+  border-color: rgba(124, 108, 255, 0.4);
+  box-shadow: 0 0 16px -4px rgba(124, 108, 255, 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hd-dash-root.dark { background-attachment: scroll; }
+}
