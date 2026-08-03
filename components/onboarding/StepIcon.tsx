@@ -57,8 +57,12 @@ const ICONS: Record<number, React.ReactNode> = {
       <path d="M7 15h4" />
     </>
   ),
-  // 9 Done — check circle
+  // 9 Connect — puzzle piece (browser extension)
   9: (
+    <path d="M14.5 3.5a2.2 2.2 0 00-4.4 0c0 .4.1.8.3 1.1H7.5a1 1 0 00-1 1v2.9c-.3-.2-.7-.3-1.1-.3a2.2 2.2 0 000 4.4c.4 0 .8-.1 1.1-.3V16a1 1 0 001 1h3c-.2.3-.3.7-.3 1.1a2.2 2.2 0 004.4 0c0-.4-.1-.8-.3-1.1h2.7a1 1 0 001-1v-3c.3.2.7.3 1.1.3a2.2 2.2 0 000-4.4c-.4 0-.8.1-1.1.3V5.5a1 1 0 00-1-1h-2.5c.2-.3.3-.7.3-1.1z" />
+  ),
+  // 10 Done — check circle
+  10: (
     <>
       <circle cx="12" cy="12" r="9" />
       <path d="M8 12l3 3 5-6" />

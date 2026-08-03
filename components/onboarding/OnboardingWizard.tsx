@@ -13,6 +13,7 @@ import StepResume from "./StepResume";
 import StepATSCheck from "./StepATSCheck";
 import StepWritingStyle from "./StepWritingStyle";
 import StepPlan from "./StepPlan";
+import StepConnectExtension from "./StepConnectExtension";
 import StepDone from "./StepDone";
 import type { UserProfile } from "@/lib/types";
 
@@ -25,7 +26,8 @@ const STEPS = [
   { id: 6, title: "ATS" },
   { id: 7, title: "Style" },
   { id: 8, title: "Plan" },
-  { id: 9, title: "Done" },
+  { id: 9, title: "Connect" },
+  { id: 10, title: "Done" },
 ];
 
 const initialProfile: UserProfile = {
@@ -44,11 +46,28 @@ const initialProfile: UserProfile = {
   onboarding_completed: false,
 };
 
-export default function OnboardingWizard() {
+// Persist wizard progress so the mandatory extension step (which reloads the tab once
+// after a first-time install, to inject the extension's content script) never loses the
+// answers the user already typed. resumeFile isn't stored — by the time we reach the
+// extension step the resume is already uploaded to storage (resume_url), so it's safe.
+const STORAGE_KEY = "hd_onboarding_v1";
+function loadSaved(): { step?: number; profile?: Partial<UserProfile> } | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "null");
+  } catch {
+    return null;
+  }
+}
+
+export default function OnboardingWizard({ initialStep }: { initialStep?: number } = {}) {
   const router = useRouter();
   const supabase = createClient();
-  const [step, setStep] = useState(1);
-  const [profile, setProfile] = useState<UserProfile>(initialProfile);
+  const [step, setStep] = useState<number>(() => initialStep ?? loadSaved()?.step ?? 1);
+  const [profile, setProfile] = useState<UserProfile>(() => ({
+    ...initialProfile,
+    ...(loadSaved()?.profile || {}),
+  }));
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -67,11 +86,14 @@ export default function OnboardingWizard() {
       // = Google OAuth metadata (OAuth users never filled our form).
       const meta = user.user_metadata || {};
       const fullName: string = meta.full_name || meta.name || "";
-      updateProfile({
-        email: user.email || "",
-        name: meta.first_name || meta.given_name || fullName.split(" ")[0] || "",
-        last_name: meta.last_name || meta.family_name || fullName.split(" ").slice(1).join(" ") || "",
-      });
+      // Only fill blanks — never clobber values restored from a saved session.
+      setProfile((prev) => ({
+        ...prev,
+        email: prev.email || user.email || "",
+        name: prev.name || meta.first_name || meta.given_name || fullName.split(" ")[0] || "",
+        last_name:
+          prev.last_name || meta.last_name || meta.family_name || fullName.split(" ").slice(1).join(" ") || "",
+      }));
 
       // Load resume_url so ATS step knows a resume already exists in storage
       // (covers users who uploaded in a previous session and resumed onboarding)
@@ -93,6 +115,16 @@ export default function OnboardingWizard() {
     }
     loadUser();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep the saved snapshot in sync so a reload on the extension step is lossless.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, profile }));
+    } catch {
+      /* storage full / private mode — non-fatal */
+    }
+  }, [step, profile]);
 
   function back() {
     if (step > 1) setStep(step - 1);
@@ -162,6 +194,9 @@ export default function OnboardingWizard() {
       setSaveError("Something went wrong saving your profile. Please try again.");
       return;
     }
+
+    // Onboarding complete — drop the resume-progress snapshot.
+    try { window.localStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
 
     router.push("/dashboard");
     router.refresh();
@@ -277,6 +312,9 @@ export default function OnboardingWizard() {
             <StepPlan onNext={next} onBack={back} />
           )}
           {step === 9 && (
+            <StepConnectExtension onNext={next} onBack={back} />
+          )}
+          {step === 10 && (
             <>
               {saveError && (
                 <div className="mb-4 p-3 rounded-lg bg-red/10 border border-red/20 text-red text-sm">

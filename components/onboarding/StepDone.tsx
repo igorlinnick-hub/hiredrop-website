@@ -111,12 +111,9 @@ export default function StepDone({ profile, resumeFile, onBack, onFinish, saving
 
       <motion.div variants={item} className="flex justify-between items-center pt-1">
         <Button type="button" variant="ghost" onClick={onBack}>Back</Button>
-        <div className="flex gap-3">
-          <Button variant="secondary" href="/extension">Install Extension</Button>
-          <Button onClick={onFinish} disabled={saving}>
-            {saving ? "Saving..." : "Go to Dashboard"}
-          </Button>
-        </div>
+        <Button onClick={onFinish} disabled={saving}>
+          {saving ? "Saving..." : "Go to Dashboard"}
+        </Button>
       </motion.div>
     </motion.div>
   );
