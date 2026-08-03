@@ -103,7 +103,6 @@ export default async function DashboardPage() {
         hasResume={!resumeMissing}
         salaryMin={profile?.salary_min ?? null}
         salaryMax={profile?.salary_max ?? null}
-        salaryListedOnly={profile?.salary_listed_only ?? false}
         searchRadiusMiles={profile?.search_radius_miles ?? null}
       />
 
