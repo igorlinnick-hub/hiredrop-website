@@ -290,3 +290,24 @@ h1, h2, h3 {
 @media (prefers-reduced-motion: reduce) {
   .hd-dash-root.dark { background-attachment: scroll; }
 }
+
+/* Profile dropdown — slides + scales out of the top-right corner. */
+@keyframes hd-menu-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.profile-menu {
+  transform-origin: top right;
+  animation: hd-menu-in 0.17s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dark .profile-menu {
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.8), 0 0 24px -8px rgba(124, 108, 255, 0.4);
+}
+.dark .profile-trigger:hover,
+.dark .profile-trigger[aria-expanded="true"] {
+  border-color: rgba(124, 108, 255, 0.5);
+  box-shadow: 0 0 16px -5px rgba(124, 108, 255, 0.6);
+}
+@media (prefers-reduced-motion: reduce) {
+  .profile-menu { animation: none; }
+}
