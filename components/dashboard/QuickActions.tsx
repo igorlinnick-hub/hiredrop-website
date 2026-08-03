@@ -6,7 +6,6 @@ import { ApiError, apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
 import LaunchModal from "@/components/dashboard/LaunchModal";
-import FitModeControl from "@/components/dashboard/FitModeControl";
 import StartReadinessModal, { gateStart, type ReadinessCheck } from "@/components/dashboard/StartReadiness";
 import RadiusMap, { type RadiusMiles } from "@/components/dashboard/RadiusMap";
 
@@ -554,13 +553,6 @@ export default function QuickActions({
             onBlur={() => persistSalary(salMin, salMax)}
             className="w-[3.75rem] bg-transparent text-xs text-text placeholder:text-text2/40 outline-none tabular-nums" />
         </div>
-
-        <span className="text-border">·</span>
-
-        {/* Fit strictness lives here now (Igor 2026-07-16) — a calm, persistent
-            dashboard control instead of a per-launch popup. The platform list left
-            this row entirely; Start asks "where should we apply today?" at launch. */}
-        <FitModeControl />
       </div>
 
       {/* Search radius — only for non-remote searches. Animated mini-map + a

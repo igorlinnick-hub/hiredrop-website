@@ -272,8 +272,8 @@ h1, h2, h3 {
 .dark .text-green { text-shadow: 0 0 14px rgba(0, 184, 148, 0.55); }
 .dark .bg-green { box-shadow: 0 0 18px -4px rgba(0, 184, 148, 0.6); }
 
-/* Active nav tab underline picks up a glow. */
-.dark nav a.border-accent { box-shadow: 0 3px 14px -4px rgba(124, 108, 255, 0.7); }
+/* Active nav pill gets a soft accent halo in the dark — flows from the surface. */
+.dark .nav-active { box-shadow: 0 0 18px -6px rgba(124, 108, 255, 0.55); }
 
 /* Cards get an accent-lit edge on hover in the dark. */
 .dark .card-lift:hover {
