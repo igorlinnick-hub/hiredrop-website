@@ -16,7 +16,6 @@ import QuickActions from "@/components/dashboard/QuickActions";
 import PlatformsIndicator from "@/components/dashboard/PlatformsIndicator";
 import SetupChecklist from "@/components/dashboard/SetupChecklist";
 import MobileHandoff from "@/components/dashboard/MobileHandoff";
-import UsageBanner from "@/components/dashboard/UsageBanner";
 import FreeTastePaywall from "@/components/dashboard/FreeTastePaywall";
 
 export const metadata = {
@@ -68,13 +67,6 @@ export default async function DashboardPage() {
   const applicationsData = (applications.status === "fulfilled" ? applications.value : []) as unknown as Application[];
   const campaignRunning = campaign.status === "fulfilled" ? campaign.value.running : false;
 
-  const TIER_LABELS: Record<string, string> = {
-    free: "Free",
-    pro: "Pro",
-    elite: "Elite",
-    admin: "Admin",
-  };
-
   // Free taste exhausted → the paywall moment leads the page (free tier only;
   // fields are null for paid tiers and absent on a pre-feature backend).
   const freeTasteExhausted =
@@ -120,21 +112,6 @@ export default async function DashboardPage() {
       <PlatformsIndicator />
 
       <div className="space-y-6">
-        {/* Subscription tier + daily usage */}
-        {statsData && (
-          <UsageBanner
-            tier={statsData.tier}
-            tierLabel={TIER_LABELS[statsData.tier] || statsData.tier}
-            usedToday={statsData.applications_today}
-            dailyLimit={statsData.daily_limit}
-            remainingToday={statsData.remaining_today}
-            platformCounts={statsData.platform_counts}
-            maxPerPlatform={statsData.max_per_platform}
-            freeUsed={statsData.free_used}
-            freeLimit={statsData.free_limit}
-          />
-        )}
-
         <StatsCards
           totalJobs={statsData?.total_jobs ?? 0}
           totalApplications={statsData?.total_applications ?? 0}

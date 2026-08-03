@@ -418,20 +418,23 @@ export default function CampaignView({ token: initialToken }: Props) {
           filter: drop-shadow(0 8px 16px rgba(108,92,231,0.22));
           text-shadow: 0 1px 0 rgba(255,255,255,0.65);
         }
-        .dark .hd-glass-num { text-shadow: 0 1px 0 rgba(255,255,255,0.10); }
-        @supports ((-webkit-background-clip: text) or (background-clip: text)) {
-          .hd-glass-num {
-            background: linear-gradient(180deg, var(--text) 42%, var(--accent) 130%);
-            -webkit-background-clip: text; background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: none;
-          }
-          .dark .hd-glass-num {
-            background: linear-gradient(180deg, #f2f0ff 40%, var(--accent2) 130%);
-            -webkit-background-clip: text; background-clip: text;
-            -webkit-text-fill-color: transparent;
-          }
+        .dark .hd-glass-num { color: #f2f0ff; text-shadow: 0 1px 0 rgba(255,255,255,0.10); }
+
+        /* Idle "anticipation": while the count is still 0 the number softly
+           breathes + glows — it reads as alive, waiting for the first tick.
+           transform/opacity/filter ONLY: cheap and artifact-free. (An earlier
+           background-clip:text fill glitched the rolling digits in WebKit — a
+           bright sliver appeared beside the 0. Solid color kills that.) */
+        @keyframes hd-idle {
+          0%, 100% { opacity: 0.72; transform: translateY(0.5px); filter: drop-shadow(0 6px 14px rgba(108,92,231,0.16)); }
+          50%      { opacity: 1;    transform: translateY(-1.5px); filter: drop-shadow(0 0 18px rgba(108,92,231,0.45)); }
         }
+        @keyframes hd-idle-dark {
+          0%, 100% { opacity: 0.62; transform: translateY(0.5px); filter: drop-shadow(0 0 5px rgba(124,108,255,0.2)); }
+          50%      { opacity: 1;    transform: translateY(-1.5px); filter: drop-shadow(0 0 22px rgba(124,108,255,0.75)); }
+        }
+        .hd-glass-num.is-idle { animation: hd-idle 2.4s ease-in-out infinite; }
+        .dark .hd-glass-num.is-idle { animation: hd-idle-dark 2.4s ease-in-out infinite; }
 
         /* Crystalline ripple when the counter ticks up — a thin glass ring with
            a prismatic edge instead of the old flat green burst. */
@@ -468,7 +471,7 @@ export default function CampaignView({ token: initialToken }: Props) {
         .hd-status { animation: hd-status-in 0.35s ease both; }
 
         @media (prefers-reduced-motion: reduce) {
-          .hd-aura, .hd-sheen, .hd-bead, .hd-ripple { animation: none; }
+          .hd-aura, .hd-bead, .hd-ripple, .hd-glass-num.is-idle { animation: none; }
         }
       `}</style>
       {/* Header */}
@@ -572,10 +575,9 @@ export default function CampaignView({ token: initialToken }: Props) {
             <div className="relative flex flex-col items-center">
               <div className="hd-plate">
                 {bumpKey > 0 && <span key={bumpKey} aria-hidden className="hd-ripple pointer-events-none" />}
-                <div className="hd-glass-num relative text-[4.25rem] font-bold leading-none">
+                <div className={`hd-glass-num relative text-[4.25rem] font-bold leading-none ${stats.applied === 0 ? "is-idle" : ""}`}>
                   <OdometerNumber value={stats.applied} />
                 </div>
-                <span aria-hidden className="hd-plate-clip"><span className="hd-sheen" /></span>
               </div>
               <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-text2/60">
                 applications sent today
