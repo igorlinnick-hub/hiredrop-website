@@ -28,7 +28,6 @@ interface Props {
   // Optional filters (moved out of the launch modal onto the dashboard).
   salaryMin?: number | null;
   salaryMax?: number | null;
-  salaryListedOnly?: boolean;
   searchRadiusMiles?: number | null;
 }
 
@@ -47,7 +46,6 @@ export default function QuickActions({
   hasResume,
   salaryMin: initialSalaryMin,
   salaryMax: initialSalaryMax,
-  salaryListedOnly: initialListedOnly,
   searchRadiusMiles: initialRadius,
 }: Props) {
   const router = useRouter();
@@ -94,7 +92,6 @@ export default function QuickActions({
   // Salary kept as raw strings (empty = no filter). Prefilled from the profile.
   const [salMin, setSalMin] = useState(initialSalaryMin != null ? String(initialSalaryMin) : "");
   const [salMax, setSalMax] = useState(initialSalaryMax != null ? String(initialSalaryMax) : "");
-  const [listedOnly, setListedOnly] = useState(!!initialListedOnly);
   const [radius, setRadius] = useState<RadiusMiles | null>(
     initialRadius != null && RADIUS_STEPS.includes(initialRadius) ? (initialRadius as RadiusMiles) : null
   );
@@ -219,13 +216,13 @@ export default function QuickActions({
     const n = parseInt(s, 10);
     return Number.isFinite(n) && n > 0 ? n : null;
   };
-  async function persistSalary(min: string, max: string, listed: boolean) {
+  async function persistSalary(min: string, max: string) {
     try {
       const t = await getFreshToken();
       await apiPost("/profile/salary", t, {
         salary_min: boundSalary(min),
         salary_max: boundSalary(max),
-        salary_listed_only: listed,
+        salary_listed_only: false,
       });
     } catch { /* optional filter — ignore */ }
   }
@@ -547,25 +544,16 @@ export default function QuickActions({
           <input type="number" inputMode="numeric" min={0} step={5000} placeholder="Min"
             value={salMin}
             onChange={(e) => setSalMin(e.target.value)}
-            onBlur={() => persistSalary(salMin, salMax, listedOnly)}
+            onBlur={() => persistSalary(salMin, salMax)}
             className="w-[3.75rem] bg-transparent text-xs text-text placeholder:text-text2/40 outline-none tabular-nums" />
           <span aria-hidden className="text-text2/30 text-xs">–</span>
           <span aria-hidden className="text-[11px] text-text2/50">$</span>
           <input type="number" inputMode="numeric" min={0} step={5000} placeholder="Max"
             value={salMax}
             onChange={(e) => setSalMax(e.target.value)}
-            onBlur={() => persistSalary(salMin, salMax, listedOnly)}
+            onBlur={() => persistSalary(salMin, salMax)}
             className="w-[3.75rem] bg-transparent text-xs text-text placeholder:text-text2/40 outline-none tabular-nums" />
         </div>
-        <button type="button" role="switch" aria-checked={listedOnly}
-          onClick={() => { const next = !listedOnly; setListedOnly(next); persistSalary(salMin, salMax, next); }}
-          title="Only apply to jobs that list a salary"
-          className="flex items-center gap-1.5 text-[11px] text-text2 hover:text-text transition">
-          <span className={`relative w-7 h-4 rounded-full transition-colors ${listedOnly ? "bg-accent" : "bg-border"}`}>
-            <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-all ${listedOnly ? "left-3.5" : "left-0.5"}`} />
-          </span>
-          Listed only
-        </button>
 
         <span className="text-border">·</span>
 
