@@ -47,31 +47,83 @@ export default function FreeTastePaywall({ freeUsed, freeLimit }: FreeTastePaywa
       const W = 1080;
       const H = 1080;
 
-      // Night backdrop — mirrors the landing's GradientCTA section
-      ctx.fillStyle = "#0F0F17";
+      // Deep-space ground + violet well breathing from the lower third — the
+      // approved brand world (glass + space, 2026-08-05), replacing the old
+      // grid-and-glow landing texture.
+      ctx.fillStyle = "#0a0a14";
+      ctx.fillRect(0, 0, W, H);
+      const well = ctx.createRadialGradient(540, 1140, 0, 540, 1140, 980);
+      well.addColorStop(0, "rgba(58,45,122,0.95)");
+      well.addColorStop(0.55, "rgba(35,28,80,0.5)");
+      well.addColorStop(1, "rgba(58,45,122,0)");
+      ctx.fillStyle = well;
       ctx.fillRect(0, 0, W, H);
 
-      // Purple glows
-      const glow = (x: number, y: number, r: number, alpha: number) => {
-        const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-        g.addColorStop(0, `rgba(108,92,231,${alpha})`);
-        g.addColorStop(1, "rgba(108,92,231,0)");
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, W, H);
-      };
-      glow(160, 120, 620, 0.5);
-      glow(950, 980, 680, 0.4);
-      glow(560, 540, 900, 0.15);
+      // Sparse stars, falling-snow feel — deterministic scatter, a few brighter
+      const STARS: [number, number, number, number][] = [
+        [92, 88, 2.4, 0.5], [214, 210, 1.6, 0.3], [356, 74, 2, 0.42], [470, 168, 1.5, 0.25],
+        [610, 96, 2.6, 0.55], [724, 232, 1.6, 0.3], [854, 120, 2.2, 0.45], [986, 214, 1.5, 0.28],
+        [150, 356, 1.8, 0.32], [520, 320, 1.4, 0.22], [934, 372, 1.9, 0.35], [1020, 520, 1.5, 0.25],
+        [64, 540, 1.6, 0.28], [990, 700, 1.7, 0.3], [80, 760, 1.4, 0.22], [1002, 880, 1.8, 0.3],
+      ];
+      for (const [sx, sy, sr, sa] of STARS) {
+        ctx.fillStyle = `rgba(235,230,255,${sa})`;
+        ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
+      }
 
-      // Faint grid — the hero's signature texture
-      ctx.strokeStyle = "rgba(255,255,255,0.045)";
-      ctx.lineWidth = 1;
-      for (let x = 0; x <= W; x += 60) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-      }
-      for (let y = 0; y <= H; y += 60) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-      }
+      // Frosted glass slab holding the content — hairline rim + inner top light
+      const slab = (x: number, y: number, w: number, h: number, r: number) => {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      };
+      slab(36, 36, W - 72, H - 72, 40);
+      ctx.fillStyle = "rgba(255,255,255,0.035)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.13)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      const topLight = ctx.createLinearGradient(0, 36, 0, 320);
+      topLight.addColorStop(0, "rgba(255,255,255,0.07)");
+      topLight.addColorStop(1, "rgba(255,255,255,0)");
+      slab(36, 36, W - 72, H - 72, 40);
+      ctx.fillStyle = topLight;
+      ctx.fill();
+
+      // The dimensional glass droplet, top-right — halo, violet body, specular
+      ctx.save();
+      ctx.translate(838, 96);
+      ctx.scale(1.5, 1.5);
+      const halo = ctx.createRadialGradient(50, 64, 6, 50, 64, 92);
+      halo.addColorStop(0, "rgba(167,139,250,0.5)");
+      halo.addColorStop(1, "rgba(167,139,250,0)");
+      ctx.fillStyle = halo;
+      ctx.fillRect(-46, -40, 192, 210);
+      const dropPath = () => {
+        ctx.beginPath();
+        ctx.moveTo(50, 8);
+        ctx.bezierCurveTo(30, 44, 18, 62, 18, 78);
+        ctx.arc(50, 78, 32, Math.PI, 0, true);
+        ctx.bezierCurveTo(82, 62, 70, 44, 50, 8);
+        ctx.closePath();
+      };
+      dropPath();
+      const body = ctx.createRadialGradient(37, 40, 4, 52, 66, 74);
+      body.addColorStop(0, "#efe8ff");
+      body.addColorStop(0.42, "#8b7cf0");
+      body.addColorStop(1, "#3f2f95");
+      ctx.fillStyle = body;
+      ctx.fill();
+      ctx.save();
+      ctx.translate(37, 48); ctx.rotate((-18 * Math.PI) / 180);
+      ctx.beginPath(); ctx.ellipse(0, 0, 8, 14, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255,255,255,0.5)"; ctx.fill();
+      ctx.restore();
+      ctx.restore();
 
       const grotesk = (weight: number, size: number) =>
         `${weight} ${size}px "Space Grotesk", "Inter", sans-serif`;
@@ -103,13 +155,22 @@ export default function FreeTastePaywall({ freeUsed, freeLimit }: FreeTastePaywa
       ctx.fillStyle = "#00CE9B";
       ctx.fillText("free", 72 + sentW, 902);
 
+      // Brand hairline: violet → mint (the approved bottom element)
+      const hair = ctx.createLinearGradient(72, 0, W - 72, 0);
+      hair.addColorStop(0, "#6C5CE7");
+      hair.addColorStop(1, "#00B894");
+      ctx.fillStyle = hair;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(72, 936, W - 144, 4, 2); else ctx.rect(72, 936, W - 144, 4);
+      ctx.fill();
+
       // Footer
       ctx.fillStyle = "rgba(255,255,255,0.55)";
       ctx.font = grotesk(500, 34);
-      ctx.fillText("The ban-safe AI that applies for you", 72, 984);
+      ctx.fillText("The ban-safe AI that applies for you", 72, 992);
       ctx.fillStyle = "#8B7CF7";
       ctx.font = grotesk(700, 36);
-      ctx.fillText("hiredrop.io", 72, 1032);
+      ctx.fillText("hiredrop.io", 72, 1038);
     };
 
     draw(); // immediate paint with fallback font
