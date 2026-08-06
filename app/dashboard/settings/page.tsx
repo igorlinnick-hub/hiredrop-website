@@ -178,7 +178,17 @@ export default function SettingsPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl space-y-8">
+      {/* Quiet brand echo (M2 two-circles) behind the page header — barely there,
+          both themes. Non-interactive, sits under the content. */}
+      <div className="relative">
+        <div aria-hidden className="pointer-events-none absolute -top-4 right-0 w-56 h-40 overflow-visible">
+          <span className="absolute right-10 top-0 w-28 h-28 rounded-full"
+            style={{ background: "radial-gradient(circle, rgba(108,92,231,.22), transparent 70%)", filter: "blur(7px)" }} />
+          <span className="absolute right-0 top-9 w-24 h-24 rounded-full"
+            style={{ background: "radial-gradient(circle, rgba(0,184,148,.18), transparent 70%)", filter: "blur(7px)" }} />
+        </div>
+      </div>
+      <div className="relative max-w-2xl space-y-8">
         <div>
           <h2 className="text-xl font-bold text-text">Profile Settings</h2>
           <p className="text-sm text-text2 mt-1">Update your information and preferences.</p>
