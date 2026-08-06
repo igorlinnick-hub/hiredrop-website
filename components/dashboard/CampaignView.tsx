@@ -470,8 +470,30 @@ export default function CampaignView({ token: initialToken }: Props) {
         }
         .hd-status { animation: hd-status-in 0.35s ease both; }
 
+        /* ── Brand droplet = the submission pulse (map item #2, both themes) ──
+           Rests in the plate's corner breathing softly; every application tick
+           (bumpKey) refills it and blooms a mint check-ring. Violet/mint read on
+           both the day and night plate; dark just adds glow. */
+        .hd-drop-proc { position: absolute; top: 10px; right: 12px; width: 17px; height: 21px; opacity: .78; }
+        .dark .hd-drop-proc { filter: drop-shadow(0 0 6px rgba(124,108,255,.55)); }
+        .hd-drop-proc .hd-drop-fill { animation: hdDropBreathe 3.4s ease-in-out infinite; }
+        .hd-drop-proc.is-burst .hd-drop-fill {
+          animation: hdDropBurst 1.2s cubic-bezier(.3,.85,.35,1) both,
+                     hdDropBreathe 3.4s ease-in-out 1.2s infinite;
+        }
+        @keyframes hdDropBreathe { 0%,100% { transform: translateY(68%); } 50% { transform: translateY(50%); } }
+        @keyframes hdDropBurst { 0% { transform: translateY(68%); } 40%,70% { transform: translateY(0); } 100% { transform: translateY(68%); } }
+        .hd-drop-ring {
+          position: absolute; inset: -7px; border-radius: 9999px;
+          border: 1.5px solid rgba(0,184,148,.8);
+          box-shadow: 0 0 12px rgba(0,184,148,.5);
+          animation: hdDropRing .95s ease-out both;
+        }
+        @keyframes hdDropRing { 0% { transform: scale(.5); opacity: 0; } 25% { opacity: .95; } 100% { transform: scale(1.9); opacity: 0; } }
+
         @media (prefers-reduced-motion: reduce) {
-          .hd-aura, .hd-bead, .hd-ripple, .hd-glass-num.is-idle { animation: none; }
+          .hd-aura, .hd-bead, .hd-ripple, .hd-glass-num.is-idle,
+          .hd-drop-proc .hd-drop-fill, .hd-drop-ring { animation: none; }
         }
       `}</style>
       {/* Header */}
@@ -575,6 +597,27 @@ export default function CampaignView({ token: initialToken }: Props) {
             <div className="relative flex flex-col items-center">
               <div className="hd-plate">
                 {bumpKey > 0 && <span key={bumpKey} aria-hidden className="hd-ripple pointer-events-none" />}
+                {/* brand droplet: breathes at rest, refills + mint ring on every application */}
+                <span key={`drop-${bumpKey}`} aria-hidden
+                  className={`hd-drop-proc pointer-events-none ${bumpKey > 0 ? "is-burst" : ""}`}>
+                  {bumpKey > 0 && <i className="hd-drop-ring" />}
+                  <svg viewBox="0 0 100 122" className="w-full h-full" fill="none">
+                    <defs>
+                      <clipPath id="hdCvDrop">
+                        <path d="M50 8 C30 44 18 62 18 78 a32 32 0 0 0 64 0 C82 62 70 44 50 8Z" />
+                      </clipPath>
+                      <linearGradient id="hdCvDropG" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stopColor="#a78bfa" />
+                        <stop offset="1" stopColor="#6c5ce7" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M50 8 C30 44 18 62 18 78 a32 32 0 0 0 64 0 C82 62 70 44 50 8Z"
+                      fill="rgba(108,92,231,.12)" stroke="#6C5CE7" strokeOpacity=".55" strokeWidth="5" />
+                    <g clipPath="url(#hdCvDrop)">
+                      <rect className="hd-drop-fill" x="0" y="0" width="100" height="122" fill="url(#hdCvDropG)" />
+                    </g>
+                  </svg>
+                </span>
                 <div className={`hd-glass-num relative text-[4.25rem] font-bold leading-none ${stats.applied === 0 ? "is-idle" : ""}`}>
                   <OdometerNumber value={stats.applied} />
                 </div>
