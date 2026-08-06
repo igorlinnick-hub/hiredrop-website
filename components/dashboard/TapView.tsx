@@ -369,7 +369,42 @@ export default function TapView({ token: initialToken }: { token: string }) {
 
   return (
     <DashboardLayout>
-      <style>{`@keyframes tapIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}`}</style>
+      <style>{`
+        @keyframes tapIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+        /* ── Brand glass card (approved visual language: violet well, starfall, convex glass) ── */
+        .hd-card-glass{
+          position:relative;overflow:hidden;border-radius:18px;
+          background:
+            radial-gradient(120% 90% at 50% 108%, #3a2d7a 0%, #1a1536 42%, #0c0b14 78%);
+          border:1px solid rgba(255,255,255,.12);
+          box-shadow:
+            0 24px 60px -24px rgba(70,48,150,.55), 0 2px 12px rgba(0,0,0,.5),
+            inset 0 1px 0 rgba(255,255,255,.14);
+        }
+        /* convex sheen — the card reads as a physical glass slab */
+        .hd-card-glass::before{
+          content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+          background:radial-gradient(90% 60% at 18% -8%, rgba(255,255,255,.10), transparent 55%);
+        }
+        /* slow falling stars, like snow */
+        @keyframes hdStarFall{0%{transform:translateY(-16px);opacity:0}12%{opacity:var(--o)}85%{opacity:var(--o)}100%{transform:translateY(105cqh);opacity:0}}
+        .hd-stars{position:absolute;inset:0;pointer-events:none;container-type:size}
+        .hd-star{position:absolute;top:0;border-radius:9999px;background:#fff;animation:hdStarFall linear infinite}
+        /* card flip-in: back (brand) → front (job) */
+        .hd-flip{position:relative;transform-style:preserve-3d;animation:hdFlipIn .7s cubic-bezier(.35,1.15,.45,1) both}
+        @keyframes hdFlipIn{from{transform:rotateY(180deg)}to{transform:rotateY(0deg)}}
+        .hd-face-front{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+        .hd-face-back{position:absolute;inset:0;transform:rotateY(180deg);
+          backface-visibility:hidden;-webkit-backface-visibility:hidden;display:grid;place-items:center}
+        /* the CSS back: quiet eclipse disc + glass droplet (M3 Soft Well) */
+        .hd-back-well{position:absolute;left:50%;bottom:-12%;width:130%;aspect-ratio:1;transform:translateX(-50%);
+          border-radius:9999px;background:radial-gradient(circle, rgba(58,45,122,.85), transparent 62%);filter:blur(6px)}
+        .hd-back-drop{position:relative;width:44px;height:56px;filter:drop-shadow(0 10px 22px rgba(108,92,231,.55))}
+        @media (prefers-reduced-motion: reduce){
+          .hd-star{animation:none;opacity:.4}
+          .hd-flip{animation:none}
+        }
+      `}</style>
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
@@ -408,18 +443,20 @@ export default function TapView({ token: initialToken }: { token: string }) {
 
       <div className="max-w-xl mx-auto">
         {card ? (
-          /* ── Instant swipe card straight from the pool ── */
-          <div className="relative select-none">
-            {/* deck edges peeking underneath — real next cards, so the stack has depth */}
-            <div className="absolute inset-x-3 -bottom-2 h-8 rounded-2xl bg-surface border border-border opacity-60" />
-            <div className="absolute inset-x-1.5 -bottom-1 h-8 rounded-2xl bg-surface border border-border opacity-80" />
+          /* ── Instant swipe card — brand glass: violet well, starfall, flip-in from the back ── */
+          <div className="relative select-none" style={{ perspective: "1400px" }}>
+            {/* deck edges peeking underneath — dark glass, so the stack reads on-brand */}
+            <div className="absolute inset-x-3 -bottom-2 h-8 rounded-2xl border opacity-70"
+              style={{ background: "#131126", borderColor: "rgba(255,255,255,.07)" }} />
+            <div className="absolute inset-x-1.5 -bottom-1 h-8 rounded-2xl border opacity-90"
+              style={{ background: "#171432", borderColor: "rgba(255,255,255,.09)" }} />
 
             <div
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerUp}
-              className="relative bg-surface border border-border rounded-2xl p-6 shadow-sm cursor-grab active:cursor-grabbing"
+              className="relative cursor-grab active:cursor-grabbing"
               style={{
                 touchAction: "pan-y",
                 transform: fly
@@ -429,83 +466,146 @@ export default function TapView({ token: initialToken }: { token: string }) {
                 transition: fly
                   ? "transform .26s cubic-bezier(.5,0,1,1), opacity .26s ease-in"
                   : drag === 0 ? "transform .25s ease" : "none",
-                animation: !fly && drag === 0 ? "tapIn .2s ease" : undefined,
               }}
             >
-              {/* Swipe-intent overlays */}
-              <div className="pointer-events-none absolute top-5 left-5 px-3 py-1 rounded-lg border-2 border-green text-green font-extrabold text-sm -rotate-12"
-                style={{ opacity: Math.max(0, Math.min(1, drag / SWIPE_THRESHOLD)) }}>APPLY</div>
-              <div className="pointer-events-none absolute top-5 right-5 px-3 py-1 rounded-lg border-2 border-red text-red font-extrabold text-sm rotate-12"
-                style={{ opacity: Math.max(0, Math.min(1, -drag / SWIPE_THRESHOLD)) }}>SKIP</div>
+              {/* keyed by card → every new card enters with the back-to-front flip */}
+              <div className="hd-flip" key={card.id}>
+                {/* FRONT — the job, on deep glass. Committed dark (brand object), not theme tokens. */}
+                <div className="hd-face-front hd-card-glass p-6">
+                  <div className="hd-stars" aria-hidden>
+                    {[
+                      { l: 12, d: 13, dl: 0, o: 0.55, s: 2 },
+                      { l: 28, d: 17, dl: -6, o: 0.35, s: 1.5 },
+                      { l: 46, d: 11, dl: -3, o: 0.5, s: 2 },
+                      { l: 63, d: 15, dl: -9, o: 0.3, s: 1.5 },
+                      { l: 78, d: 12, dl: -5, o: 0.45, s: 2 },
+                      { l: 91, d: 18, dl: -12, o: 0.35, s: 1.5 },
+                    ].map((st, i) => (
+                      <span key={i} className="hd-star" style={{
+                        left: `${st.l}%`, width: st.s, height: st.s,
+                        animationDuration: `${st.d}s`, animationDelay: `${st.dl}s`,
+                        ["--o" as string]: st.o,
+                      }} />
+                    ))}
+                  </div>
 
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex items-start gap-3 min-w-0">
-                  {/* Platform monogram — the deck mixes boards, so each card flags its own */}
-                  <span
-                    aria-label={platformName}
-                    title={platformName}
-                    className="flex items-center justify-center w-9 h-9 rounded-lg text-sm font-bold shrink-0 select-none mt-0.5"
-                    style={{ backgroundColor: `${brandColor}1a`, color: brandColor }}
-                  >
-                    {platformName ? platformName[0].toUpperCase() : "?"}
-                  </span>
-                  <div className="min-w-0">
-                    <h2 className="text-xl font-bold text-text leading-snug">{card.title || "Untitled role"}</h2>
-                    <p className="text-sm text-text2 mt-0.5">
-                      {card.company || "—"}
-                      {platformName && <span className="text-text2/50"> · {platformName}</span>}
+                  <div className="relative">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-start gap-3 min-w-0">
+                        {/* Platform monogram — the deck mixes boards, so each card flags its own */}
+                        <span
+                          aria-label={platformName}
+                          title={platformName}
+                          className="flex items-center justify-center w-9 h-9 rounded-lg text-sm font-bold shrink-0 select-none mt-0.5"
+                          style={{
+                            backgroundColor: `${brandColor}26`, color: brandColor,
+                            boxShadow: "inset 0 1px 0 rgba(255,255,255,.18)",
+                          }}
+                        >
+                          {platformName ? platformName[0].toUpperCase() : "?"}
+                        </span>
+                        <div className="min-w-0">
+                          <h2 className="text-xl font-bold leading-snug" style={{ color: "#f2f1fa" }}>
+                            {card.title || "Untitled role"}
+                          </h2>
+                          <p className="text-sm mt-0.5" style={{ color: "rgba(199,200,216,.78)" }}>
+                            {card.company || "—"}
+                            {platformName && <span style={{ color: "rgba(199,200,216,.45)" }}> · {platformName}</span>}
+                          </p>
+                        </div>
+                      </div>
+                      {typeof card.score === "number" && (
+                        <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border"
+                          style={card.score >= 70
+                            ? { background: "rgba(0,184,148,.16)", color: "#5eead4", borderColor: "rgba(0,184,148,.4)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.15)" }
+                            : card.score >= 55
+                            ? { background: "rgba(108,92,231,.2)", color: "#c7bcff", borderColor: "rgba(139,124,240,.45)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.15)" }
+                            : { background: "rgba(255,255,255,.06)", color: "rgba(199,200,216,.7)", borderColor: "rgba(255,255,255,.14)" }}>
+                          {card.score}% fit
+                        </span>
+                      )}
+                    </div>
+
+                    {/* The job description — what you actually decide on */}
+                    {card.description ? (
+                      <div className="mb-4">
+                        <div className="text-[13px] leading-relaxed whitespace-pre-wrap rounded-lg p-4 max-h-[300px] overflow-y-auto"
+                          style={{
+                            color: "rgba(228,228,238,.88)",
+                            background: "rgba(255,255,255,.045)",
+                            border: "1px solid rgba(255,255,255,.09)",
+                          }}>
+                          {card.description}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-[13px] mb-4" style={{ color: "rgba(199,200,216,.55)" }}>
+                        No description captured — open the posting to read it, then decide.
+                      </p>
+                    )}
+
+                    {card.link && (
+                      <a href={card.link} target="_blank" rel="noopener noreferrer"
+                        className="text-xs hover:underline" style={{ color: "#A78BFA" }}>Open the posting</a>
+                    )}
+
+                    <p className="text-[11px] mt-3" style={{ color: "rgba(210,208,228,.42)" }}>
+                      Approve → we write your cover letter and submit in the background. Nothing sends until you approve.
                     </p>
+
+                    {/* brand hairline: violet → mint, micro wordmark (approved F3 bottom element) */}
+                    <div className="mt-4 mb-1">
+                      <div className="h-px w-full rounded-full"
+                        style={{ background: "linear-gradient(90deg, #6C5CE7, #00B894)", opacity: .75 }} />
+                      <p className="text-center text-[8px] font-bold mt-1.5"
+                        style={{ color: "rgba(199,188,255,.5)", letterSpacing: "3px" }}>HIREDROP</p>
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                      <button onClick={() => decide("skip")} disabled={!!acting}
+                        className="flex-1 px-4 py-3 rounded-xl text-sm font-semibold border disabled:opacity-50 transition"
+                        style={{
+                          borderColor: "rgba(255,255,255,.14)", color: "rgba(233,231,242,.75)",
+                          background: "rgba(255,255,255,.04)",
+                        }}>
+                        Skip
+                      </button>
+                      <button onClick={() => decide("approve")} disabled={!!acting}
+                        className="flex-[2] flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold
+                          bg-accent text-white hover:bg-accent2 disabled:opacity-50 transition"
+                        style={{ boxShadow: "0 0 22px -6px rgba(124,108,255,.7)" }}>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"
+                          strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" /></svg>
+                        Approve
+                      </button>
+                    </div>
                   </div>
                 </div>
-                {typeof card.score === "number" && (
-                  <span className={[
-                    "shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border",
-                    card.score >= 70 ? "bg-green/10 text-green border-green/20"
-                      : card.score >= 55 ? "bg-accent/10 text-accent border-accent/20"
-                      : "bg-surface2 text-text2 border-border",
-                  ].join(" ")}>
-                    {card.score}% fit
-                  </span>
-                )}
-              </div>
 
-              {/* The job description — what you actually decide on */}
-              {card.description ? (
-                <div className="mb-4">
-                  <div className="text-[13px] text-text/90 leading-relaxed whitespace-pre-wrap
-                    bg-surface2/50 border border-border rounded-lg p-4 max-h-[300px] overflow-y-auto">
-                    {card.description}
-                  </div>
+                {/* BACK — the brand card back (M3 Soft Well): quiet eclipse + glass droplet, no stars */}
+                <div className="hd-face-back hd-card-glass">
+                  <div className="hd-back-well" aria-hidden />
+                  <svg className="hd-back-drop" viewBox="0 0 100 122" fill="none" aria-hidden>
+                    <defs>
+                      <radialGradient id="hdDropG" cx="37%" cy="26%" r="82%">
+                        <stop offset="0" stopColor="#efe8ff" />
+                        <stop offset="42%" stopColor="#8b7cf0" />
+                        <stop offset="100%" stopColor="#3f2f95" />
+                      </radialGradient>
+                    </defs>
+                    <path d="M50 8 C30 44 18 62 18 78 a32 32 0 0 0 64 0 C82 62 70 44 50 8Z" fill="url(#hdDropG)" />
+                    <ellipse cx="37" cy="48" rx="9" ry="15" fill="#fff" opacity=".5" transform="rotate(-18 37 48)" />
+                  </svg>
+                  <span className="absolute bottom-4 left-0 right-0 text-center text-[8px] font-bold"
+                    style={{ color: "rgba(217,210,255,.55)", letterSpacing: "3px" }}>HIREDROP</span>
                 </div>
-              ) : (
-                <p className="text-[13px] text-text2/60 mb-4">
-                  No description captured — open the posting to read it, then decide.
-                </p>
-              )}
-
-              {card.link && (
-                <a href={card.link} target="_blank" rel="noopener noreferrer"
-                  className="text-xs text-accent hover:underline">Open the posting</a>
-              )}
-
-              <p className="text-[11px] text-text2/45 mt-3">
-                Approve → we write your cover letter and submit in the background. Nothing sends until you approve.
-              </p>
-
-              <div className="flex gap-3 pt-4">
-                <button onClick={() => decide("skip")} disabled={!!acting}
-                  className="flex-1 px-4 py-3 rounded-xl text-sm font-semibold border border-border
-                    bg-surface text-text2 hover:bg-surface2 hover:text-text disabled:opacity-50 transition">
-                  Skip
-                </button>
-                <button onClick={() => decide("approve")} disabled={!!acting}
-                  className="flex-[2] flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold
-                    bg-accent text-white hover:bg-accent2 disabled:opacity-50 transition shadow-sm">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"
-                    strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" /></svg>
-                  Approve
-                </button>
               </div>
+
+              {/* Swipe-intent overlays — above the flip so they never mirror */}
+              <div className="pointer-events-none absolute top-5 left-5 z-10 px-3 py-1 rounded-lg border-2 border-green text-green font-extrabold text-sm -rotate-12"
+                style={{ opacity: Math.max(0, Math.min(1, drag / SWIPE_THRESHOLD)) }}>APPLY</div>
+              <div className="pointer-events-none absolute top-5 right-5 z-10 px-3 py-1 rounded-lg border-2 border-red text-red font-extrabold text-sm rotate-12"
+                style={{ opacity: Math.max(0, Math.min(1, -drag / SWIPE_THRESHOLD)) }}>SKIP</div>
             </div>
             <p className="text-center text-[11px] text-text2/40 mt-3">
               Swipe → to apply · ← to skip — or use the buttons
