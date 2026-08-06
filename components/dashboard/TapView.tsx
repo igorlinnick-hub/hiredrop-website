@@ -432,9 +432,14 @@ export default function TapView({ token: initialToken }: { token: string }) {
         .hd-back-well{position:absolute;left:50%;bottom:-12%;width:130%;aspect-ratio:1;transform:translateX(-50%);
           border-radius:9999px;background:radial-gradient(circle, var(--hdc-well), transparent 62%);filter:blur(6px)}
         .hd-back-drop{position:relative;width:44px;height:56px;filter:drop-shadow(0 10px 22px rgba(108,92,231,.55))}
+        /* waiting droplet — replaces generic spinners in empty/loading states */
+        .hd-drop-wait{width:38px;height:47px;filter:drop-shadow(0 6px 14px rgba(108,92,231,.35))}
+        .hd-drop-wait .hd-dw-fill{animation:hdDropWait 2.6s ease-in-out infinite}
+        @keyframes hdDropWait{0%,100%{transform:translateY(70%)}50%{transform:translateY(32%)}}
         @media (prefers-reduced-motion: reduce){
           .hd-star{animation:none;opacity:.4}
           .hd-flip{animation:none}
+          .hd-drop-wait .hd-dw-fill{animation:none;transform:translateY(45%)}
         }
       `}</style>
 
@@ -644,13 +649,19 @@ export default function TapView({ token: initialToken }: { token: string }) {
           /* ── First load ── */
           <div className="bg-surface border border-border rounded-2xl p-10 text-center flex flex-col items-center gap-4"
             style={{ minHeight: "min(48vh, 380px)", justifyContent: "center" }}>
-            <div className="w-9 h-9 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
+            <DropWait clip="dwLoad" />
             <p className="text-sm text-text2">Loading your job deck…</p>
           </div>
         ) : remote && !hasSession ? (
           /* ── Idle on the phone ── */
           <div className="bg-surface border border-border rounded-2xl p-8 text-center flex flex-col items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-accent/10 text-accent flex items-center justify-center text-2xl" aria-hidden>📱</div>
+            <div className="w-14 h-14 rounded-2xl bg-accent/10 text-accent flex items-center justify-center" aria-hidden>
+              <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="1.8"
+                strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                <rect x="7" y="2.5" width="10" height="19" rx="2.5" />
+                <path d="M11 18.5h2" />
+              </svg>
+            </div>
             <div>
               <h2 className="text-lg font-bold text-text">Your phone is the remote</h2>
               <p className="text-sm text-text2 mt-1 max-w-sm">
@@ -668,7 +679,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
           /* ── Running but the deck is momentarily empty — finding more ── */
           <div className="bg-surface border border-border rounded-2xl p-10 text-center flex flex-col items-center gap-4"
             style={{ minHeight: "min(48vh, 380px)", justifyContent: "center" }}>
-            <div className="w-9 h-9 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
+            <DropWait clip="dwFind" />
             <div className="max-w-sm">
               <p className="text-sm font-semibold text-text">Finding more jobs…</p>
               <p className="text-xs text-text2/60 mt-1">
@@ -737,5 +748,29 @@ function CardBack({ grad }: { grad: string }) {
       <span className="absolute bottom-4 left-0 right-0 text-center text-[8px] font-bold"
         style={{ color: "var(--hdc-caps)", letterSpacing: "3px" }}>HIREDROP</span>
     </div>
+  );
+}
+
+// Breathing brand droplet — the waiting indicator for empty/loading states
+// (replaces generic grey spinners; violet reads on both themes).
+function DropWait({ clip }: { clip: string }) {
+  return (
+    <svg className="hd-drop-wait" viewBox="0 0 100 122" fill="none" aria-hidden>
+      <defs>
+        <clipPath id={clip}>
+          <path d="M50 8 C30 44 18 62 18 78 a32 32 0 0 0 64 0 C82 62 70 44 50 8Z" />
+        </clipPath>
+        <linearGradient id={`${clip}-g`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#a78bfa" />
+          <stop offset="1" stopColor="#6c5ce7" />
+        </linearGradient>
+      </defs>
+      <path d="M50 8 C30 44 18 62 18 78 a32 32 0 0 0 64 0 C82 62 70 44 50 8Z"
+        fill="rgba(108,92,231,.12)" stroke="#6C5CE7" strokeOpacity=".5" strokeWidth="4" />
+      <g clipPath={`url(#${clip})`}>
+        <rect className="hd-dw-fill" x="0" y="0" width="100" height="122" fill={`url(#${clip}-g)`} />
+      </g>
+      <ellipse cx="38" cy="50" rx="7" ry="12" fill="#fff" opacity=".3" transform="rotate(-18 38 50)" />
+    </svg>
   );
 }
