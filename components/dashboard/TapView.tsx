@@ -371,9 +371,38 @@ export default function TapView({ token: initialToken }: { token: string }) {
     <DashboardLayout>
       <style>{`
         @keyframes tapIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
-        /* ── Brand glass card (approved visual language: violet well, starfall, convex glass) ── */
+        /* ── Brand glass card — BOTH themes are first-class (Igor 08-05):
+           day = white frosted glass with a lavender well + violet star-dots;
+           night = deep space with the violet well + white starfall.
+           All card colors live in these vars; the .dark override flips the world. ── */
         .hd-card-glass{
+          --hdc-title:#1A1A2E; --hdc-sub:rgba(75,75,110,.85); --hdc-sub2:rgba(75,75,110,.5);
+          --hdc-desc-bg:rgba(108,92,231,.05); --hdc-desc-bd:rgba(108,92,231,.13); --hdc-desc-tx:#3c3c5c;
+          --hdc-hint:rgba(90,88,130,.55); --hdc-caps:rgba(108,92,231,.45); --hdc-link:#5A4BD1;
+          --hdc-skip-bd:rgba(108,92,231,.22); --hdc-skip-tx:#5a5880; --hdc-skip-bg:rgba(255,255,255,.55);
+          --hdc-star:#6C5CE7; --hdc-star-o:.35;
+          --hdc-pmint-bg:rgba(0,184,148,.13); --hdc-pmint-tx:#0a8f6f; --hdc-pmint-bd:rgba(0,184,148,.3);
+          --hdc-pvio-bg:rgba(108,92,231,.12); --hdc-pvio-tx:#5A4BD1; --hdc-pvio-bd:rgba(108,92,231,.3);
+          --hdc-pmut-bg:rgba(26,26,46,.05); --hdc-pmut-tx:rgba(75,75,110,.75); --hdc-pmut-bd:rgba(26,26,46,.12);
+          --hdc-well:rgba(124,108,255,.38); --hdc-sheen:rgba(255,255,255,.55);
           position:relative;overflow:hidden;border-radius:18px;
+          background:
+            radial-gradient(120% 90% at 50% 108%, #DDD3FF 0%, #F1EDFF 42%, #FDFDFF 80%);
+          border:1px solid rgba(108,92,231,.16);
+          box-shadow:
+            0 24px 55px -26px rgba(108,92,231,.38), 0 2px 10px rgba(26,26,46,.06),
+            inset 0 1px 0 rgba(255,255,255,.9);
+        }
+        .dark .hd-card-glass{
+          --hdc-title:#f2f1fa; --hdc-sub:rgba(199,200,216,.78); --hdc-sub2:rgba(199,200,216,.45);
+          --hdc-desc-bg:rgba(255,255,255,.045); --hdc-desc-bd:rgba(255,255,255,.09); --hdc-desc-tx:rgba(228,228,238,.88);
+          --hdc-hint:rgba(210,208,228,.42); --hdc-caps:rgba(199,188,255,.5); --hdc-link:#A78BFA;
+          --hdc-skip-bd:rgba(255,255,255,.14); --hdc-skip-tx:rgba(233,231,242,.75); --hdc-skip-bg:rgba(255,255,255,.04);
+          --hdc-star:#fff; --hdc-star-o:.5;
+          --hdc-pmint-bg:rgba(0,184,148,.16); --hdc-pmint-tx:#5eead4; --hdc-pmint-bd:rgba(0,184,148,.4);
+          --hdc-pvio-bg:rgba(108,92,231,.2); --hdc-pvio-tx:#c7bcff; --hdc-pvio-bd:rgba(139,124,240,.45);
+          --hdc-pmut-bg:rgba(255,255,255,.06); --hdc-pmut-tx:rgba(199,200,216,.7); --hdc-pmut-bd:rgba(255,255,255,.14);
+          --hdc-well:rgba(58,45,122,.85); --hdc-sheen:rgba(255,255,255,.10);
           background:
             radial-gradient(120% 90% at 50% 108%, #3a2d7a 0%, #1a1536 42%, #0c0b14 78%);
           border:1px solid rgba(255,255,255,.12);
@@ -384,12 +413,12 @@ export default function TapView({ token: initialToken }: { token: string }) {
         /* convex sheen — the card reads as a physical glass slab */
         .hd-card-glass::before{
           content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
-          background:radial-gradient(90% 60% at 18% -8%, rgba(255,255,255,.10), transparent 55%);
+          background:radial-gradient(90% 60% at 18% -8%, var(--hdc-sheen), transparent 55%);
         }
         /* slow falling stars, like snow */
         @keyframes hdStarFall{0%{transform:translateY(-16px);opacity:0}12%{opacity:var(--o)}85%{opacity:var(--o)}100%{transform:translateY(105cqh);opacity:0}}
         .hd-stars{position:absolute;inset:0;pointer-events:none;container-type:size}
-        .hd-star{position:absolute;top:0;border-radius:9999px;background:#fff;animation:hdStarFall linear infinite}
+        .hd-star{position:absolute;top:0;border-radius:9999px;background:var(--hdc-star);animation:hdStarFall linear infinite}
         /* card flip-in: hold on the brand back (~0.4s so the art actually reads), then turn */
         .hd-flip{position:relative;transform-style:preserve-3d;animation:hdFlipIn 1.15s cubic-bezier(.35,1.12,.45,1) both}
         @keyframes hdFlipIn{0%,34%{transform:rotateY(180deg)}100%{transform:rotateY(0deg)}}
@@ -398,7 +427,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
           backface-visibility:hidden;-webkit-backface-visibility:hidden;display:grid;place-items:center}
         /* the CSS back: quiet eclipse disc + glass droplet (M3 Soft Well) */
         .hd-back-well{position:absolute;left:50%;bottom:-12%;width:130%;aspect-ratio:1;transform:translateX(-50%);
-          border-radius:9999px;background:radial-gradient(circle, rgba(58,45,122,.85), transparent 62%);filter:blur(6px)}
+          border-radius:9999px;background:radial-gradient(circle, var(--hdc-well), transparent 62%);filter:blur(6px)}
         .hd-back-drop{position:relative;width:44px;height:56px;filter:drop-shadow(0 10px 22px rgba(108,92,231,.55))}
         @media (prefers-reduced-motion: reduce){
           .hd-star{animation:none;opacity:.4}
@@ -514,22 +543,22 @@ export default function TapView({ token: initialToken }: { token: string }) {
                           {platformName ? platformName[0].toUpperCase() : "?"}
                         </span>
                         <div className="min-w-0">
-                          <h2 className="text-xl font-bold leading-snug" style={{ color: "#f2f1fa" }}>
+                          <h2 className="text-xl font-bold leading-snug" style={{ color: "var(--hdc-title)" }}>
                             {card.title || "Untitled role"}
                           </h2>
-                          <p className="text-sm mt-0.5" style={{ color: "rgba(199,200,216,.78)" }}>
+                          <p className="text-sm mt-0.5" style={{ color: "var(--hdc-sub)" }}>
                             {card.company || "—"}
-                            {platformName && <span style={{ color: "rgba(199,200,216,.45)" }}> · {platformName}</span>}
+                            {platformName && <span style={{ color: "var(--hdc-sub2)" }}> · {platformName}</span>}
                           </p>
                         </div>
                       </div>
                       {typeof card.score === "number" && (
                         <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border"
                           style={card.score >= 70
-                            ? { background: "rgba(0,184,148,.16)", color: "#5eead4", borderColor: "rgba(0,184,148,.4)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.15)" }
+                            ? { background: "var(--hdc-pmint-bg)", color: "var(--hdc-pmint-tx)", borderColor: "var(--hdc-pmint-bd)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.15)" }
                             : card.score >= 55
-                            ? { background: "rgba(108,92,231,.2)", color: "#c7bcff", borderColor: "rgba(139,124,240,.45)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.15)" }
-                            : { background: "rgba(255,255,255,.06)", color: "rgba(199,200,216,.7)", borderColor: "rgba(255,255,255,.14)" }}>
+                            ? { background: "var(--hdc-pvio-bg)", color: "var(--hdc-pvio-tx)", borderColor: "var(--hdc-pvio-bd)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.15)" }
+                            : { background: "var(--hdc-pmut-bg)", color: "var(--hdc-pmut-tx)", borderColor: "var(--hdc-pmut-bd)" }}>
                           {card.score}% fit
                         </span>
                       )}
@@ -540,25 +569,25 @@ export default function TapView({ token: initialToken }: { token: string }) {
                       <div className="mb-4">
                         <div className="text-[13px] leading-relaxed whitespace-pre-wrap rounded-lg p-4 max-h-[300px] overflow-y-auto"
                           style={{
-                            color: "rgba(228,228,238,.88)",
-                            background: "rgba(255,255,255,.045)",
-                            border: "1px solid rgba(255,255,255,.09)",
+                            color: "var(--hdc-desc-tx)",
+                            background: "var(--hdc-desc-bg)",
+                            border: "1px solid var(--hdc-desc-bd)",
                           }}>
                           {card.description}
                         </div>
                       </div>
                     ) : (
-                      <p className="text-[13px] mb-4" style={{ color: "rgba(199,200,216,.55)" }}>
+                      <p className="text-[13px] mb-4" style={{ color: "var(--hdc-sub2)" }}>
                         No description captured — open the posting to read it, then decide.
                       </p>
                     )}
 
                     {card.link && (
                       <a href={card.link} target="_blank" rel="noopener noreferrer"
-                        className="text-xs hover:underline" style={{ color: "#A78BFA" }}>Open the posting</a>
+                        className="text-xs hover:underline" style={{ color: "var(--hdc-link)" }}>Open the posting</a>
                     )}
 
-                    <p className="text-[11px] mt-3" style={{ color: "rgba(210,208,228,.42)" }}>
+                    <p className="text-[11px] mt-3" style={{ color: "var(--hdc-hint)" }}>
                       Approve → we write your cover letter and submit in the background. Nothing sends until you approve.
                     </p>
 
@@ -567,15 +596,15 @@ export default function TapView({ token: initialToken }: { token: string }) {
                       <div className="h-px w-full rounded-full"
                         style={{ background: "linear-gradient(90deg, #6C5CE7, #00B894)", opacity: .75 }} />
                       <p className="text-center text-[8px] font-bold mt-1.5"
-                        style={{ color: "rgba(199,188,255,.5)", letterSpacing: "3px" }}>HIREDROP</p>
+                        style={{ color: "var(--hdc-caps)", letterSpacing: "3px" }}>HIREDROP</p>
                     </div>
 
                     <div className="flex gap-3 pt-2">
                       <button onClick={() => decide("skip")} disabled={!!acting}
                         className="flex-1 px-4 py-3 rounded-xl text-sm font-semibold border disabled:opacity-50 transition"
                         style={{
-                          borderColor: "rgba(255,255,255,.14)", color: "rgba(233,231,242,.75)",
-                          background: "rgba(255,255,255,.04)",
+                          borderColor: "var(--hdc-skip-bd)", color: "var(--hdc-skip-tx)",
+                          background: "var(--hdc-skip-bg)",
                         }}>
                         Skip
                       </button>
@@ -703,7 +732,7 @@ function CardBack({ grad }: { grad: string }) {
         <ellipse cx="37" cy="48" rx="9" ry="15" fill="#fff" opacity=".5" transform="rotate(-18 37 48)" />
       </svg>
       <span className="absolute bottom-4 left-0 right-0 text-center text-[8px] font-bold"
-        style={{ color: "rgba(217,210,255,.55)", letterSpacing: "3px" }}>HIREDROP</span>
+        style={{ color: "var(--hdc-caps)", letterSpacing: "3px" }}>HIREDROP</span>
     </div>
   );
 }
