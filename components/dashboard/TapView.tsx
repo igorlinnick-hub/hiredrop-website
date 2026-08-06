@@ -390,9 +390,9 @@ export default function TapView({ token: initialToken }: { token: string }) {
         @keyframes hdStarFall{0%{transform:translateY(-16px);opacity:0}12%{opacity:var(--o)}85%{opacity:var(--o)}100%{transform:translateY(105cqh);opacity:0}}
         .hd-stars{position:absolute;inset:0;pointer-events:none;container-type:size}
         .hd-star{position:absolute;top:0;border-radius:9999px;background:#fff;animation:hdStarFall linear infinite}
-        /* card flip-in: back (brand) → front (job) */
-        .hd-flip{position:relative;transform-style:preserve-3d;animation:hdFlipIn .7s cubic-bezier(.35,1.15,.45,1) both}
-        @keyframes hdFlipIn{from{transform:rotateY(180deg)}to{transform:rotateY(0deg)}}
+        /* card flip-in: hold on the brand back (~0.4s so the art actually reads), then turn */
+        .hd-flip{position:relative;transform-style:preserve-3d;animation:hdFlipIn 1.15s cubic-bezier(.35,1.12,.45,1) both}
+        @keyframes hdFlipIn{0%,34%{transform:rotateY(180deg)}100%{transform:rotateY(0deg)}}
         .hd-face-front{backface-visibility:hidden;-webkit-backface-visibility:hidden}
         .hd-face-back{position:absolute;inset:0;transform:rotateY(180deg);
           backface-visibility:hidden;-webkit-backface-visibility:hidden;display:grid;place-items:center}
@@ -445,11 +445,20 @@ export default function TapView({ token: initialToken }: { token: string }) {
         {card ? (
           /* ── Instant swipe card — brand glass: violet well, starfall, flip-in from the back ── */
           <div className="relative select-none" style={{ perspective: "1400px" }}>
-            {/* deck edges peeking underneath — dark glass, so the stack reads on-brand */}
-            <div className="absolute inset-x-3 -bottom-2 h-8 rounded-2xl border opacity-70"
-              style={{ background: "#131126", borderColor: "rgba(255,255,255,.07)" }} />
-            <div className="absolute inset-x-1.5 -bottom-1 h-8 rounded-2xl border opacity-90"
-              style={{ background: "#171432", borderColor: "rgba(255,255,255,.09)" }} />
+            {/* the deck: real full-size brand backs stacked under the top card — as many as
+                are actually queued (max 2 shown), so the back art is always visible */}
+            {deck.length > 2 && (
+              <div className="absolute inset-0 pointer-events-none" aria-hidden
+                style={{ transform: "translateY(22px) scale(.94) rotate(2.4deg)", opacity: 0.75 }}>
+                <CardBack grad="hdDropB2" />
+              </div>
+            )}
+            {deck.length > 1 && (
+              <div className="absolute inset-0 pointer-events-none" aria-hidden
+                style={{ transform: "translateY(12px) scale(.97) rotate(-2deg)", opacity: 0.95 }}>
+                <CardBack grad="hdDropB1" />
+              </div>
+            )}
 
             <div
               onPointerDown={onPointerDown}
@@ -583,21 +592,8 @@ export default function TapView({ token: initialToken }: { token: string }) {
                 </div>
 
                 {/* BACK — the brand card back (M3 Soft Well): quiet eclipse + glass droplet, no stars */}
-                <div className="hd-face-back hd-card-glass">
-                  <div className="hd-back-well" aria-hidden />
-                  <svg className="hd-back-drop" viewBox="0 0 100 122" fill="none" aria-hidden>
-                    <defs>
-                      <radialGradient id="hdDropG" cx="37%" cy="26%" r="82%">
-                        <stop offset="0" stopColor="#efe8ff" />
-                        <stop offset="42%" stopColor="#8b7cf0" />
-                        <stop offset="100%" stopColor="#3f2f95" />
-                      </radialGradient>
-                    </defs>
-                    <path d="M50 8 C30 44 18 62 18 78 a32 32 0 0 0 64 0 C82 62 70 44 50 8Z" fill="url(#hdDropG)" />
-                    <ellipse cx="37" cy="48" rx="9" ry="15" fill="#fff" opacity=".5" transform="rotate(-18 37 48)" />
-                  </svg>
-                  <span className="absolute bottom-4 left-0 right-0 text-center text-[8px] font-bold"
-                    style={{ color: "rgba(217,210,255,.55)", letterSpacing: "3px" }}>HIREDROP</span>
+                <div className="hd-face-back">
+                  <CardBack grad="hdDropTop" />
                 </div>
               </div>
 
@@ -685,5 +681,29 @@ export default function TapView({ token: initialToken }: { token: string }) {
         onFix={fixReadiness}
       />
     </DashboardLayout>
+  );
+}
+
+// The brand card back (approved M3 "Soft Well"): dark glass, quiet eclipse disc, dimensional
+// glass droplet, HIREDROP micro caps — no stars. Rendered for the flip face AND the visible
+// deck stack, so gradient ids must be unique per instance (`grad`).
+function CardBack({ grad }: { grad: string }) {
+  return (
+    <div className="hd-card-glass relative h-full w-full grid place-items-center">
+      <div className="hd-back-well" aria-hidden />
+      <svg className="hd-back-drop" viewBox="0 0 100 122" fill="none" aria-hidden>
+        <defs>
+          <radialGradient id={grad} cx="37%" cy="26%" r="82%">
+            <stop offset="0" stopColor="#efe8ff" />
+            <stop offset="42%" stopColor="#8b7cf0" />
+            <stop offset="100%" stopColor="#3f2f95" />
+          </radialGradient>
+        </defs>
+        <path d="M50 8 C30 44 18 62 18 78 a32 32 0 0 0 64 0 C82 62 70 44 50 8Z" fill={`url(#${grad})`} />
+        <ellipse cx="37" cy="48" rx="9" ry="15" fill="#fff" opacity=".5" transform="rotate(-18 37 48)" />
+      </svg>
+      <span className="absolute bottom-4 left-0 right-0 text-center text-[8px] font-bold"
+        style={{ color: "rgba(217,210,255,.55)", letterSpacing: "3px" }}>HIREDROP</span>
+    </div>
   );
 }
