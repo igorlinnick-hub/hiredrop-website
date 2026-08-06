@@ -424,7 +424,10 @@ export default function TapView({ token: initialToken }: { token: string }) {
         @keyframes hdFlipIn{0%,34%{transform:rotateY(180deg)}100%{transform:rotateY(0deg)}}
         .hd-face-front{backface-visibility:hidden;-webkit-backface-visibility:hidden}
         .hd-face-back{position:absolute;inset:0;transform:rotateY(180deg);
-          backface-visibility:hidden;-webkit-backface-visibility:hidden;display:grid;place-items:center}
+          backface-visibility:hidden;-webkit-backface-visibility:hidden;display:grid;place-items:center;
+          /* decorative only — must NEVER hit-test, or it eats wheel/touch scroll over the
+             front (the description panel stopped scrolling, Igor 08-05) */
+          pointer-events:none}
         /* the CSS back: quiet eclipse disc + glass droplet (M3 Soft Well) */
         .hd-back-well{position:absolute;left:50%;bottom:-12%;width:130%;aspect-ratio:1;transform:translateX(-50%);
           border-radius:9999px;background:radial-gradient(circle, var(--hdc-well), transparent 62%);filter:blur(6px)}
