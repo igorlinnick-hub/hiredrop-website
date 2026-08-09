@@ -1,29 +1,11 @@
-// Premium per-step header for the onboarding quiz: a brand glass/space PHOTO
-// (generated, public/onboarding/step-N.jpg) filling a banner, with a soft left
-// scrim and one short message overlaid in Space Grotesk — so the person instantly
-// gets what the step is for. No icons. Text is CSS (crisp + editable), never baked
-// into the image.
-
-const MSG: Record<number, string> = {
-  1: "The basics we'll put on every application.",
-  2: "What you're after — so we match the right roles.",
-  3: "How HireDrop applies without risking your account.",
-  4: "Where HireDrop should apply for you.",
-  5: "Your resume — we tailor a fresh one for every role.",
-  6: "A quick check so it gets past the filters.",
-  7: "Your voice — so cover letters sound like you.",
-  8: "Start free — 40 applications, no card.",
-  9: "The piece that actually applies — right from your browser.",
-  10: "You're set — here's what happens next.",
-};
-
+// Per-step header for the onboarding quiz: a context-specific brand glass/space
+// PHOTO (public/onboarding/step-N.jpg) filling the card edge-to-edge. No text —
+// the step's own title/form sits below; the image alone sets the mood. Full-bleed,
+// scaled a touch, with a faint bottom fade so it grounds into the white content.
 export default function StepHeader({ step }: { step: number }) {
-  const msg = MSG[step];
-  if (!msg) return null;
-  // Full-bleed image: fills the card's width edge-to-edge (the card's rounded
-  // overflow-hidden clips the top corners). No border/rounding/margin here.
+  if (step < 1 || step > 10) return null;
   return (
-    <div className="relative w-full h-44 sm:h-52 overflow-hidden">
+    <div className="relative w-full h-40 sm:h-48 overflow-hidden">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={`/onboarding/step-${step}.jpg`}
@@ -32,22 +14,11 @@ export default function StepHeader({ step }: { step: number }) {
         className="absolute inset-0 w-full h-full object-cover"
         style={{ transform: "scale(1.12)" }}
       />
-      {/* left scrim for legibility — no bottom line, image bleeds clean to the edges */}
       <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(90deg, rgba(9,9,18,0.86) 0%, rgba(9,9,18,0.45) 48%, rgba(9,9,18,0.05) 100%)",
-        }}
+        aria-hidden
+        className="absolute inset-x-0 bottom-0 h-16"
+        style={{ background: "linear-gradient(to top, rgba(9,9,18,0.28), transparent)" }}
       />
-      <div className="relative h-full flex items-end p-6 sm:p-7">
-        <p
-          className="text-white text-xl sm:text-2xl font-semibold leading-snug max-w-md"
-          style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif", textShadow: "0 2px 16px rgba(0,0,0,0.6)" }}
-        >
-          {msg}
-        </p>
-      </div>
     </div>
   );
 }
