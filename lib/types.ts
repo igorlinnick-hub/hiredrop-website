@@ -77,4 +77,5 @@ export interface Application {
   status: string;
   cover_letter?: string;
   tailored_resume?: string;
+  resume_pdf_url?: string; // signed URL to the ATS PDF we actually submitted (1h TTL)
 }
