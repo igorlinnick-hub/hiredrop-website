@@ -30,6 +30,7 @@ export default function StepHeader({ step }: { step: number }) {
         alt=""
         aria-hidden
         className="absolute inset-0 w-full h-full object-cover"
+        style={{ transform: "scale(1.08)" }}
       />
       {/* left scrim for legibility + a faint violet→mint brand edge at the bottom */}
       <div
