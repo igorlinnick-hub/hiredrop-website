@@ -273,7 +273,8 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
         </div>
 
         {/* Step content — each step glides in and decelerates to a stop */}
-        <div className="bg-surface border border-border rounded-xl overflow-hidden">
+        <div className="bg-surface rounded-2xl overflow-hidden"
+          style={{ boxShadow: "0 10px 44px -14px rgba(26,26,46,0.22), 0 1px 3px rgba(26,26,46,0.06)" }}>
          <motion.div
            key={step}
            initial={{ opacity: 0, x: 34 }}

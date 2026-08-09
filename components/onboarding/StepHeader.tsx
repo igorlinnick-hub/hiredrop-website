@@ -30,20 +30,15 @@ export default function StepHeader({ step }: { step: number }) {
         alt=""
         aria-hidden
         className="absolute inset-0 w-full h-full object-cover"
-        style={{ transform: "scale(1.08)" }}
+        style={{ transform: "scale(1.12)" }}
       />
-      {/* left scrim for legibility + a faint violet→mint brand edge at the bottom */}
+      {/* left scrim for legibility — no bottom line, image bleeds clean to the edges */}
       <div
         className="absolute inset-0"
         style={{
           background:
             "linear-gradient(90deg, rgba(9,9,18,0.86) 0%, rgba(9,9,18,0.45) 48%, rgba(9,9,18,0.05) 100%)",
         }}
-      />
-      <div
-        aria-hidden
-        className="absolute bottom-0 left-0 right-0 h-[3px]"
-        style={{ background: "linear-gradient(90deg, #6C5CE7, #00B894)", opacity: 0.9 }}
       />
       <div className="relative h-full flex items-end p-6 sm:p-7">
         <p
