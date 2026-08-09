@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { redeemPromoCode } from "@/lib/promo";
-import { StepIcon } from "./StepIcon";
+import StepHeader from "./StepHeader";
 import StepPersonalInfo from "./StepPersonalInfo";
 import StepJobPreferences from "./StepJobPreferences";
 import StepReassurance from "./StepReassurance";
@@ -271,9 +272,15 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
           </div>
         </div>
 
-        {/* Step content */}
-        <div className="bg-surface border border-border rounded-xl p-6 sm:p-8">
-          <StepIcon step={step} />
+        {/* Step content — each step glides in and decelerates to a stop */}
+        <div className="bg-surface border border-border rounded-xl p-6 sm:p-8 overflow-hidden">
+         <motion.div
+           key={step}
+           initial={{ opacity: 0, x: 34 }}
+           animate={{ opacity: 1, x: 0 }}
+           transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+         >
+          <StepHeader step={step} />
           {step === 1 && (
             <StepPersonalInfo profile={profile} updateProfile={updateProfile} onNext={next} />
           )}
@@ -324,6 +331,7 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
               <StepDone profile={profile} resumeFile={resumeFile} onBack={back} onFinish={finish} saving={saving} />
             </>
           )}
+         </motion.div>
         </div>
       </div>
     </div>

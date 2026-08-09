@@ -20,9 +20,15 @@ interface ApplicationHistoryProps {
 
 export default function ApplicationHistory({ applications, token }: ApplicationHistoryProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [expandedResumeId, setExpandedResumeId] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
   const [hiredId, setHiredId] = useState<string | null>(null);
   const [hiredDone, setHiredDone] = useState<string | null>(null);
+
+  function copyCoverLetter(appId: string, text: string) {
+    navigator.clipboard.writeText(text);
+    setCopied(appId);
+    setTimeout(() => setCopied((c) => (c === appId ? null : c)), 1500);
+  }
 
   async function markHired(appId: string) {
     setHiredId(appId);
@@ -84,7 +90,6 @@ export default function ApplicationHistory({ applications, token }: ApplicationH
         {applications.map((app) => {
           const platform = PLATFORMS.find((p) => p.id === app.platform);
           const expanded = expandedId === app.id;
-          const expandedResume = expandedResumeId === app.id;
           const hasResponse = ["interview", "interview_invite", "rejected", "received"].includes(app.status);
           const isInterview = ["interview", "interview_invite"].includes(app.status);
           const isHired = hiredDone === app.id || app.status === "hired";
@@ -116,51 +121,55 @@ export default function ApplicationHistory({ applications, token }: ApplicationH
                     </button>
                   )}
 
-                  {app.tailored_resume && (
-                    <button
-                      onClick={() => setExpandedResumeId(expandedResume ? null : app.id)}
-                      className="text-xs text-accent/80 hover:text-accent"
-                    >
-                      {expandedResume ? "Hide draft" : "Resume draft"}
-                    </button>
-                  )}
-
-                  {app.cover_letter && (
+                  {/* One quiet affordance — the docs we generated are here if the user
+                      ever needs them (mainly: prep before an interview/follow-up). */}
+                  {(app.resume_pdf_url || app.cover_letter) && (
                     <button
                       onClick={() => setExpandedId(expanded ? null : app.id)}
-                      className="text-xs text-accent hover:text-accent2"
+                      className="text-xs text-accent/80 hover:text-accent transition"
                     >
-                      {expanded ? "Hide" : "Cover letter"}
+                      {expanded ? "Hide" : "Documents"}
                     </button>
                   )}
                 </div>
               </div>
 
-              {expandedResume && app.tailored_resume && (
-                <div className="mt-3 p-3 bg-surface2 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-semibold text-accent/70 uppercase tracking-wider">
-                      Tailored Resume Draft
-                    </span>
-                    <button
-                      onClick={() => navigator.clipboard.writeText(app.tailored_resume!)}
-                      className="text-[11px] text-text2 hover:text-accent transition"
-                    >
-                      Copy
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-text2/60 mb-2">
-                    Keyword-tailored version for this role. Your ATS-formatted PDF was submitted to the employer.
+              {expanded && (app.resume_pdf_url || app.cover_letter) && (
+                <div className="mt-3 rounded-lg bg-surface2 p-3">
+                  {/* Tells the user WHEN this is for — so it reads as useful, not clutter. */}
+                  <p className="text-[11px] text-text2/60 mb-3">
+                    What HireDrop submitted for this role — handy to review before an interview or follow-up.
                   </p>
-                  <pre className="text-xs text-text2 whitespace-pre-wrap leading-relaxed font-mono">
-                    {app.tailored_resume}
-                  </pre>
-                </div>
-              )}
 
-              {expanded && app.cover_letter && (
-                <div className="mt-3 p-3 bg-surface2 rounded-lg text-sm text-text2 leading-relaxed">
-                  {app.cover_letter}
+                  {app.resume_pdf_url && (
+                    <a
+                      href={app.resume_pdf_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:text-accent2 transition mb-3"
+                    >
+                      Download resume PDF ↓
+                    </a>
+                  )}
+
+                  {app.cover_letter && (
+                    <div className={app.resume_pdf_url ? "pt-3 border-t border-border" : ""}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[11px] font-semibold text-accent/70 uppercase tracking-wider">
+                          Cover Letter
+                        </span>
+                        <button
+                          onClick={() => copyCoverLetter(app.id, app.cover_letter!)}
+                          className="text-[11px] text-text2 hover:text-accent transition"
+                        >
+                          {copied === app.id ? "Copied ✓" : "Copy"}
+                        </button>
+                      </div>
+                      <div className="text-sm text-text2 leading-relaxed whitespace-pre-wrap">
+                        {app.cover_letter}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
