@@ -273,7 +273,7 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
         </div>
 
         {/* Step content — each step glides in and decelerates to a stop */}
-        <div className="bg-surface border border-border rounded-xl p-6 sm:p-8 overflow-hidden">
+        <div className="bg-surface border border-border rounded-xl overflow-hidden">
          <motion.div
            key={step}
            initial={{ opacity: 0, x: 34 }}
@@ -281,6 +281,7 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
          >
           <StepHeader step={step} />
+          <div className="p-6 sm:p-8">
           {step === 1 && (
             <StepPersonalInfo profile={profile} updateProfile={updateProfile} onNext={next} />
           )}
@@ -331,6 +332,7 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
               <StepDone profile={profile} resumeFile={resumeFile} onBack={back} onFinish={finish} saving={saving} />
             </>
           )}
+          </div>
          </motion.div>
         </div>
       </div>
