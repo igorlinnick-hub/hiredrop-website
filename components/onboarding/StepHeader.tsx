@@ -20,8 +20,10 @@ const MSG: Record<number, string> = {
 export default function StepHeader({ step }: { step: number }) {
   const msg = MSG[step];
   if (!msg) return null;
+  // Full-bleed image: fills the card's width edge-to-edge (the card's rounded
+  // overflow-hidden clips the top corners). No border/rounding/margin here.
   return (
-    <div className="relative mb-7 rounded-2xl overflow-hidden border border-border h-36 sm:h-40">
+    <div className="relative w-full h-44 sm:h-52 overflow-hidden">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={`/onboarding/step-${step}.jpg`}
@@ -34,18 +36,18 @@ export default function StepHeader({ step }: { step: number }) {
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(90deg, rgba(9,9,18,0.86) 0%, rgba(9,9,18,0.5) 46%, rgba(9,9,18,0.08) 100%)",
+            "linear-gradient(90deg, rgba(9,9,18,0.86) 0%, rgba(9,9,18,0.45) 48%, rgba(9,9,18,0.05) 100%)",
         }}
       />
       <div
         aria-hidden
         className="absolute bottom-0 left-0 right-0 h-[3px]"
-        style={{ background: "linear-gradient(90deg, #6C5CE7, #00B894)", opacity: 0.85 }}
+        style={{ background: "linear-gradient(90deg, #6C5CE7, #00B894)", opacity: 0.9 }}
       />
-      <div className="relative h-full flex items-end p-5">
+      <div className="relative h-full flex items-end p-6 sm:p-7">
         <p
-          className="text-white text-lg sm:text-xl font-semibold leading-snug max-w-md"
-          style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif", textShadow: "0 2px 14px rgba(0,0,0,0.55)" }}
+          className="text-white text-xl sm:text-2xl font-semibold leading-snug max-w-md"
+          style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif", textShadow: "0 2px 16px rgba(0,0,0,0.6)" }}
         >
           {msg}
         </p>
