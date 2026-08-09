@@ -17,6 +17,7 @@ import PlatformsIndicator from "@/components/dashboard/PlatformsIndicator";
 import SetupChecklist from "@/components/dashboard/SetupChecklist";
 import MobileHandoff from "@/components/dashboard/MobileHandoff";
 import FreeTastePaywall from "@/components/dashboard/FreeTastePaywall";
+import NeedsAttentionPanel from "@/components/dashboard/NeedsAttentionPanel";
 
 export const metadata = {
   title: "Dashboard — HireDrop",
@@ -109,6 +110,10 @@ export default async function DashboardPage() {
       {/* Connections moved to their own /dashboard/platforms tab — here just a
           compact status pill so the dashboard leads with the filters + campaign. */}
       <PlatformsIndicator />
+
+      {/* Trust surfaces (council #3): hand-backs that need the human's hands +
+          per-application receipts. Renders nothing when both are empty. */}
+      <NeedsAttentionPanel />
 
       <div className="space-y-6">
         <StatsCards
