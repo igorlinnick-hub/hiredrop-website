@@ -72,20 +72,6 @@ export default function StepReassurance({ onNext, onBack }: Props) {
       animate="show"
       className="space-y-8 text-center"
     >
-      <motion.div variants={item} className="space-y-3">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent-light text-accent text-xs font-semibold">
-          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-          What makes HireDrop different
-        </div>
-        <h2 className="text-2xl font-bold text-text leading-tight">
-          Automation that won&apos;t risk<br className="hidden sm:block" /> the account you&apos;ve built.
-        </h2>
-        <p className="text-sm text-text2 max-w-md mx-auto">
-          Other tools blast hundreds of applications from their servers and get accounts flagged.
-          HireDrop is built the safe way.
-        </p>
-      </motion.div>
-
       <motion.div variants={container} className="space-y-3 text-left">
         {points.map((p) => (
           <motion.div
