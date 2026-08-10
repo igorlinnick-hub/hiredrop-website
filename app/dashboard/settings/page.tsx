@@ -24,6 +24,10 @@ const emptyProfile: UserProfile = {
   writing_style: "",
   linkedin_url: "",
   portfolio_url: "",
+  work_authorized_us: null,
+  needs_sponsorship: null,
+  notice_period: "",
+  english_level: "",
   resume_url: null,
   onboarding_completed: false,
 };
@@ -75,6 +79,10 @@ export default function SettingsPage() {
           writing_style: data.writing_style || "",
           linkedin_url: data.linkedin_url || "",
           portfolio_url: data.portfolio_url || "",
+          work_authorized_us: data.work_authorized_us ?? null,
+          needs_sponsorship: data.needs_sponsorship ?? null,
+          notice_period: data.notice_period || "",
+          english_level: data.english_level || "",
           resume_url: data.resume_url || null,
           onboarding_completed: data.onboarding_completed || false,
         });
@@ -131,6 +139,10 @@ export default function SettingsPage() {
         writing_style: profile.writing_style,
         linkedin_url: profile.linkedin_url,
         portfolio_url: profile.portfolio_url,
+        work_authorized_us: profile.work_authorized_us,
+        needs_sponsorship: profile.needs_sponsorship,
+        notice_period: profile.notice_period,
+        english_level: profile.english_level,
       })
       .eq("user_id", user.id);
 
@@ -210,6 +222,41 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="LinkedIn URL" type="url" value={profile.linkedin_url} onChange={(e) => update({ linkedin_url: e.target.value })} hint="Used to fill LinkedIn fields on company application forms." />
             <Input label="Portfolio / website URL" type="url" value={profile.portfolio_url} onChange={(e) => update({ portfolio_url: e.target.value })} hint="Used for portfolio/website fields." />
+          </div>
+
+          {/* Work eligibility — the most frequent required questions on application
+              forms. Filled honestly from here; never guessed on a knockout question. */}
+          <p className="text-sm font-medium text-text pt-2">Work eligibility</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Select
+              label="Authorized to work in the US?"
+              value={profile.work_authorized_us === null ? "" : profile.work_authorized_us ? "yes" : "no"}
+              onChange={(e) => update({ work_authorized_us: e.target.value === "" ? null : e.target.value === "yes" })}
+              placeholder="Select…"
+              options={[{ value: "yes", label: "Yes" }, { value: "no", label: "No" }]}
+              hint="Answers the most common required application question."
+            />
+            <Select
+              label="Do you require visa sponsorship?"
+              value={profile.needs_sponsorship === null ? "" : profile.needs_sponsorship ? "yes" : "no"}
+              onChange={(e) => update({ needs_sponsorship: e.target.value === "" ? null : e.target.value === "yes" })}
+              placeholder="Select…"
+              options={[{ value: "yes", label: "Yes" }, { value: "no", label: "No" }]}
+              hint="A knockout question — left blank if unset (never guessed)."
+            />
+            <Input label="Notice period" value={profile.notice_period} onChange={(e) => update({ notice_period: e.target.value })} hint='e.g. "2 weeks", "Immediate".' />
+            <Select
+              label="English level"
+              value={profile.english_level}
+              onChange={(e) => update({ english_level: e.target.value })}
+              placeholder="Select…"
+              options={[
+                { value: "Native", label: "Native" },
+                { value: "Fluent", label: "Fluent" },
+                { value: "Professional", label: "Professional working" },
+                { value: "Conversational", label: "Conversational" },
+              ]}
+            />
           </div>
           {saveBar()}
         </section>
