@@ -43,6 +43,10 @@ const initialProfile: UserProfile = {
   writing_style: "",
   linkedin_url: "",
   portfolio_url: "",
+  work_authorized_us: null,
+  needs_sponsorship: null,
+  notice_period: "",
+  english_level: "",
   resume_url: null,
   onboarding_completed: false,
 };

@@ -10,6 +10,13 @@ export interface UserProfile {
   writing_style: string;
   linkedin_url: string;
   portfolio_url: string;
+  // Screener-answer fields the extension's deterministic handlers use to fill the
+  // most frequent required application questions (work auth / sponsorship / notice /
+  // English) — honestly, from the user, never guessed on a knockout.
+  work_authorized_us: boolean | null;
+  needs_sponsorship: boolean | null;
+  notice_period: string;
+  english_level: string;
   resume_url: string | null;
   onboarding_completed: boolean;
 }
