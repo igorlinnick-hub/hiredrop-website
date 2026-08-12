@@ -111,10 +111,6 @@ export default async function DashboardPage() {
           compact status pill so the dashboard leads with the filters + campaign. */}
       <PlatformsIndicator />
 
-      {/* Trust surfaces (council #3): hand-backs that need the human's hands +
-          per-application receipts. Renders nothing when both are empty. */}
-      <NeedsAttentionPanel />
-
       <div className="space-y-6">
         <StatsCards
           totalJobs={statsData?.total_jobs ?? 0}
@@ -126,8 +122,13 @@ export default async function DashboardPage() {
           <JobsTable jobs={jobsData} />
         </div>
 
-        <div id="history">
+        <div id="history" className="space-y-4">
           <ApplicationHistory applications={applicationsData} token={token} />
+          {/* Trust surfaces (council #3): jobs we couldn't submit + per-application
+              receipts. They belong with the record of what was sent — NOT at the top
+              of the dashboard, where a diagnostic list distracts from the campaign.
+              Renders nothing when both are empty. */}
+          <NeedsAttentionPanel />
         </div>
       </div>
     </DashboardLayout>
