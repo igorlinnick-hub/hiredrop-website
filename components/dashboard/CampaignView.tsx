@@ -204,8 +204,14 @@ export default function CampaignView({ token: initialToken }: Props) {
   const fetchStats = useCallback(async () => {
     try {
       const t = await getToken();
+      // Send the user's LOCAL midnight (as a UTC instant) so "today" rolls over at
+      // THEIR midnight, not the server's UTC — otherwise a late-evening submit shows
+      // as "today" the next local morning (Hawaii, 2026-08-12).
+      const localMidnight = new Date();
+      localMidnight.setHours(0, 0, 0, 0);
+      const since = encodeURIComponent(localMidnight.toISOString());
       const status = await apiGet<{ today_applications: number; jobs_ready: number; started_at?: string | null; submit_mode?: string }>(
-        "/campaign/status",
+        `/campaign/status?since=${since}`,
         t
       );
       startedAtRef.current = status.started_at || null;
