@@ -1,14 +1,22 @@
 "use client";
 
 /**
- * NeedsAttentionPanel — the two trust surfaces from council #3, on the dashboard:
+ * NeedsAttentionPanel — the two trust surfaces from council #3. Lives UNDER the
+ * application history (not on the main dashboard): this is the record of what
+ * happened to each job, not a control the user acts on every session.
  *
- *  1. "Needs your hands" — jobs the executor filled but could NOT submit honestly
- *     (validation-blocked / no submit button / resume). The extension logs them as
- *     "✋ Needs your hands: <job> — <reason>. Finish it yourself: <url>" activity
- *     lines; here they become actionable rows with a deep link. The product
+ *  1. "Couldn't submit these" — jobs the executor filled but could NOT submit
+ *     honestly (validation-blocked / no submit button / resume). The extension logs
+ *     them as "✋ Needs your hands: <job> — <reason>. Finish it yourself: <url>"
+ *     activity lines; here they become actionable rows with a deep link. The product
  *     invariant: every approved job ends submitted-complete-and-honest OR handed
  *     back with a reason — this panel is the "handed back" surface.
+ *
+ *     The user sees the FACT and the link, never our diagnostics: raw reasons like
+ *     "submit blocked — 10 required fields still empty" are a field-count that means
+ *     nothing to them and reads as failure theatre. userReason() maps them to one
+ *     calm sentence; the raw string + unfilled-field labels go to the backend
+ *     (activity_log.metadata_json, background.js ATS_JOB_FAILED) where WE read them.
  *
  *  2. Receipts — per-application confirmation captures (page text + screenshot at
  *     the submit moment, chrome.storage.receipts). Employer emails aren't
@@ -36,6 +44,25 @@ type Receipt = {
 type HandBack = { job: string; reason: string; url: string };
 
 const HANDBACK_RE = /Needs your hands:\s*(.+?)\s+—\s+(.+?)(?:\.\s*Finish it yourself:\s*(\S+))?$/;
+
+/**
+ * Raw hand-back reason → one plain sentence. Order matters: captcha and resume are
+ * checked before the generic validation cases, because those messages also mention
+ * the form. Anything unmatched falls through to the neutral line — a reason we
+ * haven't classified must never leak its internals into the UI.
+ */
+const REASON_MAP: [RegExp, string][] = [
+  [/captcha/i, "the site asked for a captcha — only you can pass it"],
+  [/resume|upload/i, "the resume upload didn't go through"],
+  [/submit button|no submit/i, "we couldn't find the submit button on this form"],
+  [/required field|validation/i, "this form asks something we can't answer for you"],
+  [/timeout|timed out/i, "the site stopped responding partway through"],
+];
+
+function userReason(raw: string): string {
+  for (const [re, text] of REASON_MAP) if (re.test(raw)) return text;
+  return "we couldn't finish this one automatically";
+}
 
 export default function NeedsAttentionPanel() {
   const [handbacks, setHandbacks] = useState<HandBack[]>([]);
@@ -87,9 +114,9 @@ export default function NeedsAttentionPanel() {
       {handbacks.length > 0 && (
         <div>
           <p className="text-sm font-semibold text-text flex items-center gap-2">
-            ✋ Needs your hands
+            Couldn&apos;t submit these
             <span className="text-[11px] font-normal text-text2">
-              filled as far as possible — finish &amp; submit yourself
+              already filled in — open one and it&apos;s a click away
             </span>
           </p>
           <ul className="mt-2 space-y-1.5">
@@ -107,7 +134,9 @@ export default function NeedsAttentionPanel() {
                 ) : (
                   <span className="font-medium text-text">{h.job}</span>
                 )}
-                <span className="text-text2"> — {h.reason}</span>
+                {/* title = the raw reason, for support/debugging without putting our
+                    diagnostics in front of the user. */}
+                <span className="text-text2" title={h.reason}> — {userReason(h.reason)}</span>
               </li>
             ))}
           </ul>

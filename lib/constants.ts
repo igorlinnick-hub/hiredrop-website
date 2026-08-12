@@ -59,6 +59,11 @@ export const JOB_TYPES: JobType[] = [
 export const JOB_STATUSES: JobStatus[] = [
   { value: "new", label: "New", color: "blue" },
   { value: "applied", label: "Applied", color: "yellow" },
+  // Written by the extension when the submit click landed but no confirmation page
+  // was detected (content.js: result.verified === false). It was in the schema from
+  // the start and rendered as the raw string — surfacing it as its own state is the
+  // point: "applied" must mean we SAW the confirmation, never "we clicked and hoped".
+  { value: "applied_unconfirmed", label: "Sent, unconfirmed", color: "gray" },
   { value: "received", label: "Received", color: "blue" },
   { value: "interview", label: "Interview", color: "green" },
   { value: "interview_invite", label: "Interview", color: "green" },

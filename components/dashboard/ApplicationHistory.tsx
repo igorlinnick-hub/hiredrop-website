@@ -5,8 +5,9 @@ import Badge from "@/components/ui/Badge";
 import { PLATFORMS, JOB_STATUSES } from "@/lib/constants";
 import type { Application } from "@/lib/types";
 
-const statusColor: Record<string, "blue" | "yellow" | "green" | "red"> = {
+const statusColor: Record<string, "blue" | "yellow" | "green" | "red" | "gray"> = {
   applied: "yellow",
+  applied_unconfirmed: "gray",
   received: "blue",
   interview: "green",
   interview_invite: "green",
