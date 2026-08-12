@@ -77,7 +77,7 @@ export default function StatsCards({
       <StatCard
         label="Total Applied"
         value={totalApplications}
-        href="#history"
+        href="/dashboard/history"
         hint="All-time — view application history →"
         icon={
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,7 +89,7 @@ export default function StatsCards({
       <StatCard
         label="Applied Today"
         value={applicationsToday}
-        href="#history"
+        href="/dashboard/history"
         hint="View today's applications →"
         icon={
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
