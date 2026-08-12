@@ -4,20 +4,17 @@ import {
   apiGet,
   type StatsResponse,
   type ApiJob,
-  type ApiApplication,
   type CampaignStatusResponse,
 } from "@/lib/api";
-import type { Job, Application } from "@/lib/types";
+import type { Job } from "@/lib/types";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import StatsCards from "@/components/dashboard/StatsCards";
 import JobsTable from "@/components/dashboard/JobsTable";
-import ApplicationHistory from "@/components/dashboard/ApplicationHistory";
 import QuickActions from "@/components/dashboard/QuickActions";
 import PlatformsIndicator from "@/components/dashboard/PlatformsIndicator";
 import SetupChecklist from "@/components/dashboard/SetupChecklist";
 import MobileHandoff from "@/components/dashboard/MobileHandoff";
 import FreeTastePaywall from "@/components/dashboard/FreeTastePaywall";
-import NeedsAttentionPanel from "@/components/dashboard/NeedsAttentionPanel";
 
 export const metadata = {
   title: "Dashboard — HireDrop",
@@ -56,16 +53,14 @@ export default async function DashboardPage() {
   }
 
   // Fetch all dashboard data in parallel
-  const [stats, jobs, applications, campaign] = await Promise.allSettled([
+  const [stats, jobs, campaign] = await Promise.allSettled([
     apiGet<StatsResponse>("/stats", token),
     apiGet<ApiJob[]>("/jobs", token),
-    apiGet<ApiApplication[]>("/applications/history", token),
     apiGet<CampaignStatusResponse>("/campaign/status", token),
   ]);
 
   const statsData = stats.status === "fulfilled" ? stats.value : null;
   const jobsData = (jobs.status === "fulfilled" ? jobs.value : []) as Job[];
-  const applicationsData = (applications.status === "fulfilled" ? applications.value : []) as unknown as Application[];
   const campaignRunning = campaign.status === "fulfilled" ? campaign.value.running : false;
 
   // Free taste exhausted → the paywall moment leads the page (free tier only;
@@ -122,14 +117,15 @@ export default async function DashboardPage() {
           <JobsTable jobs={jobsData} />
         </div>
 
-        <div id="history" className="space-y-4">
-          <ApplicationHistory applications={applicationsData} token={token} />
-          {/* Trust surfaces (council #3): jobs we couldn't submit + per-application
-              receipts. They belong with the record of what was sent — NOT at the top
-              of the dashboard, where a diagnostic list distracts from the campaign.
-              Renders nothing when both are empty. */}
-          <NeedsAttentionPanel />
-        </div>
+        {/* The full record — applications by day, links, statuses, receipts, and the
+            "couldn't submit these" hand-backs — now lives in its own History tab
+            (/dashboard/history), not stacked under the dashboard. */}
+        <a
+          href="/dashboard/history"
+          className="block rounded-xl border border-border bg-surface p-4 text-sm text-text2 hover:text-text hover:border-accent/40 transition"
+        >
+          View your full application history, per day — with links &amp; proof of submission →
+        </a>
       </div>
     </DashboardLayout>
   );
