@@ -4,7 +4,7 @@ import { KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
-import { PLATFORMS, LOCATIONS, JOB_TYPES } from "@/lib/constants";
+import { PLATFORMS, LOCATIONS, JOB_TYPES, WORK_SETTINGS } from "@/lib/constants";
 import LaunchModal from "@/components/dashboard/LaunchModal";
 import StartReadinessModal, { gateStart, type ReadinessCheck } from "@/components/dashboard/StartReadiness";
 import RadiusMap, { type RadiusMiles } from "@/components/dashboard/RadiusMap";
@@ -54,6 +54,9 @@ export default function QuickActions({
   const [keywords, setKeywords] = useState<string[]>(initialKeywords);
   const [location, setLocation] = useState(initialLocation || "remote");
   const [jobType, setJobType] = useState(initialJobType || "full-time");
+  // Work setting (remote/hybrid/onsite) — a separate axis from job type. "" = Any.
+  // Not persisted to profile (no column yet) — sent with the START payload for this run.
+  const [workSetting, setWorkSetting] = useState("");
   // A campaign auto-applies on exactly ONE platform (the extension runs it to the
   // daily cap, then stops) — so auto-apply is a radio, not a multi-select. Discovery
   // platforms (Glassdoor/Google/…) are multi-select; they only fetch listings.
@@ -361,7 +364,7 @@ export default function QuickActions({
         window.addEventListener("message", onMsg);
         window.postMessage({
           type: "HIREDROP_START_CAMPAIGN",
-          filters: { keywords, platforms: effPlatforms, location, job_type: jobType },
+          filters: { keywords, platforms: effPlatforms, location, job_type: jobType, work_setting: workSetting, search_radius_miles: radius },
         }, "*");
         setTimeout(() => finish(null), 5000);
       });
@@ -525,6 +528,23 @@ export default function QuickActions({
               hover:border-accent/40 hover:text-text focus:outline-none focus:border-accent/50 transition"
           >
             {JOB_TYPES.map((j) => <option key={j.value} value={j.value}>{j.label}</option>)}
+          </select>
+          <svg className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-text2/50 pointer-events-none"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+
+        {/* Work setting chip (remote / hybrid / on-site) — separate axis from job type */}
+        <div className="relative">
+          <select
+            value={workSetting}
+            onChange={(e) => setWorkSetting(e.target.value)}
+            className="appearance-none pl-3 pr-6 py-1 text-xs font-medium rounded-full border
+              border-border bg-surface text-text2 cursor-pointer
+              hover:border-accent/40 hover:text-text focus:outline-none focus:border-accent/50 transition"
+          >
+            {WORK_SETTINGS.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
           </select>
           <svg className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-text2/50 pointer-events-none"
             fill="none" stroke="currentColor" viewBox="0 0 24 24">
