@@ -56,6 +56,16 @@ export const JOB_TYPES: JobType[] = [
   { value: "contract", label: "Contract" },
 ];
 
+// Work setting is a SEPARATE axis from job type (employment type). Remote/Hybrid/On-site.
+// "" = Any (no filter). Flows to the extension via the START payload → URL builders
+// (LinkedIn uses its native f_WT param; Indeed/ZR bias the query with "hybrid").
+export const WORK_SETTINGS: JobType[] = [
+  { value: "", label: "Any setting" },
+  { value: "remote", label: "Remote" },
+  { value: "hybrid", label: "Hybrid" },
+  { value: "onsite", label: "On-site" },
+];
+
 export const JOB_STATUSES: JobStatus[] = [
   { value: "new", label: "New", color: "blue" },
   { value: "applied", label: "Applied", color: "yellow" },
