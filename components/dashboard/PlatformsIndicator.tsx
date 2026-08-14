@@ -52,8 +52,8 @@ export default function PlatformsIndicator() {
 
   return (
     <Link href="/dashboard/platforms"
-      className="mb-6 flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3
-        hover:border-accent/40 hover:bg-surface2/40 transition group">
+      className="hd-glass mb-6 flex items-center gap-3 rounded-2xl px-4 py-3
+        hover:border-accent/40 transition group">
       <span className={[
         "flex items-center justify-center w-9 h-9 rounded-lg shrink-0",
         allSet ? "bg-green/10 text-green" : "bg-accent/10 text-accent",

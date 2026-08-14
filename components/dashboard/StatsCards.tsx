@@ -10,7 +10,7 @@ function StatCard({ label, value, icon, href, hint }: StatCardProps) {
   const inner = (
     <div
       className={[
-        "group relative bg-surface border border-border rounded-xl p-5 transition-all duration-200",
+        "group relative hd-glass hd-glass-bloom overflow-hidden rounded-2xl p-5 transition-all duration-200",
         href
           ? "hover:border-accent/40 hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
           : "",
