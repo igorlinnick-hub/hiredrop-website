@@ -122,7 +122,7 @@ export default async function DashboardPage() {
             (/dashboard/history), not stacked under the dashboard. */}
         <a
           href="/dashboard/history"
-          className="block rounded-xl border border-border bg-surface p-4 text-sm text-text2 hover:text-text hover:border-accent/40 transition"
+          className="hd-glass block rounded-2xl p-4 text-sm text-text2 hover:text-text hover:border-accent/40 transition"
         >
           View your full application history, per day — with links &amp; proof of submission →
         </a>

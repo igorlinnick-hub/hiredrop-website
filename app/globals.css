@@ -209,6 +209,64 @@ h1, h2, h3 {
   border-color: rgba(108, 92, 231, 0.5);
 }
 
+/* ============================================================
+   BRAND GLASS — one shared atmosphere across the app (matches
+   LaunchModeCards + TapView): a frosted-glass surface, an optional
+   violet bloom glowing UP THROUGH the glass, and a halo pooling
+   beneath. Base = day (light frosted); .dark = night (deep glass).
+   Opt in with class="hd-glass" on any card (bring your own rounded-*);
+   add hd-glass-bloom for a hero glow; wrap a card in .hd-halo-slot
+   with a <span class="hd-halo"/> sibling for the underglow.
+   ============================================================ */
+.hd-glass {
+  --hg-bloomA: rgba(139,124,240,.42);
+  --hg-bloomB: rgba(91,108,255,.18);
+  position: relative;
+  background: linear-gradient(165deg, #fcfbff 0%, #f1ecff 100%);
+  border: 1px solid rgba(108,92,231,.16);
+  box-shadow: 0 16px 38px -24px rgba(108,92,231,.34), inset 0 1px 0 rgba(255,255,255,.8);
+}
+.dark .hd-glass {
+  --hg-bloomA: rgba(146,138,255,.7);
+  --hg-bloomB: rgba(74,98,240,.32);
+  background: linear-gradient(165deg, #1b1830 0%, #100d1c 100%);
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 22px 48px -24px rgba(70,48,150,.5), inset 0 1px 0 rgba(255,255,255,.1);
+}
+/* violet bloom glowing up through the glass — for hero surfaces */
+.hd-glass-bloom::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 90%;
+  height: 66%;
+  transform: translateX(-50%);
+  border-radius: inherit;
+  background: radial-gradient(56% 62% at 50% 104%, var(--hg-bloomA), var(--hg-bloomB) 46%, transparent 72%);
+  filter: blur(9px);
+  pointer-events: none;
+  z-index: 0;
+}
+.hd-glass-bloom > * { position: relative; z-index: 1; }
+/* halo pooling beneath a card */
+.hd-halo-slot { position: relative; }
+.hd-halo {
+  position: absolute;
+  left: 50%;
+  bottom: -14%;
+  width: 76%;
+  height: 52%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124,108,255,.26), transparent 62%);
+  filter: blur(22px);
+  z-index: 0;
+  pointer-events: none;
+}
+.dark .hd-halo { background: radial-gradient(circle, rgba(108,92,231,.58), transparent 62%); }
+.hd-halo-slot > :not(.hd-halo) { position: relative; z-index: 1; }
+
 /* ===== NAV LINK UNDERLINE ===== */
 .nav-link {
   position: relative;
