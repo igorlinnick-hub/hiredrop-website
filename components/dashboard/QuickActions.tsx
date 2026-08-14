@@ -235,6 +235,18 @@ export default function QuickActions({
       } catch { /* optional filter — ignore */ }
     })();
   }
+  // A city picked on the map becomes the campaign location (a precise city string,
+  // not the coarse remote/usa/europe enum) — it flows to Indeed l= via the extension.
+  // Save the label directly (not from state, which updates async) so the write is fresh.
+  function pickLocation(label: string) {
+    setLocation(label);
+    (async () => {
+      try {
+        const t = await getFreshToken();
+        await apiPost("/profile/prefs", t, { keywords, location: label, job_type: jobType, platforms });
+      } catch { /* optional filter — ignore */ }
+    })();
+  }
   // Switching to a non-remote location with no radius yet → commit a sensible
   // default (25 mi) so the highlighted chip reflects what's actually saved.
   useEffect(() => {
@@ -447,6 +459,11 @@ export default function QuickActions({
               appearance-none cursor-pointer focus:outline-none focus:border-accent/50
               focus:ring-2 focus:ring-accent/10 transition whitespace-nowrap"
           >
+            {/* A city picked on the map isn't one of the 3 base options — surface it
+                as a selected entry so the dropdown shows it instead of going blank. */}
+            {location && !LOCATIONS.some((l) => l.value === location) && (
+              <option value={location}>{location}</option>
+            )}
             {LOCATIONS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
           </select>
           <svg className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text2/50 pointer-events-none"
@@ -537,15 +554,17 @@ export default function QuickActions({
         </div>
       </div>
 
-      {/* Search radius — only for non-remote searches. Animated mini-map + a
-          10/25/50/100-mile selector; saved to profile.search_radius_miles. */}
+      {/* Search area — only for non-remote searches. Live map + city search + a
+          10/25/50/100-mile radius; city → profile.location, radius → search_radius_miles. */}
       {location !== "remote" && (
         <div className="px-1 max-w-sm" style={{ animation: "hdRadiusIn .25s ease" }}>
           <style>{`@keyframes hdRadiusIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}`}</style>
           <RadiusMap
             value={radius}
             onChange={selectRadius}
-            areaLabel={LOCATIONS.find((l) => l.value === location)?.label}
+            onPick={pickLocation}
+            areaLabel={LOCATIONS.find((l) => l.value === location)?.label ?? location}
+            initialQuery={LOCATIONS.some((l) => l.value === location) ? undefined : location}
           />
         </div>
       )}
