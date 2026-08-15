@@ -45,7 +45,7 @@ export default function QuickActions({
   onboardingComplete,
   hasResume,
   salaryMin: initialSalaryMin,
-  salaryMax: initialSalaryMax,
+  // salaryMax intentionally unused — the filter is now a single "minimum pay" floor.
   searchRadiusMiles: initialRadius,
 }: Props) {
   const router = useRouter();
@@ -97,8 +97,12 @@ export default function QuickActions({
 
   // Optional filters (moved out of FitChoiceModal): salary range + non-remote radius.
   // Salary kept as raw strings (empty = no filter). Prefilled from the profile.
+  // A single "minimum pay" floor is what job-seekers actually want (a Max would filter OUT
+  // higher-paying jobs — never the goal). Stored/compared as ANNUAL USD on the backend;
+  // the Year/Hour toggle only affects how the number is ENTERED (hour → ×2080 on save).
+  const HOURS_PER_YEAR = 2080;
+  const [salUnit, setSalUnit] = useState<"year" | "hour">("year");
   const [salMin, setSalMin] = useState(initialSalaryMin != null ? String(initialSalaryMin) : "");
-  const [salMax, setSalMax] = useState(initialSalaryMax != null ? String(initialSalaryMax) : "");
   const [radius, setRadius] = useState<RadiusMiles | null>(
     initialRadius != null && RADIUS_STEPS.includes(initialRadius) ? (initialRadius as RadiusMiles) : null
   );
@@ -248,12 +252,15 @@ export default function QuickActions({
     const n = parseInt(s, 10);
     return Number.isFinite(n) && n > 0 ? n : null;
   };
-  async function persistSalary(min: string, max: string) {
+  async function persistSalary(min: string, unit: "year" | "hour") {
     try {
       const t = await getFreshToken();
+      const raw = boundSalary(min);
+      // Normalize to ANNUAL USD (the backend's unit) before saving.
+      const annual = raw == null ? null : unit === "hour" ? raw * HOURS_PER_YEAR : raw;
       await apiPost("/profile/salary", t, {
-        salary_min: boundSalary(min),
-        salary_max: boundSalary(max),
+        salary_min: annual,
+        salary_max: null, // no upper bound — a job-seeker never wants to exclude higher pay
         salary_listed_only: false,
       });
     } catch { /* optional filter — ignore */ }
@@ -614,23 +621,35 @@ export default function QuickActions({
 
         <span className="text-border">·</span>
 
-        {/* Salary range (optional) — moved here from the launch modal. Empty = no
-            filter; saved fire-and-forget on blur / toggle so it never blocks Start. */}
-        <span className="text-[11px] font-medium text-text2/60">Salary</span>
+        {/* Minimum pay (optional). A single floor is what job-seekers actually want — a Max
+            would exclude higher-paying jobs. Stored as annual USD; the Year/Hour toggle only
+            changes entry (hour → ×2080 on save). We skip jobs that LIST pay below this;
+            postings with no listed salary are still included. Fire-and-forget on blur/toggle. */}
+        <span className="text-[11px] font-medium text-text2/60" title="We skip jobs that list pay below this. Postings without a listed salary are still included.">
+          Min pay
+        </span>
         <div className="flex items-center gap-1 rounded-full border border-border bg-surface pl-2 pr-1 py-0.5">
           <span aria-hidden className="text-[11px] text-text2/50">$</span>
-          <input type="number" inputMode="numeric" min={0} step={5000} placeholder="Min"
+          <input type="number" inputMode="numeric" min={0} step={salUnit === "hour" ? 1 : 5000}
+            placeholder={salUnit === "hour" ? "e.g. 45" : "e.g. 90000"}
             value={salMin}
             onChange={(e) => setSalMin(e.target.value)}
-            onBlur={() => persistSalary(salMin, salMax)}
-            className="w-[3.75rem] bg-transparent text-xs text-text placeholder:text-text2/40 outline-none tabular-nums" />
-          <span aria-hidden className="text-text2/30 text-xs">–</span>
-          <span aria-hidden className="text-[11px] text-text2/50">$</span>
-          <input type="number" inputMode="numeric" min={0} step={5000} placeholder="Max"
-            value={salMax}
-            onChange={(e) => setSalMax(e.target.value)}
-            onBlur={() => persistSalary(salMin, salMax)}
-            className="w-[3.75rem] bg-transparent text-xs text-text placeholder:text-text2/40 outline-none tabular-nums" />
+            onBlur={() => persistSalary(salMin, salUnit)}
+            className="w-[4.75rem] bg-transparent text-xs text-text placeholder:text-text2/40 outline-none tabular-nums" />
+          {/* Year / Hour toggle */}
+          <div className="flex items-center rounded-full bg-surface2/60 p-0.5 text-[10px] font-semibold">
+            {(["year", "hour"] as const).map((u) => (
+              <button key={u} type="button"
+                onClick={() => { setSalUnit(u); persistSalary(salMin, u); }}
+                className={[
+                  "px-1.5 py-0.5 rounded-full transition",
+                  salUnit === u ? "bg-accent text-white" : "text-text2/60 hover:text-text",
+                ].join(" ")}
+              >
+                {u === "year" ? "/yr" : "/hr"}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
