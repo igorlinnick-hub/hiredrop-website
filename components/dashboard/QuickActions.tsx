@@ -631,11 +631,11 @@ export default function QuickActions({
         <div className="flex items-center gap-1 rounded-full border border-border bg-surface pl-2 pr-1 py-0.5">
           <span aria-hidden className="text-[11px] text-text2/50">$</span>
           <input type="number" inputMode="numeric" min={0} step={salUnit === "hour" ? 1 : 5000}
-            placeholder={salUnit === "hour" ? "e.g. 45" : "e.g. 90000"}
+            placeholder={salUnit === "hour" ? "45" : "90,000"}
             value={salMin}
             onChange={(e) => setSalMin(e.target.value)}
             onBlur={() => persistSalary(salMin, salUnit)}
-            className="w-[4.75rem] bg-transparent text-xs text-text placeholder:text-text2/40 outline-none tabular-nums" />
+            className="w-[5.5rem] bg-transparent text-xs text-text placeholder:text-text2/40 outline-none tabular-nums" />
           {/* Year / Hour toggle */}
           <div className="flex items-center rounded-full bg-surface2/60 p-0.5 text-[10px] font-semibold">
             {(["year", "hour"] as const).map((u) => (
