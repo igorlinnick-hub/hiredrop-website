@@ -589,8 +589,25 @@ export default function QuickActions({
         </div>
       )}
 
-      {/* Error */}
-      {err && <p className="text-xs text-red px-1">{err}</p>}
+      {/* Error. `context_invalidated` isn't a real failure — it means the extension was
+          just reloaded/updated and this tab still holds the dead content-script bridge.
+          Show a friendly, actionable banner (refresh reconnects) instead of raw red text. */}
+      {err && (/context_invalidated/.test(err) ? (
+        <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/[0.06] px-3 py-2 text-xs text-text2">
+          <svg className="w-4 h-4 shrink-0 text-accent" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span className="flex-1">The HireDrop extension was just updated — refresh this tab to reconnect.</span>
+          <button
+            onClick={() => window.location.reload()}
+            className="shrink-0 rounded-lg bg-accent px-2.5 py-1 font-semibold text-white hover:bg-accent2 transition"
+          >
+            Refresh
+          </button>
+        </div>
+      ) : (
+        <p className="text-xs text-red px-1">{err}</p>
+      ))}
 
       {/* Start flow: readiness checklist if something's missing, else the launch
           platform picker → startCampaign(picked). */}
