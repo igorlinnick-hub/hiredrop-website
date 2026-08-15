@@ -152,6 +152,13 @@ export default function CampaignView({ token: initialToken }: Props) {
   const [slots, setSlots] = useState<[string | null, string | null]>([null, null]);
   const [frontIdx, setFrontIdx] = useState<0 | 1>(0);
   const frontIdxRef = useRef<0 | 1>(0);
+  // Last frame we committed — the capture cadence (300 ms) plus the round-trip through
+  // the backend is slower than our poll (400 ms), so the same frame comes back 2–3×
+  // in a row. Flipping slots on an identical frame is a pure flicker source; skip it.
+  const lastFrameRef = useRef<string | null>(null);
+  // Only one decode/commit in flight at a time so a slow decode can't be overtaken
+  // by the next poll and commit frames out of order.
+  const frameBusyRef = useRef(false);
 
   async function getToken(): Promise<string> {
     const { data: { session } } = await createClient().auth.getSession();
@@ -159,22 +166,44 @@ export default function CampaignView({ token: initialToken }: Props) {
   }
 
   const fetchScreenshot = useCallback(async () => {
+    if (frameBusyRef.current) return;
+    frameBusyRef.current = true;
     try {
       const t = await getToken();
       const res = await apiGet<{ data: string | null }>("/campaign/screenshot", t);
-      if (res.data) {
+      const data = res.data;
+      if (data) {
+        // Fresh frame → the stream is alive even if the pixels didn't change.
+        lastScreenshotTs.current = Date.now();
+        setScreenshotAge(0);
+        if (data === lastFrameRef.current) return;
+
+        // Decode OFF-screen first. Setting a ~100 KB data-URL as <img src> and fading it
+        // in immediately paints a blank frame for a few ticks while the JPEG decodes —
+        // that blank-then-image pop is the "flicker" users see. Once decoded here the
+        // browser has it cached, so the visible <img> paints on its first frame.
+        try {
+          const probe = new Image();
+          probe.src = data;
+          await probe.decode();
+        } catch {
+          return; // corrupt / interrupted frame — keep showing the last good one
+        }
+        lastFrameRef.current = data;
+
         const next = (1 - frontIdxRef.current) as 0 | 1;
         setSlots(prev => {
           const s: [string | null, string | null] = [prev[0], prev[1]];
-          s[next] = res.data;
+          s[next] = data;
           return s;
         });
         frontIdxRef.current = next;
         setFrontIdx(next);
-        lastScreenshotTs.current = Date.now();
-        setScreenshotAge(0);
       }
-    } catch {}
+    } catch {
+    } finally {
+      frameBusyRef.current = false;
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -791,10 +820,15 @@ export default function CampaignView({ token: initialToken }: Props) {
                         key={i}
                         src={slots[i]!}
                         alt="Live browser automation"
+                        decoding="sync"
                         className="absolute inset-0 w-full h-full object-cover object-top"
                         style={{
                           opacity: i === frontIdx ? 1 : 0,
-                          transition: "opacity 150ms ease",
+                          // Frames are pre-decoded before they land here, so this is a
+                          // true crossfade between two painted images — no blank gap.
+                          transition: "opacity 260ms ease-out",
+                          willChange: "opacity",
+                          backfaceVisibility: "hidden",
                         }}
                       />
                     )
