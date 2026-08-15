@@ -57,6 +57,10 @@ export default function QuickActions({
   // Work setting (remote/hybrid/onsite) — a separate axis from job type. "" = Any.
   // Not persisted to profile (no column yet) — sent with the START payload for this run.
   const [workSetting, setWorkSetting] = useState("");
+  // "Did you mean" typo suggestions for keywords — the ONE place a typo costs search
+  // results (keywords go raw into board queries; the AI layers read the real posting so
+  // they're already typo-tolerant). Shown as accept-with-one-click chips, never silent.
+  const [typoSuggestions, setTypoSuggestions] = useState<{ original: string; suggestion: string }[]>([]);
   // A campaign auto-applies on exactly ONE platform (the extension runs it to the
   // daily cap, then stops) — so auto-apply is a radio, not a multi-select. Discovery
   // platforms (Glassdoor/Google/…) are multi-select; they only fetch listings.
@@ -212,6 +216,31 @@ export default function QuickActions({
     } else if (e.key === "Backspace" && kwInput === "" && keywords.length > 0) {
       setKeywords((p) => p.slice(0, -1));
     }
+  }
+
+  // Debounced typo check for the keyword list (cheap Haiku call server-side). Fail-open:
+  // any error just yields no suggestions and the search runs with keywords as typed.
+  useEffect(() => {
+    if (!keywords.length) { setTypoSuggestions([]); return; }
+    let cancelled = false;
+    const id = setTimeout(async () => {
+      try {
+        const t = await getFreshToken();
+        const res = await apiPost<{ corrections: { original: string; suggestion: string }[] }>(
+          "/tools/normalize-keywords", t, { keywords });
+        if (!cancelled) setTypoSuggestions((res.corrections || []).filter((c) => keywords.includes(c.original)));
+      } catch { if (!cancelled) setTypoSuggestions([]); }
+    }, 700);
+    return () => { cancelled = true; clearTimeout(id); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keywords]);
+
+  function applyTypoFix(original: string, suggestion: string) {
+    setKeywords((p) => (p.includes(suggestion) ? p.filter((k) => k !== original) : p.map((k) => (k === original ? suggestion : k))));
+    setTypoSuggestions((s) => s.filter((c) => c.original !== original));
+  }
+  function dismissTypoFix(original: string) {
+    setTypoSuggestions((s) => s.filter((c) => c.original !== original));
   }
 
   // ── optional filters: salary + radius (fire-and-forget, never block Start) ────
@@ -514,6 +543,37 @@ export default function QuickActions({
           </>
         )}
       </div>
+
+      {/* "Did you mean" — one-click typo fixes for keywords (search-only; the AI understands
+          typos, but the board search doesn't reliably). Never rewrites silently. */}
+      {typoSuggestions.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 px-1">
+          {typoSuggestions.map((c) => (
+            <span key={c.original}
+              className="inline-flex items-center gap-1.5 rounded-full border border-yellow/30 bg-yellow/[0.07]
+                px-2.5 py-1 text-xs text-text2">
+              <span className="text-text2/70">Did you mean</span>
+              <button
+                onClick={() => applyTypoFix(c.original, c.suggestion)}
+                className="font-semibold text-accent hover:underline"
+                title={`Replace "${c.original}" with "${c.suggestion}"`}
+              >
+                {c.suggestion}
+              </button>
+              <span className="text-text2/50">?</span>
+              <button
+                onClick={() => dismissTypoFix(c.original)}
+                className="ml-0.5 text-text2/40 hover:text-text2 transition"
+                title="Keep it as typed"
+              >
+                <svg className="w-2.5 h-2.5" viewBox="0 0 10 10" fill="currentColor">
+                  <path d="M5 4.293 8.146 1.146a.5.5 0 0 1 .708.708L5.707 5l3.147 3.146a.5.5 0 0 1-.708.708L5 5.707 1.854 8.854a.5.5 0 0 1-.708-.708L4.293 5 1.146 1.854a.5.5 0 1 1 .708-.708z" />
+                </svg>
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* ── Filter chips row ── */}
       <div className="flex flex-wrap items-center gap-2 px-1">
