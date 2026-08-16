@@ -47,8 +47,10 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
           --halo:rgba(124,108,255,.30); --star:rgba(108,92,231,.55);
           --title:#1A1A2E; --sub:rgba(75,75,110,.82);
           --pen:#4a4668; --script:#6C5CE7;
-          position:relative;z-index:1;display:flex;flex-direction:column;width:100%;
-          padding:14px 14px 15px;border-radius:22px;border:1px solid var(--edge);background:var(--card);
+          /* the card IS the space window: scene runs edge-to-edge under the frame,
+             title/sub sit on top of it at the bottom (Igor 08-15: "заполняла рамку целиком") */
+          position:relative;z-index:1;display:block;width:100%;height:172px;overflow:hidden;
+          padding:0;border-radius:22px;border:1px solid var(--edge);background:var(--body);
           text-align:center;transform:perspective(950px) rotateX(0) rotateY(0);transform-style:preserve-3d;
           transition:transform .5s cubic-bezier(.25,1,.4,1),box-shadow .35s,border-color .25s;
           box-shadow:0 20px 45px -22px rgba(108,92,231,.42),inset 0 1px 0 rgba(255,255,255,.8)}
@@ -71,16 +73,23 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
           box-shadow:0 0 30px -6px var(--color-green),0 20px 45px -22px rgba(108,92,231,.42)}
 
         /* the glass window that the bloom glows through */
-        .lmc-body{position:relative;width:100%;height:106px;border-radius:15px;overflow:hidden;margin-bottom:11px;
-          background:var(--body);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -1px 0 rgba(0,0,0,.15)}
-        .lmc-bloom{position:absolute;left:50%;bottom:0;width:88%;height:82%;transform:translateX(-50%);
-          background:radial-gradient(58% 54% at 50% 66%,var(--bloomA),var(--bloomB) 46%,transparent 73%);
-          filter:blur(7px);pointer-events:none;z-index:0}
+        .lmc-body{position:absolute;inset:0;overflow:hidden;
+          box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -1px 0 rgba(0,0,0,.15)}
+        /* bloom sits under the scene, above the caption band — its lower edge feathers into
+           the caption so the text stays readable without a hard scrim */
+        .lmc-bloom{position:absolute;left:50%;bottom:22px;width:92%;height:78%;transform:translateX(-50%);
+          background:radial-gradient(58% 54% at 50% 68%,var(--bloomA),var(--bloomB) 46%,transparent 73%);
+          filter:blur(9px);pointer-events:none;z-index:0}
         .lmc-stars{position:absolute;inset:0;pointer-events:none;z-index:1}
         .lmc-star{position:absolute;border-radius:50%;background:var(--star)}
-        .lmc-scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2}
+        /* scene occupies the space above the caption band */
+        .lmc-scene{position:absolute;left:0;right:0;top:0;bottom:56px;display:flex;align-items:center;justify-content:center;z-index:2}
 
-        .lmc-title{font-family:'Space Grotesk','Inter',sans-serif;font-weight:700;font-size:20px;color:var(--title);line-height:1}
+        /* caption band overlaid on the bottom of the scene */
+        .lmc-caption{position:absolute;left:0;right:0;bottom:0;padding:0 14px 15px;z-index:3;pointer-events:none;
+          display:flex;flex-direction:column;align-items:center}
+        .lmc-title{font-family:'Space Grotesk','Inter',sans-serif;font-weight:700;font-size:20px;color:var(--title);line-height:1;
+          text-shadow:0 1px 10px rgba(0,0,0,.18)}
         .lmc-sub{font-size:12px;color:var(--sub);margin-top:4px}
 
         /* ── AUTO: rest = written line; hover = pen flies & rewrites ── */
@@ -153,9 +162,11 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
                 </svg>
               </div>
             </div>
+            <div className="lmc-caption">
+              <span className="lmc-title">Auto</span>
+              <span className="lmc-sub">Fills &amp; sends for you</span>
+            </div>
           </div>
-          <span className="lmc-title">Auto</span>
-          <span className="lmc-sub">Fills &amp; sends for you</span>
         </button>
       </div>
 
@@ -191,9 +202,11 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
                 ))}
               </div>
             </div>
+            <div className="lmc-caption">
+              <span className="lmc-title">Tap</span>
+              <span className="lmc-sub">Review each on a card</span>
+            </div>
           </div>
-          <span className="lmc-title">Tap</span>
-          <span className="lmc-sub">Review each on a card</span>
         </button>
       </div>
     </div>
