@@ -10,6 +10,13 @@ export interface UserProfile {
   writing_style: string;
   linkedin_url: string;
   portfolio_url: string;
+  // Mailing address — some application forms (ZipRecruiter's contact step) refuse to
+  // submit while these are blank, even though they label them Optional. The filler never
+  // invents a value; a missing address means the job is handed back instead.
+  street_address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
   // Screener-answer fields the extension's deterministic handlers use to fill the
   // most frequent required application questions (work auth / sponsorship / notice /
   // English) — honestly, from the user, never guessed on a knockout.

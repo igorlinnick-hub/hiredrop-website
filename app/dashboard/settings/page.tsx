@@ -24,6 +24,10 @@ const emptyProfile: UserProfile = {
   writing_style: "",
   linkedin_url: "",
   portfolio_url: "",
+  street_address: "",
+  city: "",
+  state: "",
+  postal_code: "",
   work_authorized_us: null,
   needs_sponsorship: null,
   notice_period: "",
@@ -79,6 +83,10 @@ export default function SettingsPage() {
           writing_style: data.writing_style || "",
           linkedin_url: data.linkedin_url || "",
           portfolio_url: data.portfolio_url || "",
+          street_address: data.street_address || "",
+          city: data.city || "",
+          state: data.state || "",
+          postal_code: data.postal_code || "",
           work_authorized_us: data.work_authorized_us ?? null,
           needs_sponsorship: data.needs_sponsorship ?? null,
           notice_period: data.notice_period || "",
@@ -139,6 +147,10 @@ export default function SettingsPage() {
         writing_style: profile.writing_style,
         linkedin_url: profile.linkedin_url,
         portfolio_url: profile.portfolio_url,
+        street_address: profile.street_address,
+        city: profile.city,
+        state: profile.state,
+        postal_code: profile.postal_code,
         work_authorized_us: profile.work_authorized_us,
         needs_sponsorship: profile.needs_sponsorship,
         notice_period: profile.notice_period,
@@ -222,6 +234,21 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="LinkedIn URL" type="url" value={profile.linkedin_url} onChange={(e) => update({ linkedin_url: e.target.value })} hint="Used to fill LinkedIn fields on company application forms." />
             <Input label="Portfolio / website URL" type="url" value={profile.portfolio_url} onChange={(e) => update({ portfolio_url: e.target.value })} hint="Used for portfolio/website fields." />
+          </div>
+
+          {/* Mailing address. ZipRecruiter's contact step labels these Optional and then
+              refuses to advance while they are blank, so a missing address quietly costs
+              applications. We never invent one — the filler leaves the field empty and
+              hands the job back instead. */}
+          <p className="text-sm font-medium text-text pt-2">Mailing address</p>
+          <p className="text-xs text-text-muted -mt-2">
+            Some application forms won’t submit without it. Used only to fill those fields.
+          </p>
+          <Input label="Street address" value={profile.street_address} onChange={(e) => update({ street_address: e.target.value })} />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Input label="City" value={profile.city} onChange={(e) => update({ city: e.target.value })} />
+            <Input label="State / region" value={profile.state} onChange={(e) => update({ state: e.target.value })} hint="e.g. FL" />
+            <Input label="ZIP / postal code" value={profile.postal_code} onChange={(e) => update({ postal_code: e.target.value })} />
           </div>
 
           {/* Work eligibility — the most frequent required questions on application
