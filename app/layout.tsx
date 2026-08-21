@@ -5,8 +5,21 @@ import AttributionCapture from "@/components/AttributionCapture";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://hiredrop.io"),
   title: "HireDrop — Automate Your Job Search",
   description: "AI-powered job search automation. Personalized cover letters, auto-apply, multi-platform search.",
+  openGraph: {
+    type: "website",
+    siteName: "HireDrop",
+    url: "https://hiredrop.io",
+    title: "HireDrop — Automate Your Job Search",
+    description: "AI-powered job search automation. Personalized cover letters, auto-apply, multi-platform search.",
+  },
+  twitter: {
+    card: "summary",
+    title: "HireDrop — Automate Your Job Search",
+    description: "AI-powered job search automation. Personalized cover letters, auto-apply, multi-platform search.",
+  },
 };
 
 export default function RootLayout({

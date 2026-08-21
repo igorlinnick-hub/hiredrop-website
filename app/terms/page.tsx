@@ -1,6 +1,12 @@
 import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
 
+export const metadata = {
+  title: "Terms of Service — HireDrop",
+  description:
+    "The terms that govern your use of HireDrop's AI-powered job application service: accounts, subscriptions, and acceptable use.",
+};
+
 export default function TermsPage() {
   return (
     <>

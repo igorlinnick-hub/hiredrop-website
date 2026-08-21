@@ -1,6 +1,12 @@
 import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
 
+export const metadata = {
+  title: "FAQ — HireDrop",
+  description:
+    "Answers to common questions about HireDrop: how AI auto-apply works, supported job platforms, account safety, and pricing.",
+};
+
 const FAQS = [
   {
     q: "What is HireDrop?",
