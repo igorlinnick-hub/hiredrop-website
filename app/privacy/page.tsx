@@ -1,6 +1,12 @@
 import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
 
+export const metadata = {
+  title: "Privacy Policy — HireDrop",
+  description:
+    "How HireDrop collects, uses, and protects your data: resume and profile information, application history, and your rights.",
+};
+
 export default function PrivacyPage() {
   return (
     <>
