@@ -15,6 +15,7 @@ import PlatformsIndicator from "@/components/dashboard/PlatformsIndicator";
 import SetupChecklist from "@/components/dashboard/SetupChecklist";
 import MobileHandoff from "@/components/dashboard/MobileHandoff";
 import FreeTastePaywall from "@/components/dashboard/FreeTastePaywall";
+import CoachOffer from "@/components/dashboard/CoachOffer";
 import UsageBanner from "@/components/dashboard/UsageBanner";
 import CheckoutSuccessBanner from "@/components/dashboard/CheckoutSuccessBanner";
 
@@ -134,6 +135,10 @@ export default async function DashboardPage() {
           totalApplications={statsData?.total_applications ?? 0}
           applicationsToday={statsData?.applications_today ?? 0}
         />
+
+        {/* Sits right under the stats on purpose: the offer only makes sense next
+            to the number that earns it ("N applications in"). */}
+        <CoachOffer totalApplications={statsData?.total_applications ?? 0} />
 
         <div id="jobs">
           <JobsTable jobs={jobsData} />
