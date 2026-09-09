@@ -12,6 +12,12 @@
 export const WEEKLY_USD = 12;
 export const MONTHLY_USD = 39;
 
+/**
+ * Applications a free account gets before it needs a plan — mirrors FREE_APP_LIMIT
+ * in the backend's app/db/subscriptions.py. It is a lifetime total, not a daily cap.
+ */
+export const FREE_APP_LIMIT = 40;
+
 export const WEEKLY_PRICE = `$${WEEKLY_USD}`;
 export const MONTHLY_PRICE = `$${MONTHLY_USD}`;
 
