@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
-import { MONTHLY_PRICE, MONTHLY_USD, WEEKLY_PRICE } from "@/lib/pricing";
+import { FREE_APP_LIMIT, MONTHLY_PRICE, MONTHLY_USD, WEEKLY_PRICE } from "@/lib/pricing";
 import Button from "@/components/ui/Button";
 
 interface Props {
@@ -12,14 +12,19 @@ interface Props {
 }
 
 /**
- * Plan-selection interstitial (pre-billing stub).
+ * Plan-selection interstitial.
  *
- * Stripe isn't wired yet, so nobody is charged — the step exists to (a) set
- * the expectation that HireDrop is paid, and (b) record which plan each user
- * picks (user_metadata.selected_plan) so we have real conversion data before
- * checkout ships. Copy stays honest: early access is free, we email before
- * billing starts. Swap the Continue handler for Stripe Checkout when billing
- * lands.
+ * No checkout here on purpose: a new account gets FREE_APP_LIMIT applications
+ * before it needs a plan, so the card comes later, from the paywall, once the
+ * user has watched real applications go out. This step only (a) sets the
+ * expectation that HireDrop is paid and (b) records which plan each user leans
+ * toward (user_metadata.selected_plan) for conversion data.
+ *
+ * The copy used to say "early access — it's free for now… we'll email you before
+ * paid plans go live". That was written before billing shipped and became false
+ * on 2026-09-07 when $12/$39 went live: it promised no charge ever and an email
+ * we don't send (users get no email from us at all — 2026-09-07 decision). The
+ * free tier is the 40 applications, and that is what this says now.
  */
 const PLANS = [
   {
@@ -132,8 +137,11 @@ export default function StepPlan({ onNext, onBack }: Props) {
           </svg>
         </div>
         <p className="text-sm text-text">
-          <span className="font-semibold">Early access — it&apos;s free for now.</span>{" "}
-          You won&apos;t be charged today. We&apos;ll email you before paid plans go live, and you can cancel then.
+          <span className="font-semibold">
+            Your first {FREE_APP_LIMIT} applications are free.
+          </span>{" "}
+          No card today — you pick a plan once you&apos;ve used them and have seen real
+          applications go out.
         </p>
       </motion.div>
 
