@@ -1,16 +1,14 @@
 import type { MetadataRoute } from "next";
 
-const BASE = "https://hiredrop.io";
+import { PUBLIC_PAGES, absoluteUrl } from "@/lib/seo";
 
+// Generated from PUBLIC_PAGES in lib/seo.ts so a new public page can't be added
+// without entering the sitemap. It used to be a hand-written list, which is how
+// pages stay uncrawled for weeks.
 export default function sitemap(): MetadataRoute.Sitemap {
-  return [
-    { url: `${BASE}/`, changeFrequency: "weekly", priority: 1 },
-    { url: `${BASE}/faq`, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE}/extension`, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${BASE}/affiliate`, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${BASE}/signup`, changeFrequency: "yearly", priority: 0.5 },
-    { url: `${BASE}/login`, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${BASE}/privacy`, changeFrequency: "yearly", priority: 0.2 },
-    { url: `${BASE}/terms`, changeFrequency: "yearly", priority: 0.2 },
-  ];
+  return PUBLIC_PAGES.map((page) => ({
+    url: absoluteUrl(page.path),
+    changeFrequency: page.changeFrequency,
+    priority: page.priority,
+  }));
 }

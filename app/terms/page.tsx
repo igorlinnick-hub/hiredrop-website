@@ -3,11 +3,14 @@ import { PRICE_SENTENCE } from "@/lib/pricing";
 import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
 
-export const metadata = {
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
   title: "Terms of Service — HireDrop",
   description:
     "The terms that govern your use of HireDrop's AI-powered job application service: accounts, subscriptions, and acceptable use.",
-};
+  path: "/terms",
+});
 
 export default function TermsPage() {
   return (

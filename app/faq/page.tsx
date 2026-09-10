@@ -1,13 +1,17 @@
 import { PRICE_SENTENCE } from "@/lib/pricing";
+import { pageMetadata } from "@/lib/seo";
+import { faqPageSchema } from "@/lib/structured-data";
 
 import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
+import JsonLd from "@/components/seo/JsonLd";
 
-export const metadata = {
-  title: "FAQ — HireDrop",
+export const metadata = pageMetadata({
+  title: "HireDrop FAQ — auto-apply, account safety and pricing",
   description:
-    "Answers to common questions about HireDrop: how AI auto-apply works, supported job platforms, account safety, and pricing.",
-};
+    "Answers to common questions about HireDrop: how AI auto-apply works, supported job platforms, account safety, daily limits, and pricing.",
+  path: "/faq",
+});
 
 const FAQS = [
   {
@@ -24,7 +28,7 @@ const FAQS = [
   },
   {
     q: "Which job platforms are supported?",
-    a: "Indeed and ZipRecruiter today, plus thousands of company application forms via their ATS (Greenhouse, Lever, Workday, Ashby). More platforms are being added.",
+    a: "Indeed and ZipRecruiter today, plus thousands of company application forms on Greenhouse, Lever and Ashby. More platforms are being added.",
   },
   {
     q: "How does the Chrome extension work?",
@@ -51,6 +55,7 @@ const FAQS = [
 export default function FAQPage() {
   return (
     <>
+      <JsonLd data={faqPageSchema(FAQS)} />
       <Header />
       <main className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">

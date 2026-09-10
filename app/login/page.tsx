@@ -2,9 +2,13 @@ import Link from "next/link";
 import LoginForm from "@/components/auth/LoginForm";
 import HeroCampaignDemo from "@/components/landing/HeroCampaignDemo";
 
-export const metadata = {
-  title: "Log In — HireDrop",
-};
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Log in — HireDrop",
+  description: "Sign in to your HireDrop account to manage your job-application campaign.",
+  path: "/login",
+});
 
 export default function LoginPage() {
   return (

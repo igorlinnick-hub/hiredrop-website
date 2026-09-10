@@ -13,7 +13,7 @@ const INCLUDED = [
   "Ban-safe auto-apply — Indeed, ZipRecruiter & company ATS",
   "AI cover letters written in your voice, per role",
   "ATS resume tailored to each job",
-  "Handles complex ATS — Workday, Greenhouse, Lever",
+  "Handles complex ATS — Greenhouse, Lever & Ashby",
   "Up to 30 applications a day, human-paced",
   "You review before anything sends",
 ];

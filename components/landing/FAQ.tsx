@@ -15,7 +15,7 @@ const QUESTIONS = [
   },
   {
     q: "Which platforms are supported?",
-    a: "Indeed and ZipRecruiter today, plus thousands of company application forms via their ATS (Greenhouse, Lever, Workday, Ashby). More platforms are being added.",
+    a: "Indeed and ZipRecruiter today, plus thousands of company application forms on Greenhouse, Lever and Ashby. More platforms are being added.",
   },
   {
     q: "What are Apply Modes?",
