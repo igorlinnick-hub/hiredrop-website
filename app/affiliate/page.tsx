@@ -2,11 +2,14 @@ import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
 import Link from "next/link";
 
-export const metadata = {
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
   title: "Affiliate Program — HireDrop",
   description:
-    "Earn 30% recurring commission for every Pro subscriber you refer. Share HireDrop's AI job-application agent with your audience.",
-};
+    "Earn 30% recurring commission for every subscriber you refer. Share HireDrop's AI job-application agent with your audience.",
+  path: "/affiliate",
+});
 
 export default function AffiliatePage() {
   return (

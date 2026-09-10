@@ -10,7 +10,9 @@ export default function robots(): MetadataRoute.Robots {
         "/onboarding/",
         "/auth/",
         "/preview/",
-        "/extension/connect",
+        // /extension and /extension/connect both redirect to /login for a
+        // signed-out visitor — a crawler only ever sees the redirect.
+        "/extension",
       ],
     },
     sitemap: "https://hiredrop.io/sitemap.xml",

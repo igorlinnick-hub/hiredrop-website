@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     description: "AI-powered job search automation. Personalized cover letters, auto-apply, multi-platform search.",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "HireDrop — Automate Your Job Search",
     description: "AI-powered job search automation. Personalized cover letters, auto-apply, multi-platform search.",
   },

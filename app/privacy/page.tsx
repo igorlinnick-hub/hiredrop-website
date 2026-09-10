@@ -1,11 +1,14 @@
 import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
 
-export const metadata = {
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
   title: "Privacy Policy — HireDrop",
   description:
     "How HireDrop collects, uses, and protects your data: resume and profile information, application history, and your rights.",
-};
+  path: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (
@@ -42,7 +45,7 @@ export default function PrivacyPage() {
 
             <section>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">5. Third-Party Services</h2>
-              <p>We use Supabase (auth + Postgres + Storage), Anthropic Claude (cover letter generation), Google OAuth (optional sign-in), Vercel (website hosting and cookieless, aggregate analytics), Resend (transactional email such as password resets), Stripe (payment processing when you purchase a subscription), and the job platforms and application systems you apply through (Indeed, ZipRecruiter, and company applicant-tracking systems such as Greenhouse, Lever, Workday, and Ashby). We share with each only the data needed for its function. We do not use advertising trackers or cross-site advertising pixels.</p>
+              <p>We use Supabase (auth + Postgres + Storage), Anthropic Claude (cover letter generation), Google OAuth (optional sign-in), Vercel (website hosting and cookieless, aggregate analytics), Resend (transactional email such as password resets), Stripe (payment processing when you purchase a subscription), and the job platforms and application systems you apply through (Indeed, ZipRecruiter, and company applicant-tracking systems such as Greenhouse, Lever, and Ashby). We share with each only the data needed for its function. We do not use advertising trackers or cross-site advertising pixels.</p>
             </section>
 
             <section>

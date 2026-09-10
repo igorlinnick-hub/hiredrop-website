@@ -16,18 +16,20 @@ export default function Header() {
 
           <nav className="hidden md:flex items-center gap-8">
             {[
-              { label: "How it works", href: "#how-it-works" },
-              { label: "Features", href: "#features" },
-              { label: "Pricing", href: "#pricing" },
+              // Root-relative so they work from /guides/*, /alternatives/* and /faq too.
+              { label: "How it works", href: "/#how-it-works" },
+              { label: "Features", href: "/#features" },
+              { label: "Pricing", href: "/#pricing" },
+              { label: "Guides", href: "/guides" },
             ].map((link) => (
-              <a
+              <Link
                 key={link.href}
                 href={link.href}
                 className="relative text-sm text-[#6B6B8A] hover:text-[#1A1A2E] transition-colors group"
               >
                 {link.label}
                 <span className="absolute bottom-[-2px] left-0 w-0 h-[1.5px] bg-[#6C5CE7] transition-all duration-200 group-hover:w-full" />
-              </a>
+              </Link>
             ))}
             <Link
               href="/login"
@@ -71,15 +73,18 @@ export default function Header() {
         {menuOpen && (
           <div className="md:hidden pb-4 border-t border-[#E8E8F0]">
             <div className="flex flex-col gap-3 pt-4">
-              <a href="#how-it-works" className="text-sm text-[#6B6B8A] hover:text-[#1A1A2E]" onClick={() => setMenuOpen(false)}>
+              <Link href="/#how-it-works" className="text-sm text-[#6B6B8A] hover:text-[#1A1A2E]" onClick={() => setMenuOpen(false)}>
                 How it works
-              </a>
-              <a href="#features" className="text-sm text-[#6B6B8A] hover:text-[#1A1A2E]" onClick={() => setMenuOpen(false)}>
+              </Link>
+              <Link href="/#features" className="text-sm text-[#6B6B8A] hover:text-[#1A1A2E]" onClick={() => setMenuOpen(false)}>
                 Features
-              </a>
-              <a href="#pricing" className="text-sm text-[#6B6B8A] hover:text-[#1A1A2E]" onClick={() => setMenuOpen(false)}>
+              </Link>
+              <Link href="/#pricing" className="text-sm text-[#6B6B8A] hover:text-[#1A1A2E]" onClick={() => setMenuOpen(false)}>
                 Pricing
-              </a>
+              </Link>
+              <Link href="/guides" className="text-sm text-[#6B6B8A] hover:text-[#1A1A2E]" onClick={() => setMenuOpen(false)}>
+                Guides
+              </Link>
               <Link href="/login" className="text-sm text-[#6B6B8A] hover:text-[#1A1A2E]">
                 Log in
               </Link>

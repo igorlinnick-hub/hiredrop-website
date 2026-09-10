@@ -51,7 +51,7 @@ const features = [
   },
   {
     title: "Handles complex ATS",
-    subtitle: "Workday · Greenhouse · Lever",
+    subtitle: "Greenhouse · Lever · Ashby",
     description: "The multi-step application forms that eat your evening — filled out for you, end to end, not just quick one-click boards.",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
