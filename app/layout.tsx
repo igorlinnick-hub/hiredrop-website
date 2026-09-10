@@ -15,6 +15,12 @@ export const metadata: Metadata = {
     title: "HireDrop — Automate Your Job Search",
     description: "AI-powered job search automation. Personalized cover letters, auto-apply, multi-platform search.",
   },
+  // Google Search Console ownership. Issued by the siteVerification API for
+  // https://hiredrop.io/ — `python jobflow/scripts/gsc.py token` reissues it.
+  // Removing this un-verifies the property and blanks the search-query data.
+  verification: {
+    google: "0R9KfhdGASPU2RI189FBNtRY3vI9l2unld0XB9Ncebo",
+  },
   twitter: {
     card: "summary_large_image",
     title: "HireDrop — Automate Your Job Search",
