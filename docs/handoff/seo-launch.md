@@ -1,6 +1,6 @@
 # seo-launch — органический поиск для hiredrop.io
 
-Обновлено: 2026-09-09 · ветка: `feat/seo-content` (worktree `~/Code/jw-seo`)
+Обновлено: 2026-09-09 · в main (website #140, #141; jobflow #172)
 
 Цепочка про то, чтобы людей приводил Google/Safari **бесплатно**. Началась с рила
 itsblakedavis «10 Things After Launching» (аудит 08-21), второй заход 09-09 —
@@ -17,7 +17,7 @@ itsblakedavis «10 Things After Launching» (аудит 08-21), второй з�
 | JSON-LD | ❌ нет | ✅ Organization + SoftwareApplication (главная), FAQPage (/faq + каждая контентная), BreadcrumbList, Article |
 | Контентные страницы | 0 | 6: `/alternatives` + 2 сравнения, `/guides` + 2 гайда |
 | Внутренние ссылки | Header/Footer, якоря битые вне `/` | колонка Resources в футере, `Guides` в шапке, якоря → `/#...`, «Keep reading» на каждой странице |
-| Google Search Console | ❌ не подключён | ❌ **всё ещё ждёт Игоря** — единственный ручной пункт |
+| Google Search Console | ❌ не подключён | ✅ **подключён как канал** — `jobflow/scripts/gsc.py`, property верифицирована, sitemap принят (13 URL, errors=0) |
 
 ## Что именно построено 09-09
 
@@ -53,9 +53,10 @@ itsblakedavis «10 Things After Launching» (аудит 08-21), второй з�
 
 ## Сломано / не доделано
 
-- **GSC не подключён** — мы не видим ни запросов, ни индексации, ни ошибок. Игорь:
-  добавить `hiredrop.io` в Search Console (DNS-верификация или meta-тег → тег скинуть,
-  вставлю в `app/layout.tsx`), затем сабмитнуть `https://hiredrop.io/sitemap.xml`.
+- Данных по запросам ещё нет: Google копит их **с момента верификации** (09-09), первые
+  строки появятся через несколько дней. Смотреть `python jobflow/scripts/gsc.py queries`.
+- Property — **URL-prefix** `https://hiredrop.io/`. Domain-property (все поддомены, http+https)
+  требует TXT-записи у регистратора — мета-тегом её создать нельзя.
 - Backlinks — работа не начата (каталоги, Product Hunt, гостевые). Не код.
 - Лендинг рендерится клиентскими компонентами со скролл-ревилами (`opacity:0` до JS).
   Googlebot это исполняет, но у части AI-краулеров рендера нет. Мерить после GSC.
@@ -65,5 +66,6 @@ itsblakedavis «10 Things After Launching» (аудит 08-21), второй з�
 
 После мержа: дождаться деплоя, проверить в проде
 `curl -s https://hiredrop.io/sitemap.xml | grep -c "<url>"` (ожидание 13) и
-`curl -s https://hiredrop.io/alternatives/lazyapply | grep canonical`. Потом — GSC
-(Игорь), и только по его данным решать, какие ещё страницы писать.
+`curl -s https://hiredrop.io/alternatives/lazyapply | grep canonical`. Потом — через
+несколько дней `python jobflow/scripts/gsc.py queries` и `pages`: писать следующие страницы
+по РЕАЛЬНЫМ запросам, а не по догадкам.
