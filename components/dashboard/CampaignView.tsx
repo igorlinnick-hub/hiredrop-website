@@ -26,13 +26,23 @@ interface HealthSummary {
   last_error_msg?: string | null;
 }
 
-// Pending human hand-off (captcha / security check) reported by the extension
-// via the ping.js bridge (HIREDROP_GET_LIVE_STATE → chrome.storage.captchaWaiting).
+// Pending human hand-off reported by the extension via the ping.js bridge
+// (HIREDROP_GET_LIVE_STATE → chrome.storage.captchaWaiting).
+//
+// Since ext 1.8.2 (#182) this one channel carries TWO different walls: a captcha and a
+// consent wall ("we've updated our Terms"). They pause the run the same way but they are
+// not the same ask — sending someone to hunt for a captcha that isn't on screen is worse
+// than saying nothing. `kind` tells them apart; `action` is the exact phrase built from
+// the real button text on the page.
 interface CaptchaWaiting {
   url?: string;
   site?: string;
   signal?: string;
   at?: number;
+  // Absent on older content.js builds, which only ever reported captchas — so
+  // `undefined` must keep meaning "captcha", the original behaviour.
+  kind?: "captcha" | "terms";
+  action?: string | null;
 }
 
 interface Props {
@@ -316,10 +326,10 @@ export default function CampaignView({ token: initialToken }: Props) {
     prevAppliedRef.current = stats.applied;
   }, [stats.applied]);
 
-  // Captcha hand-off state, live from the extension via the ping.js bridge
-  // (reads chrome.storage directly — no backend latency, survives SW restarts).
-  // The extension pauses on a captcha and resumes the moment the user clears it;
-  // this banner is the dashboard-side half of that hand-off.
+  // Human hand-off state (captcha OR consent wall), live from the extension via the
+  // ping.js bridge (reads chrome.storage directly — no backend latency, survives SW
+  // restarts). The extension pauses on the wall and resumes the moment the user clears
+  // it; this banner is the dashboard-side half of that hand-off.
   useEffect(() => {
     function onMsg(e: MessageEvent) {
       if (e.source !== window || !e.data || typeof e.data !== "object") return;
@@ -329,7 +339,7 @@ export default function CampaignView({ token: initialToken }: Props) {
         bridgeAtRef.current = Date.now();
         setBridgeLost(false);
         const cw = e.data.captchaWaiting as CaptchaWaiting | null;
-        // Stale-guard: the extension self-stops after 2h of an unsolved captcha —
+        // Stale-guard: the extension self-stops after 2h of an uncleared wall —
         // anything older is a leftover, not an active hand-off.
         setCaptcha(cw && Date.now() - (cw.at || 0) < 2 * 60 * 60 * 1000 ? cw : null);
         setReviewMode(!!e.data.reviewMode);
@@ -425,6 +435,12 @@ export default function CampaignView({ token: initialToken }: Props) {
     !captcha &&
     !reviewPending &&
     (idleDismissedAt === null || lastActivityTs > idleDismissedAt);
+
+  // A consent wall, not a bot check. Same pause, different ask — and in pool (tap) mode
+  // it PAUSES rather than skipping the pick, because the wall is account-wide: skipping
+  // would hit the same modal on the next card and burn the whole approved queue in one
+  // swipe. So the copy must never imply "we moved on".
+  const termsPause = captcha?.kind === "terms";
 
   // Ask the extension who we're signed into. Same bridge PlatformsIndicator uses; polled
   // because the answer changes the moment the user signs in, and the run should recover
@@ -898,9 +914,11 @@ export default function CampaignView({ token: initialToken }: Props) {
         </button>
       </div>
 
-      {/* Captcha hand-off CTA — the explicit "your turn" moment. The campaign is
-          paused until the human clears the check; it resumes on its own after. */}
-      {captcha && (
+      {/* Human hand-off CTA — the explicit "your turn" moment. The campaign is paused
+          until the person clears the wall; it resumes on its own after. Suppressed when
+          the bridge is lost: with no live extension the hand-off we are holding is a
+          stale snapshot, and the bridge card below is the honest thing to show. */}
+      {captcha && !bridgeLost && (
         <div className="mb-5 flex items-start gap-3 px-4 py-3.5 rounded-xl bg-yellow/10 border border-yellow/30">
           <svg className="w-5 h-5 text-yellow shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -908,10 +926,19 @@ export default function CampaignView({ token: initialToken }: Props) {
           </svg>
           <div className="text-sm">
             <p className="font-semibold text-text">
-              Your turn: solve the captcha &amp; submit
+              {termsPause ? "Your turn: accept the terms" : "Your turn: solve the captcha & submit"}
             </p>
             <p className="text-xs text-text2 mt-0.5">
-              {captcha.site || "The site"} is asking for a human check. Switch to the automation window, solve it, and hit submit if the form asks for one — we&apos;ve filled everything else. The campaign resumes automatically.
+              {termsPause ? (
+                <>
+                  {captcha.site || "The site"} is asking you to accept its terms.{" "}
+                  {captcha.action || "Accept them in the campaign window"} — the campaign resumes automatically.
+                </>
+              ) : (
+                <>
+                  {captcha.site || "The site"} is asking for a human check. Switch to the automation window, solve it, and hit submit if the form asks for one — we&apos;ve filled everything else. The campaign resumes automatically.
+                </>
+              )}
             </p>
           </div>
         </div>
