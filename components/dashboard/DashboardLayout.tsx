@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import ExtensionTokenSync from "@/components/dashboard/ExtensionTokenSync";
+import ExtensionBridgeBanner from "@/components/dashboard/ExtensionBridgeBanner";
 import FitModeMenu from "@/components/dashboard/FitModeMenu";
 
 const NAV_ITEMS = [
@@ -115,6 +116,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </header>
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
+        {/* Reloading the extension orphans this tab's ping.js bridge: the dashboard looks
+            connected but Start never arrives. Mounted here (not per-page) so the warning
+            reaches every dashboard route, /dashboard/tap included. */}
+        <ExtensionBridgeBanner />
+
         {/* Nav tabs */}
         <nav className="flex flex-wrap gap-1.5 mb-8">
           {NAV_ITEMS.map((item) => {
