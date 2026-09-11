@@ -568,22 +568,45 @@ export default function CampaignView({ token: initialToken }: Props) {
         }
 
         /* Prismatic aura — slowly rotating so the refraction never sits still */
-        @keyframes hd-aura {
-          0%   { transform: rotate(0deg)   scale(1); }
-          50%  { transform: rotate(180deg) scale(1.08); }
-          100% { transform: rotate(360deg) scale(1); }
-        }
+        /* ── Prism fan behind the number (Igor 09-11, "полосы света") ──
+           This replaces the rotating conic halo that used to sit here — same idea
+           (light behind the count) but the source is BELOW the frame, so it reads as
+           a fan of rays instead of a spinning blob. Conic, not linear: linear gives a
+           barcode, conic gives the spread.
+           Night is the same geometry REPAINTED (indigo → violet → magenta), never an
+           inversion: inverting would move the light source to the top and the plate
+           would read as a different object. Static on purpose — the plate already has
+           a sheen sweep and a tick ripple; a third moving thing turns a status screen
+           into a screensaver. */
         .hd-aura {
           position: absolute;
-          width: 240px; height: 200px; border-radius: 9999px;
-          background: conic-gradient(from 0deg,
-            rgba(108,92,231,0.30), rgba(167,139,250,0.22),
-            rgba(0,184,148,0.16), rgba(167,139,250,0.22), rgba(108,92,231,0.30));
-          filter: blur(48px);
-          opacity: 0.75;
-          animation: hd-aura 18s linear infinite;
+          left: -14%; right: -14%; top: -34%; bottom: -10%;
+          width: auto; height: auto; border-radius: 0;
+          transform: rotate(3deg);
+          filter: blur(30px);
+          opacity: 0.9;
+          background: conic-gradient(from 206deg at 50% 128%,
+            rgba(255,186,122,0) 0deg,
+            rgba(255,186,122,.50) 5deg,  rgba(255,186,122,0) 9deg,
+            rgba(255,158,140,0) 13deg,   rgba(255,158,140,.40) 17deg, rgba(255,158,140,0) 20deg,
+            rgba(255,212,168,0) 25deg,   rgba(255,212,168,.44) 31deg, rgba(255,212,168,0) 35deg,
+            rgba(236,150,180,0) 39deg,   rgba(236,150,180,.36) 43deg, rgba(236,150,180,0) 47deg,
+            rgba(168,140,240,0) 50deg,   rgba(168,140,240,.40) 55deg, rgba(168,140,240,0) 60deg,
+            rgba(108,92,231,0) 63deg,    rgba(108,92,231,.30) 67deg,  rgba(108,92,231,0) 72deg,
+            rgba(108,92,231,0) 360deg);
         }
-        .dark .hd-aura { opacity: 0.55; }
+        .dark .hd-aura {
+          opacity: 0.85;
+          background: conic-gradient(from 206deg at 50% 128%,
+            rgba(96,110,255,0) 0deg,
+            rgba(96,110,255,.62) 5deg,   rgba(96,110,255,0) 9deg,
+            rgba(140,110,255,0) 13deg,   rgba(140,110,255,.54) 17deg, rgba(140,110,255,0) 20deg,
+            rgba(176,120,255,0) 25deg,   rgba(176,120,255,.58) 31deg, rgba(176,120,255,0) 35deg,
+            rgba(214,110,230,0) 39deg,   rgba(214,110,230,.46) 43deg, rgba(214,110,230,0) 47deg,
+            rgba(167,139,250,0) 50deg,   rgba(167,139,250,.48) 55deg, rgba(167,139,250,0) 60deg,
+            rgba(108,92,231,0) 63deg,    rgba(108,92,231,.38) 67deg,  rgba(108,92,231,0) 72deg,
+            rgba(108,92,231,0) 360deg);
+        }
 
         /* Light sheen sweeping across the plate — a single glint per cycle */
         @keyframes hd-sheen {
@@ -682,7 +705,7 @@ export default function CampaignView({ token: initialToken }: Props) {
         @keyframes hdDropRing { 0% { transform: scale(.5); opacity: 0; } 25% { opacity: .95; } 100% { transform: scale(1.9); opacity: 0; } }
 
         @media (prefers-reduced-motion: reduce) {
-          .hd-aura, .hd-bead, .hd-ripple, .hd-glass-num.is-idle,
+          .hd-bead, .hd-ripple, .hd-glass-num.is-idle,
           .hd-drop-proc .hd-drop-fill, .hd-drop-ring { animation: none; }
         }
       `}</style>

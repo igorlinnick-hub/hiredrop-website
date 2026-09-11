@@ -1,5 +1,7 @@
 "use client";
 
+import type { CSSProperties } from "react";
+
 // Auto/Tap launch cards, rebuilt to the product's real atmosphere (Igor's refs,
 // 2026-08-12): a dark frosted-glass slab with a violet→blue light bloom glowing
 // UP THROUGH the glass and a soft halo arc pooling beneath the card, all on
@@ -7,9 +9,14 @@
 // by day, deep dark glass + brighter bloom by night. Motion is HOVER-ONLY (Igor:
 // "не хочу чтоб анимация всё время работала, только когда навожу"): at rest each
 // card shows its finished state (Auto = the written line; Tap = a neat deck), and
-// only on hover does the pen fly & write / the deck swipe away with mint checks.
-// A subtle 3D tilt on hover adds depth. Titles in Space Grotesk, the written word
-// in Caveat. Logic stays upstream.
+// only on hover does the Auto reel scroll employers / the Tap deck swipe away with
+// mint checks. A subtle 3D tilt on hover adds depth. Titles in Space Grotesk.
+//
+// Auto's scene was a pen flying across "your cover letter" in Caveat. Igor 09-11:
+// "вместо ручки летающей — просто блок с вакансией, и при наведении компании
+// начинают прокручиваться". The pen showed what we WRITE; a job block shows what
+// the run is actually for, in the same language the Tap deck already speaks — and
+// the card keeps its exact size. Logic stays upstream.
 interface Props {
   mode: "auto" | "tap";
   onAuto: () => void;
@@ -20,6 +27,16 @@ const SWIPE = [
   { id: "greenhouse", d: 0 },
   { id: "linkedin", d: 0.9 },
   { id: "indeed", d: 1.8 },
+];
+// The employers on the Auto reel are a decorative sample, not data — the real run
+// pulls from the user's own pool. Monogram tint = the company's own brand color, so
+// the strip reads as postings rather than as placeholder chips.
+const REEL = [
+  { c: "Stripe", r: "Product Designer", w: "Remote · US", k: "#635BFF" },
+  { c: "Notion", r: "Frontend Engineer", w: "Hybrid · NY", k: "#2F2F2F" },
+  { c: "Figma", r: "Design Systems", w: "Remote", k: "#F24E1E" },
+  { c: "Shopify", r: "Growth Marketer", w: "Remote · CA", k: "#5E8E3E" },
+  { c: "Linear", r: "Product Manager", w: "Remote", k: "#5E6AD2" },
 ];
 const STARS = [
   { l: 14, t: 22, s: 2, o: 0.7 }, { l: 34, t: 58, s: 1.5, o: 0.4 },
@@ -92,20 +109,33 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
           text-shadow:0 1px 10px rgba(0,0,0,.18)}
         .lmc-sub{font-size:12px;color:var(--sub);margin-top:4px}
 
-        /* ── AUTO: rest = written line; hover = pen flies & rewrites ── */
-        .lmc-writebox{position:relative;width:172px;height:44px}
-        .lmc-script{position:absolute;left:2px;top:2px;font-family:'Caveat',cursive;font-weight:700;font-size:30px;
-          color:var(--script);white-space:nowrap;text-shadow:0 1px 8px var(--bloomA)}
-        .lmc-underline{position:absolute;left:2px;bottom:2px;height:2px;width:140px;border-radius:2px;
-          background:var(--script);opacity:.55;transform-origin:left;transform:scaleX(1)}
-        .lmc-pen{position:absolute;left:-8px;top:-16px;color:var(--pen);opacity:0;transform-origin:bottom left;
-          filter:drop-shadow(0 3px 4px rgba(0,0,0,.3))}
-        .lmc-card:hover .lmc-script{animation:lmcReveal 3.4s ease-in-out infinite}
-        .lmc-card:hover .lmc-underline{animation:lmcUnder 3.4s ease-in-out infinite}
-        .lmc-card:hover .lmc-pen{animation:lmcPen 3.4s ease-in-out infinite}
-        @keyframes lmcReveal{0%{clip-path:inset(0 101% 0 0)}42%{clip-path:inset(0 -3% 0 0)}82%{clip-path:inset(0 -3% 0 0)}100%{clip-path:inset(0 -3% 0 0)}}
-        @keyframes lmcUnder{0%{transform:scaleX(0)}42%{transform:scaleX(1)}100%{transform:scaleX(1)}}
-        @keyframes lmcPen{0%{opacity:1;transform:translateX(0) rotate(-8deg)}42%{opacity:1;transform:translateX(140px) rotate(-8deg)}70%{opacity:1;transform:translateX(140px) rotate(-8deg)}82%{opacity:0;transform:translateX(140px) rotate(-8deg)}100%{opacity:0}}
+        /* ── AUTO: rest = one job block; hover = the reel scrolls employers ──
+           The rail holds the list TWICE and travels exactly -50%, so the loop has no
+           visible seam. That only holds if every item contributes the SAME height to
+           both halves — hence margin-bottom on each row instead of a flex gap, which omits
+           the trailing step and would drift the seam by one gap every cycle.
+           Edges fade with mask-image, never a gradient overlay: an overlay would smear
+           a grey band across the bloom glowing up through the glass. The mask is applied
+           ON HOVER ONLY, so the resting job block keeps crisp edges. */
+        .lmc-reel{position:relative;width:186px;height:92px;overflow:hidden}
+        .lmc-card:hover .lmc-reel{
+          -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 22%,#000 78%,transparent 100%);
+          mask-image:linear-gradient(180deg,transparent 0,#000 22%,#000 78%,transparent 100%)}
+        .lmc-rail{display:block;will-change:transform}
+        .lmc-card:hover .lmc-rail{animation:lmcReel 7s linear infinite}
+        @keyframes lmcReel{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+        .lmc-job{height:84px;margin-bottom:8px;border-radius:14px;padding:0 12px;text-align:left;
+          background:rgba(255,255,255,.96);border:1px solid rgba(30,30,50,.07);
+          box-shadow:0 10px 22px -10px rgba(20,18,45,.45);
+          display:grid;grid-template-columns:34px 1fr;column-gap:10px;row-gap:2px;align-content:center}
+        .lmc-mono{grid-row:1 / span 2;align-self:center;width:34px;height:34px;border-radius:10px;
+          background:var(--k);color:#fff;font-weight:700;font-size:15px;line-height:1;
+          font-family:'Space Grotesk','Inter',sans-serif;
+          display:flex;align-items:center;justify-content:center}
+        .lmc-jr{font-size:12.5px;font-weight:600;color:#1A1A2E;line-height:1.2;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .lmc-jc{grid-column:2;font-size:10.5px;color:rgba(75,75,110,.72);line-height:1.2;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
         /* ── TAP: rest = neat deck; hover = cards swipe away + mint check ── */
         .lmc-deck{position:relative;width:108px;height:80px}
@@ -132,7 +162,7 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
 
         @media (prefers-reduced-motion: reduce){
           .lmc-card:hover,.lmc-tap:hover{transform:none}
-          .lmc-card:hover .lmc-script,.lmc-card:hover .lmc-underline,.lmc-card:hover .lmc-pen,
+          .lmc-card:hover .lmc-rail,
           .lmc-card:hover .lmc-mini,.lmc-card:hover .lmc-check{animation:none}
         }
       `}</style>
@@ -152,14 +182,18 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
               ))}
             </div>
             <div className="lmc-scene">
-              <div className="lmc-writebox">
-                <span className="lmc-script">your cover letter</span>
-                <span className="lmc-underline" />
-                <svg className="lmc-pen" width="28" height="28" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
-                  <path d="M14.5 5.5l3 3" />
-                </svg>
+              {/* Decorative in full: the button already says Auto / "Fills & sends for you". */}
+              <div className="lmc-reel" aria-hidden>
+                <div className="lmc-rail">
+                  {[...REEL, ...REEL].map((j, i) => (
+                    <div key={`${j.c}-${i}`} className="lmc-job"
+                      style={{ "--k": j.k } as CSSProperties}>
+                      <span className="lmc-mono">{j.c[0]}</span>
+                      <span className="lmc-jr">{j.r}</span>
+                      <span className="lmc-jc">{j.c} · {j.w}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
             <div className="lmc-caption">
