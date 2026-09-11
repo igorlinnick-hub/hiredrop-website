@@ -56,21 +56,24 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
         .lmc-slot:hover .lmc-halo{opacity:1}
 
         .lmc-card{
-          /* DAY (base): light frosted glass, soft violet bloom */
-          --card:linear-gradient(165deg,#fcfbff 0%,#efeaff 100%);
-          --body:linear-gradient(180deg,#f6f3ff 0%,#eae4ff 100%);
-          --edge:rgba(108,92,231,.16);
-          --bloomA:rgba(139,124,240,.55); --bloomB:rgba(91,108,255,.26);
-          --halo:rgba(124,108,255,.30); --star:rgba(108,92,231,.55);
-          --title:#1A1A2E; --sub:rgba(75,75,110,.82);
-          --pen:#4a4668; --script:#6C5CE7;
+          /* DAY (base): cream/white glass with a soft butter-yellow bloom (Igor
+             09-11: "не фиолетовые — крем, белый, жёлтый, слегка полупрозрачно").
+             Violet stays the SELECTED-state ring (that's the functional accent),
+             day's atmosphere is warm. Night keeps the violet world. */
+          --card:linear-gradient(165deg,#fffefa 0%,#fdf4e3 100%);
+          --body:linear-gradient(180deg,#fffdf6 0%,#faf0da 100%);
+          --edge:rgba(198,158,74,.20);
+          --bloomA:rgba(255,216,130,.48); --bloomB:rgba(255,240,205,.30);
+          --halo:rgba(255,204,110,.32); --star:rgba(206,158,64,.55);
+          --title:#2A2418; --sub:rgba(110,95,64,.82);
+          --pen:#5a5040; --script:#B8860B;
           /* the card IS the space window: scene runs edge-to-edge under the frame,
              title/sub sit on top of it at the bottom (Igor 08-15: "заполняла рамку целиком") */
           position:relative;z-index:1;display:block;width:100%;height:172px;overflow:hidden;
           padding:0;border-radius:22px;border:1px solid var(--edge);background:var(--body);
           text-align:center;transform:perspective(950px) rotateX(0) rotateY(0);transform-style:preserve-3d;
           transition:transform .5s cubic-bezier(.25,1,.4,1),box-shadow .35s,border-color .25s;
-          box-shadow:0 20px 45px -22px rgba(108,92,231,.42),inset 0 1px 0 rgba(255,255,255,.8)}
+          box-shadow:0 20px 45px -22px rgba(178,138,58,.38),inset 0 1px 0 rgba(255,255,255,.85)}
         .dark .lmc-card{
           /* NIGHT: deep dark glass, bright violet→blue bloom through the slab */
           --card:linear-gradient(165deg,#1b1830 0%,#100d1c 100%);
@@ -82,12 +85,15 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
           --pen:#e8e4ff; --script:#c3b6ff;
           box-shadow:0 26px 55px -22px rgba(70,48,150,.6),inset 0 1px 0 rgba(255,255,255,.12)}
         .lmc-card:hover{transform:perspective(950px) rotateX(5deg) rotateY(-6deg) translateY(-4px);
-          box-shadow:0 30px 60px -20px rgba(108,92,231,.5)}
+          box-shadow:0 30px 60px -20px rgba(178,138,58,.44)}
+        .dark .lmc-card:hover{box-shadow:0 30px 60px -20px rgba(108,92,231,.5)}
         .lmc-tap:hover{transform:perspective(950px) rotateX(5deg) rotateY(6deg) translateY(-4px)}
         .lmc-card.on{border-color:color-mix(in srgb,var(--color-accent) 60%,transparent);
-          box-shadow:0 0 30px -6px var(--color-accent),0 20px 45px -22px rgba(108,92,231,.42)}
+          box-shadow:0 0 30px -6px var(--color-accent),0 20px 45px -22px rgba(178,138,58,.38)}
         .lmc-card.on-tap{border-color:color-mix(in srgb,var(--color-green) 60%,transparent);
-          box-shadow:0 0 30px -6px var(--color-green),0 20px 45px -22px rgba(108,92,231,.42)}
+          box-shadow:0 0 30px -6px var(--color-green),0 20px 45px -22px rgba(178,138,58,.38)}
+        .dark .lmc-card.on{box-shadow:0 0 30px -6px var(--color-accent),0 20px 45px -22px rgba(108,92,231,.42)}
+        .dark .lmc-card.on-tap{box-shadow:0 0 30px -6px var(--color-green),0 20px 45px -22px rgba(108,92,231,.42)}
 
         /* the glass window that the bloom glows through */
         .lmc-body{position:absolute;inset:0;overflow:hidden;
@@ -101,6 +107,7 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
         .lmc-star{position:absolute;border-radius:50%;background:var(--star)}
         /* scene occupies the space above the caption band */
         .lmc-scene{position:absolute;left:0;right:0;top:0;bottom:56px;display:flex;align-items:center;justify-content:center;z-index:2}
+        .dark .lmc-job{border-color:rgba(30,30,50,.07);box-shadow:0 10px 22px -10px rgba(20,18,45,.45)}
 
         /* caption band overlaid on the bottom of the scene */
         .lmc-caption{position:absolute;left:0;right:0;bottom:0;padding:0 14px 15px;z-index:3;pointer-events:none;
@@ -125,8 +132,8 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
         .lmc-card:hover .lmc-rail{animation:lmcReel 7s linear infinite}
         @keyframes lmcReel{from{transform:translateY(0)}to{transform:translateY(-50%)}}
         .lmc-job{height:84px;margin-bottom:8px;border-radius:14px;padding:0 12px;text-align:left;
-          background:rgba(255,255,255,.96);border:1px solid rgba(30,30,50,.07);
-          box-shadow:0 10px 22px -10px rgba(20,18,45,.45);
+          background:rgba(255,255,255,.94);border:1px solid rgba(120,96,40,.10);
+          box-shadow:0 10px 22px -10px rgba(150,116,48,.38);
           display:grid;grid-template-columns:34px 1fr;column-gap:10px;row-gap:2px;align-content:center}
         .lmc-mono{grid-row:1 / span 2;align-self:center;width:34px;height:34px;border-radius:10px;
           background:var(--k);color:#fff;font-weight:700;font-size:15px;line-height:1;

@@ -578,22 +578,26 @@ export default function CampaignView({ token: initialToken }: Props) {
            would read as a different object. Static on purpose — the plate already has
            a sheen sweep and a tick ripple; a third moving thing turns a status screen
            into a screensaver. */
+        /* Day palette per Igor 09-11: "крем, белый, жёлтый, приятно, слегка
+           полупрозрачно" — no violet by day. Warm candle-light fan: cream, soft
+           butter-yellow, white, a faint honey edge. Alphas kept low so it reads as
+           light falling on the plate, not paint. Night keeps the violet spectrum. */
         .hd-aura {
           position: absolute;
           left: -14%; right: -14%; top: -34%; bottom: -10%;
           width: auto; height: auto; border-radius: 0;
           transform: rotate(3deg);
           filter: blur(30px);
-          opacity: 0.9;
+          opacity: 0.85;
           background: conic-gradient(from 206deg at 50% 128%,
-            rgba(255,186,122,0) 0deg,
-            rgba(255,186,122,.50) 5deg,  rgba(255,186,122,0) 9deg,
-            rgba(255,158,140,0) 13deg,   rgba(255,158,140,.40) 17deg, rgba(255,158,140,0) 20deg,
-            rgba(255,212,168,0) 25deg,   rgba(255,212,168,.44) 31deg, rgba(255,212,168,0) 35deg,
-            rgba(236,150,180,0) 39deg,   rgba(236,150,180,.36) 43deg, rgba(236,150,180,0) 47deg,
-            rgba(168,140,240,0) 50deg,   rgba(168,140,240,.40) 55deg, rgba(168,140,240,0) 60deg,
-            rgba(108,92,231,0) 63deg,    rgba(108,92,231,.30) 67deg,  rgba(108,92,231,0) 72deg,
-            rgba(108,92,231,0) 360deg);
+            rgba(255,226,158,0) 0deg,
+            rgba(255,226,158,.42) 5deg,  rgba(255,226,158,0) 9deg,
+            rgba(255,210,120,0) 13deg,   rgba(255,210,120,.34) 17deg, rgba(255,210,120,0) 20deg,
+            rgba(255,244,214,0) 25deg,   rgba(255,244,214,.48) 31deg, rgba(255,244,214,0) 35deg,
+            rgba(255,255,255,0) 39deg,   rgba(255,255,255,.40) 43deg, rgba(255,255,255,0) 47deg,
+            rgba(250,232,180,0) 50deg,   rgba(250,232,180,.36) 55deg, rgba(250,232,180,0) 60deg,
+            rgba(232,196,120,0) 63deg,   rgba(232,196,120,.26) 67deg, rgba(232,196,120,0) 72deg,
+            rgba(232,196,120,0) 360deg);
         }
         .dark .hd-aura {
           opacity: 0.85;
