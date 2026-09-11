@@ -124,12 +124,19 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
            Edges fade with mask-image, never a gradient overlay: an overlay would smear
            a grey band across the bloom glowing up through the glass. The mask is applied
            ON HOVER ONLY, so the resting job block keeps crisp edges. */
-        .lmc-reel{position:relative;width:186px;height:92px;overflow:hidden}
+        /* Geometry per Igor's read of the comparison (09-11): wider (210px), sits LOW —
+           the second job peeks half-cut behind the "Auto" caption — and always dissolves
+           toward the card's bottom, so the caption reads over the ghost of the next
+           posting. On hover the top edge fades too, and the loop runs at half speed. */
+        .lmc-scene-auto{bottom:6px}
+        .lmc-reel{position:relative;width:210px;height:134px;overflow:hidden;
+          -webkit-mask-image:linear-gradient(180deg,#000 0,#000 52%,transparent 97%);
+          mask-image:linear-gradient(180deg,#000 0,#000 52%,transparent 97%)}
         .lmc-card:hover .lmc-reel{
-          -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 22%,#000 78%,transparent 100%);
-          mask-image:linear-gradient(180deg,transparent 0,#000 22%,#000 78%,transparent 100%)}
+          -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 16%,#000 52%,transparent 97%);
+          mask-image:linear-gradient(180deg,transparent 0,#000 16%,#000 52%,transparent 97%)}
         .lmc-rail{display:block;will-change:transform}
-        .lmc-card:hover .lmc-rail{animation:lmcReel 7s linear infinite}
+        .lmc-card:hover .lmc-rail{animation:lmcReel 14s linear infinite}
         @keyframes lmcReel{from{transform:translateY(0)}to{transform:translateY(-50%)}}
         .lmc-job{height:84px;margin-bottom:8px;border-radius:14px;padding:0 12px;text-align:left;
           background:rgba(255,255,255,.94);border:1px solid rgba(120,96,40,.10);
@@ -188,7 +195,7 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
                 }} />
               ))}
             </div>
-            <div className="lmc-scene">
+            <div className="lmc-scene lmc-scene-auto">
               {/* Decorative in full: the button already says Auto / "Fills & sends for you". */}
               <div className="lmc-reel" aria-hidden>
                 <div className="lmc-rail">
