@@ -30,11 +30,19 @@ type Receipt = {
 type HandBack = { job: string; reason: string; url: string };
 
 const HANDBACK_RE = /Needs your hands:\s*(.+?)\s+—\s+(.+?)(?:\.\s*Finish it yourself:\s*(\S+))?$/;
+// Friendly text for a hand-back reason. Matched against the raw string the extension
+// wrote via handBackJob() — the full text stays on the row's title attribute.
+//
+// No captcha row on purpose. A captcha never reaches this map: it is reported as
+// DETECTION_TRIPPED (content.js), which PAUSES the whole campaign behind the "your turn"
+// CTA on the campaign view. handBackJob is the opposite channel — "finish this ONE job
+// yourself, the walk moved on" — and content.js states the split as a rule. A /captcha/
+// row here was dead code that quietly implied captcha hand-backs exist; they don't.
 const REASON_MAP: [RegExp, string][] = [
-  [/captcha/i, "the site asked for a captcha — only you can pass it"],
   [/resume|upload/i, "the resume upload didn't go through"],
   [/submit button|no submit/i, "we couldn't find the submit button"],
   [/required field|validation/i, "this form asks something we can't answer for you"],
+  [/wouldn't accept our answers/i, "the form kept rejecting our answers — it wants something only you can give"],
   [/timeout|timed out/i, "the site stopped responding partway through"],
 ];
 const userReason = (raw: string) => REASON_MAP.find(([re]) => re.test(raw))?.[1] ?? "we couldn't finish this one automatically";
