@@ -590,13 +590,13 @@ export default function CampaignView({ token: initialToken }: Props) {
           filter: blur(30px);
           opacity: 0.85;
           background: conic-gradient(from 206deg at 50% 128%,
-            rgba(255,226,158,0) 0deg,
-            rgba(255,226,158,.42) 5deg,  rgba(255,226,158,0) 9deg,
-            rgba(255,210,120,0) 13deg,   rgba(255,210,120,.34) 17deg, rgba(255,210,120,0) 20deg,
-            rgba(255,244,214,0) 25deg,   rgba(255,244,214,.48) 31deg, rgba(255,244,214,0) 35deg,
-            rgba(255,255,255,0) 39deg,   rgba(255,255,255,.40) 43deg, rgba(255,255,255,0) 47deg,
-            rgba(250,232,180,0) 50deg,   rgba(250,232,180,.36) 55deg, rgba(250,232,180,0) 60deg,
-            rgba(232,196,120,0) 63deg,   rgba(232,196,120,.26) 67deg, rgba(232,196,120,0) 72deg,
+            rgba(255,214,124,0) 0deg,
+            rgba(255,214,124,.72) 5deg,  rgba(255,214,124,0) 9deg,
+            rgba(255,196,92,.0) 13deg,   rgba(255,196,92,.60) 17deg,  rgba(255,196,92,0) 20deg,
+            rgba(255,238,196,0) 25deg,   rgba(255,238,196,.78) 31deg, rgba(255,238,196,0) 35deg,
+            rgba(255,255,255,0) 39deg,   rgba(255,255,255,.70) 43deg, rgba(255,255,255,0) 47deg,
+            rgba(250,222,150,0) 50deg,   rgba(250,222,150,.62) 55deg, rgba(250,222,150,0) 60deg,
+            rgba(226,180,92,0) 63deg,    rgba(226,180,92,.46) 67deg,  rgba(226,180,92,0) 72deg,
             rgba(232,196,120,0) 360deg);
         }
         .dark .hd-aura {
