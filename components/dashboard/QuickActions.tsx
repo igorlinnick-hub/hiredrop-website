@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ApiError, apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { PLATFORMS, LOCATIONS, JOB_TYPES, WORK_SETTINGS } from "@/lib/constants";
-import LaunchModal from "@/components/dashboard/LaunchModal";
+import LaunchModal, { ALL_PLATFORMS_ID } from "@/components/dashboard/LaunchModal";
 import StartReadinessModal, { gateStart, type ReadinessCheck } from "@/components/dashboard/StartReadiness";
 import RadiusMap, { type RadiusMiles } from "@/components/dashboard/RadiusMap";
 import LaunchModeCards from "@/components/dashboard/LaunchModeCards";
@@ -390,18 +390,28 @@ export default function QuickActions({
   }
 
   async function startCampaign(overridePlatform?: string) {
-    // Effective platform list: the launch-modal pick (auto-apply target) + any discovery
-    // sources already on the profile. Falls back to state when no override is passed.
-    const effPlatforms = overridePlatform
-      ? [overridePlatform, ...platforms.filter((x) => !AUTO_APPLY_IDS.includes(x))]
+    // "All connected" (the modal's default) expands to every auto-apply platform the
+    // extension hasn't reported as logged_out, in yield order (constants order:
+    // Indeed → ZipRecruiter → ATS boards). A single pick stays a one-element list —
+    // and carries platform_mode "single" so the extension stops honestly instead of
+    // switching boards the user never opted into.
+    const allMode = overridePlatform === ALL_PLATFORMS_ID;
+    const autoPicks = allMode
+      ? AUTO_APPLY_IDS.filter((id) => connections[id]?.status !== "logged_out")
+      : overridePlatform ? [overridePlatform] : null;
+    // Effective platform list: the launch-modal pick(s) + any discovery sources already
+    // on the profile. Falls back to state when no override is passed.
+    const effPlatforms = autoPicks
+      ? [...autoPicks, ...platforms.filter((x) => !AUTO_APPLY_IDS.includes(x))]
       : platforms;
     if (!onboardingComplete) { setErr("Complete your profile setup first — click \"Start setup\" above."); return; }
     if (!keywords.length) { setErr("Add at least one keyword"); inputRef.current?.focus(); return; }
     if (!effPlatforms.length) { setErr("Select at least one platform"); return; }
     // Auto-apply needs a logged-in account on the target platform. If the extension
     // told us the user is signed out, open the login/sign-up page instead of starting
-    // a campaign that would just stall at a login wall.
-    const tgt = overridePlatform || selectedAutoApply;
+    // a campaign that would just stall at a login wall. In all-mode the list already
+    // excludes logged_out boards; guard the (paranoid) empty case via the fallback.
+    const tgt = (allMode ? autoPicks?.[0] : overridePlatform) || selectedAutoApply;
     if (connections[tgt]?.status === "logged_out") {
       const tgtName = PLATFORMS.find((p) => p.id === tgt)?.name || tgt;
       setErr(`Sign into ${tgtName} first — we opened the login page. Log in or create an account, then start.`);
@@ -437,7 +447,7 @@ export default function QuickActions({
         window.addEventListener("message", onMsg);
         window.postMessage({
           type: "HIREDROP_START_CAMPAIGN",
-          filters: { keywords, platforms: effPlatforms, location, job_type: jobType, work_setting: workSetting, search_radius_miles: radius },
+          filters: { keywords, platforms: effPlatforms, location, job_type: jobType, work_setting: workSetting, search_radius_miles: radius, platform_mode: allMode ? "all" : "single" },
         }, "*");
         setTimeout(() => finish(null), 5000);
       });
