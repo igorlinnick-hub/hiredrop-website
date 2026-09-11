@@ -107,7 +107,8 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
         .lmc-star{position:absolute;border-radius:50%;background:var(--star)}
         /* scene occupies the space above the caption band */
         .lmc-scene{position:absolute;left:0;right:0;top:0;bottom:56px;display:flex;align-items:center;justify-content:center;z-index:2}
-        .dark .lmc-job{border-color:rgba(30,30,50,.07);box-shadow:0 10px 22px -10px rgba(20,18,45,.45)}
+        .dark .lmc-job{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.14);
+          box-shadow:0 10px 22px -12px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.1)}
 
         /* caption band overlaid on the bottom of the scene */
         .lmc-caption{position:absolute;left:0;right:0;bottom:0;padding:0 14px 15px;z-index:3;pointer-events:none;
@@ -129,7 +130,7 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
            toward the card's bottom, so the caption reads over the ghost of the next
            posting. On hover the top edge fades too, and the loop runs at half speed. */
         .lmc-scene-auto{bottom:6px}
-        .lmc-reel{position:relative;width:210px;height:134px;overflow:hidden;
+        .lmc-reel{position:relative;width:252px;height:134px;overflow:hidden;
           -webkit-mask-image:linear-gradient(180deg,#000 0,#000 52%,transparent 97%);
           mask-image:linear-gradient(180deg,#000 0,#000 52%,transparent 97%)}
         .lmc-card:hover .lmc-reel{
@@ -138,18 +139,25 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
         .lmc-rail{display:block;will-change:transform}
         .lmc-card:hover .lmc-rail{animation:lmcReel 14s linear infinite}
         @keyframes lmcReel{from{transform:translateY(0)}to{transform:translateY(-50%)}}
-        .lmc-job{height:84px;margin-bottom:8px;border-radius:14px;padding:0 12px;text-align:left;
-          background:rgba(255,255,255,.94);border:1px solid rgba(120,96,40,.10);
-          box-shadow:0 10px 22px -10px rgba(150,116,48,.38);
+        /* Glass, not a white plate (Igor 09-11): barely-there translucency so the bloom
+           glows THROUGH the row. Alpha lives in the background color + backdrop blur —
+           never in opacity, which would dim the text with the frame. Night flips the
+           text light because the glass there is dark. */
+        .lmc-job{height:84px;margin-bottom:8px;border-radius:14px;padding:0 14px;text-align:left;
+          background:rgba(255,255,255,.40);border:1px solid rgba(255,255,255,.55);
+          backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+          box-shadow:0 10px 22px -12px rgba(150,116,48,.30), inset 0 1px 0 rgba(255,255,255,.5);
           display:grid;grid-template-columns:34px 1fr;column-gap:10px;row-gap:2px;align-content:center}
         .lmc-mono{grid-row:1 / span 2;align-self:center;width:34px;height:34px;border-radius:10px;
           background:var(--k);color:#fff;font-weight:700;font-size:15px;line-height:1;
           font-family:'Space Grotesk','Inter',sans-serif;
           display:flex;align-items:center;justify-content:center}
-        .lmc-jr{font-size:12.5px;font-weight:600;color:#1A1A2E;line-height:1.2;
+        .lmc-jr{font-size:12.5px;font-weight:600;color:#2A2418;line-height:1.2;
           white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .lmc-jc{grid-column:2;font-size:10.5px;color:rgba(75,75,110,.72);line-height:1.2;
+        .lmc-jc{grid-column:2;font-size:10.5px;color:rgba(90,78,50,.78);line-height:1.2;
           white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .dark .lmc-jr{color:#f2f1fa}
+        .dark .lmc-jc{color:rgba(199,200,216,.75)}
 
         /* ── TAP: rest = neat deck; hover = cards swipe away + mint check ── */
         .lmc-deck{position:relative;width:108px;height:80px}
