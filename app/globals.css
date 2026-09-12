@@ -316,6 +316,15 @@ h1, h2, h3 {
   --accent-light: #FBF1DA;
   --accent-hover: #8F6300;
 
+  /* The NEUTRALS go warm too (Igor 09-12: "подсветка всё ещё фиолетовая у кнопок
+     и рамок"). The :root greys are violet-biased for the marketing site
+     (#F7F7FB / #E8E8F0) — next to cream they read lavender. Same greys, warm
+     bias, so cards and hairlines sit in the same light as the fan behind them. */
+  --background: #FAF6EB;
+  --surface: #FFFEF9;
+  --surface2: #F7F1E1;
+  --border: #E8DDC2;
+
   /* ── Depth, by the Refactoring UI rules (Igor 09-11: "плоские, без стека
      глубины"). Three jobs, one box-shadow list — two declarations don't merge:
        1. LIT EDGE  inset 0 1px 0 — light comes from above and we look slightly
@@ -406,6 +415,38 @@ h1, h2, h3 {
   background-image: linear-gradient(180deg, hsla(54, 100%, 99%, .95) 0%, hsla(48, 100%, 83%, .86) 100%);
   color: hsl(40, 22%, 8%);
 }
+
+/* .hd-glass is the dashboard's standard card, and its violet is HARDCODED in
+   the class (that's why warming the tokens didn't touch it — Igor 09-12: "не
+   видно поправок, всё ещё фиолетовые оттенки"). Day repaint: warm white glass,
+   gold hairline, honey bloom. Night keeps the violet world via .dark .hd-glass,
+   which this selector can't reach. */
+.hd-dash-root:not(.dark) .hd-glass {
+  --hg-bloomA: rgba(255, 204, 106, .30);
+  --hg-bloomB: rgba(255, 236, 190, .12);
+  background: linear-gradient(165deg, #ffffff 0%, #fdf5e3 100%);
+  border: 1px solid rgba(198, 158, 74, .34);
+  box-shadow: 0 10px 26px -16px rgba(172, 132, 44, .38), 0 1px 3px rgba(46, 36, 16, .07), inset 0 1px 0 rgba(255, 255, 255, .92);
+}
+.hd-dash-root:not(.dark) .hd-halo {
+  background: radial-gradient(circle, rgba(255, 202, 96, .30), transparent 62%);
+}
+/* Token-level shadows carry a violet cast too (--shadow/--shadow-hover). */
+.hd-dash-root:not(.dark) {
+  --shadow: 0 2px 8px rgba(172, 132, 44, 0.07);
+  --shadow-hover: 0 8px 24px rgba(172, 132, 44, 0.15);
+}
+
+/* Solid-accent HOVER fills (stat-card icon tiles: group-hover:bg-accent +
+   group-hover:text-white) slipped past the .bg-accent face override — the
+   utility compiles to `.group:hover .group-hover\:bg-accent`, a different
+   class. They were the "жирно тёмно-коричневые" squares: full #B07C0A slabs.
+   Same treatment as the buttons: light gold face, near-black ink. */
+.hd-dash-root:not(.dark) .group:hover .group-hover\:bg-accent {
+  background-image: linear-gradient(180deg, #FFF9E3, #F6E4AE);
+  background-color: transparent;
+}
+.hd-dash-root:not(.dark) .group:hover .group-hover\:text-white { color: #3E3006; }
 
 /* Quiet buttons / cards on cream: same anatomy, no gold glow. */
 .hd-dash-root:not(.dark) .bg-surface {
