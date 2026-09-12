@@ -330,46 +330,84 @@ h1, h2, h3 {
      the "неон совсем чуть-чуть". It carries no shape, only warmth.
      Shadows are warm-tinted (hue ~35), not black: black on cream reads as dirt. ── */
   --lift-1:
-    0 1px 2px hsla(35, 45%, 24%, .13),
-    0 3px 8px -3px hsla(35, 55%, 32%, .10),
+    0 1px 2px hsla(45, 60%, 45%, .14),
+    0 3px 8px -3px hsla(45, 70%, 50%, .12),
     0 0 18px -6px hsla(45, 95%, 58%, .10);
   --lift-2:
-    0 1px 2px hsla(35, 45%, 24%, .11),
-    0 8px 18px -6px hsla(35, 60%, 34%, .18),
+    0 1px 2px hsla(45, 60%, 45%, .12),
+    0 8px 18px -6px hsla(45, 75%, 50%, .20),
     0 0 26px -6px hsla(45, 100%, 58%, .14);
   --lift-3:
-    0 1px 3px hsla(35, 45%, 24%, .09),
-    0 16px 34px -10px hsla(35, 62%, 34%, .24),
+    0 1px 3px hsla(45, 60%, 45%, .10),
+    0 16px 34px -10px hsla(45, 78%, 50%, .26),
     0 0 40px -8px hsla(45, 100%, 58%, .20);
-  --edge-amber: inset 0 1px 0 hsl(43, 88%, 76%);
+  --edge-amber: inset 0 1px 0 hsl(46, 96%, 78%);
   --edge-white: inset 0 1px 0 hsl(45, 60%, 99%);
   --hairline: hsla(38, 40%, 62%, .45);
+
+  /* Warning moves off gold, because the ACCENT is now gold (parallel session
+     flagged the collision: 17 call sites on --yellow #f59e0b sitting next to the
+     amber accent — a warning that looks like a call to action is not a warning).
+     Terracotta keeps the warm family and the "caution" reading, stays clearly
+     separate from both the gold accent and the red of a hard error, and carries
+     enough darkness for text on a pale tint. Night keeps its amber --yellow:
+     against a dark ground gold reads as caution just fine, and nothing there
+     competes with it. */
+  --yellow: #C2560E;
 }
 
-/* ── Day buttons: gradient face + the stack above. Airy, black/white/cream with
-   amber doing the accent work — no violet anywhere in the light theme. ── */
+/* ── Day buttons: WHITE face, gold only as a whisper (Igor 09-11: "максимально
+   светлыми с белым градиентом, золото но очень лёгкое"). The weight no longer
+   comes from a filled colour — it comes from the glow and the gold hairline,
+   which is how Apple's own primary buttons read on a light ground.
+   Text is deep gold, not white: on a white face white text is invisible, and
+   near-black would drop the button back to neutral. ── */
 .hd-dash-root:not(.dark) .bg-accent {
-  background-image: linear-gradient(180deg, hsl(41, 82%, 54%) 0%, hsl(36, 88%, 42%) 100%);
-  border: 1px solid hsla(35, 70%, 34%, .28);
-  box-shadow: var(--edge-amber), var(--lift-2);
-  transition: box-shadow .22s cubic-bezier(.3,.9,.4,1), transform .22s cubic-bezier(.3,.9,.4,1);
+  background-image: linear-gradient(180deg, hsla(52, 100%, 99%, .92) 0%, hsla(47, 100%, 86%, .80) 100%);
+  color: hsl(38, 100%, 34%);
+  border: 1px solid hsla(46, 100%, 64%, .95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  /* Two bloom radii, not one: a tight bright halo at the edge plus a wide soft
+     wash — one glow at high alpha reads as a blur; split, it reads as light.
+     Shadow hues sit at 44-47 (sunny gold): the earlier 35-38 read brown. */
+  box-shadow:
+    inset 0 1px 0 hsl(0, 0%, 100%),
+    inset 0 -10px 18px -12px hsla(46, 100%, 62%, .55),
+    0 1px 2px hsla(45, 65%, 48%, .12),
+    0 8px 18px -6px hsla(44, 80%, 52%, .20),
+    0 0 20px -2px hsla(47, 100%, 60%, .55),
+    0 0 52px -10px hsla(46, 100%, 58%, .40);
+  transition: box-shadow .22s cubic-bezier(.3,.9,.4,1), transform .22s cubic-bezier(.3,.9,.4,1), border-color .22s;
 }
 .hd-dash-root:not(.dark) .bg-accent:hover {
-  background-image: linear-gradient(180deg, hsl(42, 86%, 57%) 0%, hsl(36, 90%, 45%) 100%);
-  box-shadow: var(--edge-amber), var(--lift-3);
+  border-color: hsl(46, 100%, 58%);
+  box-shadow:
+    inset 0 1px 0 hsl(0, 0%, 100%),
+    inset 0 -12px 20px -12px hsla(46, 100%, 60%, .70),
+    0 1px 3px hsla(45, 65%, 48%, .10),
+    0 14px 30px -8px hsla(44, 82%, 52%, .24),
+    0 0 26px -2px hsla(47, 100%, 60%, .78),
+    0 0 72px -12px hsla(46, 100%, 58%, .58);
   transform: translateY(-1px);
 }
-/* Pressed: the object meets the surface — cast collapses, only contact is left,
-   and an inner shadow replaces the lit edge. Without this a "3D" button reads as
-   a sticker, because nothing happens when you push it. */
+/* Pressed: the glow contracts and an inner shadow replaces the lit edge, so the
+   button sits down onto the surface instead of reading as a sticker. */
 .hd-dash-root:not(.dark) .bg-accent:active {
   transform: translateY(1px);
   box-shadow:
-    inset 0 2px 4px hsla(35, 70%, 20%, .28),
-    0 1px 1px hsla(35, 45%, 24%, .14);
+    inset 0 2px 6px hsla(45, 80%, 50%, .24),
+    0 1px 1px hsla(45, 60%, 48%, .10),
+    0 0 16px -4px hsla(47, 100%, 60%, .42);
+}
+/* Keep hover from repainting the face to a solid accent (Tailwind's bg-accent2). */
+.hd-dash-root:not(.dark) .bg-accent:hover,
+.hd-dash-root:not(.dark) .hover\:bg-accent2:hover {
+  background-image: linear-gradient(180deg, hsla(54, 100%, 99%, .95) 0%, hsla(48, 100%, 83%, .86) 100%);
+  color: hsl(38, 100%, 32%);
 }
 
-/* Quiet buttons / cards on cream: same anatomy, white face. */
+/* Quiet buttons / cards on cream: same anatomy, no gold glow. */
 .hd-dash-root:not(.dark) .bg-surface {
   background-image: linear-gradient(180deg, hsl(45, 60%, 100%) 0%, hsl(42, 55%, 98%) 100%);
 }
@@ -384,6 +422,27 @@ h1, h2, h3 {
 }
 
 .dark { color-scheme: dark; }
+
+/* Day ground: OUR fan wallpaper behind everything, softly blurred (Igor 09-11:
+   "наша картинка на бэкграунде, заблюрено слегка"; кнопки поверх — полупрозрачное
+   стекло). A fixed ::before carries image + blur so content never inherits the
+   filter; a light wash keeps panels readable. Night gets the violet twin — same
+   frame, same geometry, so the theme switch reads as time of day. */
+.hd-dash-root { position: relative; isolation: isolate; }
+.hd-dash-root::before {
+  content: ""; position: fixed; inset: -40px; z-index: -1;
+  background: url("/bg/fan-day.jpg") center / cover no-repeat;
+  filter: blur(14px) saturate(1.05);
+}
+.hd-dash-root:not(.dark)::after {
+  content: ""; position: fixed; inset: 0; z-index: -1;
+  background: linear-gradient(180deg, hsla(48, 80%, 98%, .70), hsla(45, 60%, 97%, .58));
+}
+.hd-dash-root.dark::before { background-image: url("/bg/fan-night.jpg"); }
+.hd-dash-root.dark::after {
+  content: ""; position: fixed; inset: 0; z-index: -1;
+  background: linear-gradient(180deg, rgba(12, 10, 22, .66), rgba(12, 10, 22, .55));
+}
 
 /* Soft ambient purple wash at the top of the dashboard for depth. */
 .hd-dash-root.dark {
