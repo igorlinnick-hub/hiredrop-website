@@ -315,6 +315,72 @@ h1, h2, h3 {
   --accent2: #D9A441;
   --accent-light: #FBF1DA;
   --accent-hover: #8F6300;
+
+  /* ── Depth, by the Refactoring UI rules (Igor 09-11: "плоские, без стека
+     глубины"). Three jobs, one box-shadow list — two declarations don't merge:
+       1. LIT EDGE  inset 0 1px 0 — light comes from above and we look slightly
+          down, so a raised element shows its top edge. The color is sampled from
+          the element's OWN hue, never a white overlay: white drains saturation
+          out of the amber and the button goes chalky.
+       2. CONTACT   tight, small offset — the sliver even ambient light can't
+          reach. This is what keeps edges defined.
+       3. CAST      ~3x the offset and blur of contact. At rest contact is the
+          darker of the two; as the element lifts they cross over.
+     Plus a 4th that isn't from the book: a wide, very low-alpha amber bloom —
+     the "неон совсем чуть-чуть". It carries no shape, only warmth.
+     Shadows are warm-tinted (hue ~35), not black: black on cream reads as dirt. ── */
+  --lift-1:
+    0 1px 2px hsla(35, 45%, 24%, .13),
+    0 3px 8px -3px hsla(35, 55%, 32%, .10),
+    0 0 18px -6px hsla(45, 95%, 58%, .10);
+  --lift-2:
+    0 1px 2px hsla(35, 45%, 24%, .11),
+    0 8px 18px -6px hsla(35, 60%, 34%, .18),
+    0 0 26px -6px hsla(45, 100%, 58%, .14);
+  --lift-3:
+    0 1px 3px hsla(35, 45%, 24%, .09),
+    0 16px 34px -10px hsla(35, 62%, 34%, .24),
+    0 0 40px -8px hsla(45, 100%, 58%, .20);
+  --edge-amber: inset 0 1px 0 hsl(43, 88%, 76%);
+  --edge-white: inset 0 1px 0 hsl(45, 60%, 99%);
+  --hairline: hsla(38, 40%, 62%, .45);
+}
+
+/* ── Day buttons: gradient face + the stack above. Airy, black/white/cream with
+   amber doing the accent work — no violet anywhere in the light theme. ── */
+.hd-dash-root:not(.dark) .bg-accent {
+  background-image: linear-gradient(180deg, hsl(41, 82%, 54%) 0%, hsl(36, 88%, 42%) 100%);
+  border: 1px solid hsla(35, 70%, 34%, .28);
+  box-shadow: var(--edge-amber), var(--lift-2);
+  transition: box-shadow .22s cubic-bezier(.3,.9,.4,1), transform .22s cubic-bezier(.3,.9,.4,1);
+}
+.hd-dash-root:not(.dark) .bg-accent:hover {
+  background-image: linear-gradient(180deg, hsl(42, 86%, 57%) 0%, hsl(36, 90%, 45%) 100%);
+  box-shadow: var(--edge-amber), var(--lift-3);
+  transform: translateY(-1px);
+}
+/* Pressed: the object meets the surface — cast collapses, only contact is left,
+   and an inner shadow replaces the lit edge. Without this a "3D" button reads as
+   a sticker, because nothing happens when you push it. */
+.hd-dash-root:not(.dark) .bg-accent:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 2px 4px hsla(35, 70%, 20%, .28),
+    0 1px 1px hsla(35, 45%, 24%, .14);
+}
+
+/* Quiet buttons / cards on cream: same anatomy, white face. */
+.hd-dash-root:not(.dark) .bg-surface {
+  background-image: linear-gradient(180deg, hsl(45, 60%, 100%) 0%, hsl(42, 55%, 98%) 100%);
+}
+.hd-dash-root:not(.dark) .hd-lift {
+  border: 1px solid var(--hairline);
+  box-shadow: var(--edge-white), var(--lift-1);
+  transition: box-shadow .22s cubic-bezier(.3,.9,.4,1), transform .22s cubic-bezier(.3,.9,.4,1);
+}
+.hd-dash-root:not(.dark) .hd-lift:hover {
+  box-shadow: var(--edge-white), var(--lift-2);
+  transform: translateY(-1px);
 }
 
 .dark { color-scheme: dark; }
