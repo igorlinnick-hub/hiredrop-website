@@ -301,6 +301,22 @@ h1, h2, h3 {
    The dark token values live in `.dark {…}` above; this only adds
    the glow + a soft ambient so it reads premium, not flat-dark.
    ============================================================ */
+/* ============================================================
+   DAY ACCENT INSIDE THE APP — amber, not violet (Igor 2026-09-11)
+   The app's day format moves to yellow/white/black with light warm
+   accents; violet remains the NIGHT world (and the marketing site
+   keeps its own palette — this is scoped to the dashboard subtree).
+   Overriding the raw tokens here means every text-accent / bg-accent
+   / ring built from the theme follows without touching call sites.
+   Amber is dark enough (#B07C0A ≈ 4.9:1 on white) for accent TEXT.
+   ============================================================ */
+.hd-dash-root:not(.dark) {
+  --accent: #B07C0A;
+  --accent2: #D9A441;
+  --accent-light: #FBF1DA;
+  --accent-hover: #8F6300;
+}
+
 .dark { color-scheme: dark; }
 
 /* Soft ambient purple wash at the top of the dashboard for depth. */
