@@ -143,6 +143,13 @@ export interface CampaignStatusResponse {
   platform_counts: Record<string, number>;
   limit_per_platform: number;
   jobs_ready: number;
+  // Swipes approved on the Tap deck that are still undone. Reported in every mode —
+  // only a tap run consumes them, so in auto this is a stranded stack (#185).
+  approved_waiting?: number;
+  // The profile's submit mode, and whether the backend actually KNEW it (vs the
+  // conservative "auto" fallback) — "не знаю" has no single safe default.
+  submit_mode?: string;
+  submit_mode_known?: boolean;
   free_used?: number | null;
   free_limit?: number | null;
 }

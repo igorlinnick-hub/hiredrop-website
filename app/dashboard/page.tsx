@@ -17,6 +17,7 @@ import MobileHandoff from "@/components/dashboard/MobileHandoff";
 import FreeTastePaywall from "@/components/dashboard/FreeTastePaywall";
 import UsageBanner from "@/components/dashboard/UsageBanner";
 import CheckoutSuccessBanner from "@/components/dashboard/CheckoutSuccessBanner";
+import ApprovedWaitingBanner from "@/components/dashboard/ApprovedWaitingBanner";
 
 export const metadata = {
   title: "Dashboard — HireDrop",
@@ -64,6 +65,7 @@ export default async function DashboardPage() {
   const statsData = stats.status === "fulfilled" ? stats.value : null;
   const jobsData = (jobs.status === "fulfilled" ? jobs.value : []) as Job[];
   const campaignRunning = campaign.status === "fulfilled" ? campaign.value.running : false;
+  const campaignData = campaign.status === "fulfilled" ? campaign.value : null;
 
   // Free taste exhausted → the paywall moment leads the page (free tier only;
   // fields are null for paid tiers and absent on a pre-feature backend).
@@ -76,6 +78,12 @@ export default async function DashboardPage() {
     <DashboardLayout>
       {/* Post-payment confirmation — the redirect target used to say nothing. */}
       <CheckoutSuccessBanner tier={statsData?.tier ?? "free"} />
+
+      {/* Approved swipes nothing will ever pick up while the run is Auto (#185). */}
+      <ApprovedWaitingBanner
+        count={campaignData?.approved_waiting ?? 0}
+        submitMode={campaignData?.submit_mode}
+      />
 
       {freeTasteExhausted && statsData && (
         <FreeTastePaywall
