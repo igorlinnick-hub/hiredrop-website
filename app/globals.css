@@ -325,6 +325,24 @@ h1, h2, h3 {
   --surface2: #F7F1E1;
   --border: #E8DDC2;
 
+  /* Re-derive the --color-* aliases HERE. @theme inline declares them on :root
+     as var(--accent) etc., and a custom property resolves its var() on the
+     element it is DECLARED on — so :root's --color-accent is frozen violet no
+     matter what this scope does to --accent. Tailwind utilities dodge this
+     (inline mode substitutes var(--accent) directly), which is why buttons went
+     amber while every handwritten var(--color-accent) in component <style>
+     blocks — mode-card rings, glows — stayed violet (Igor 09-12: "всё ещё вижу
+     старую фиолетовую под Auto"). Declared here, they resolve against THIS
+     element's warm values. */
+  --color-accent: var(--accent);
+  --color-accent2: var(--accent2);
+  --color-accent-light: var(--accent-light);
+  --color-accent-hover: var(--accent-hover);
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface2: var(--surface2);
+  --color-border: var(--border);
+
   /* ── Depth, by the Refactoring UI rules (Igor 09-11: "плоские, без стека
      глубины"). Three jobs, one box-shadow list — two declarations don't merge:
        1. LIT EDGE  inset 0 1px 0 — light comes from above and we look slightly
@@ -414,6 +432,14 @@ h1, h2, h3 {
 .hd-dash-root:not(.dark) .hover\:bg-accent2:hover {
   background-image: linear-gradient(180deg, hsla(54, 100%, 99%, .95) 0%, hsla(48, 100%, 83%, .86) 100%);
   color: hsl(40, 22%, 8%);
+}
+
+/* Selected-Tap ring: day is a one-accent world (Igor 09-12 — "зелёная под
+   Tap" was the odd one out). Night keeps the green ring via the component's
+   .dark rule, which this selector cannot reach. */
+.hd-dash-root:not(.dark) .lmc-card.on-tap {
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  box-shadow: 0 0 30px -6px var(--accent), 0 20px 45px -22px rgba(178, 138, 58, .38);
 }
 
 /* .hd-glass is the dashboard's standard card, and its violet is HARDCODED in

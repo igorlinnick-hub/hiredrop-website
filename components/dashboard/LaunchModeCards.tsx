@@ -48,7 +48,11 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
   return (
     <div className="lmc grid grid-cols-2 gap-4 pt-2" style={{ perspective: "950px" }}>
       <style>{`
-        .lmc-slot{position:relative}
+        /* --halo used to live on .lmc-card, but the halo is the card's SIBLING —
+           custom properties don't cross siblings, so the arc never rendered.
+           Declared on the slot (their shared parent), both themes. */
+        .lmc-slot{position:relative;--halo:rgba(255,204,110,.32)}
+        .dark .lmc-slot{--halo:rgba(108,92,231,.72)}
         /* halo pooling under the card — the glow arc from the reference */
         .lmc-halo{position:absolute;left:50%;bottom:-16%;width:78%;height:58%;transform:translateX(-50%);
           border-radius:50%;background:radial-gradient(circle,var(--halo),transparent 62%);filter:blur(22px);
