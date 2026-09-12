@@ -598,34 +598,23 @@ export default function CampaignView({ token: initialToken }: Props) {
            полупрозрачно" — no violet by day. Warm candle-light fan: cream, soft
            butter-yellow, white, a faint honey edge. Alphas kept low so it reads as
            light falling on the plate, not paint. Night keeps the violet spectrum. */
-        .hd-aura {
-          position: absolute;
-          left: -14%; right: -14%; top: -34%; bottom: -10%;
-          width: auto; height: auto; border-radius: 0;
-          transform: rotate(3deg);
-          filter: blur(30px);
-          opacity: 0.85;
-          background: conic-gradient(from 206deg at 50% 128%,
-            rgba(255,214,124,0) 0deg,
-            rgba(255,214,124,.72) 5deg,  rgba(255,214,124,0) 9deg,
-            rgba(255,196,92,.0) 13deg,   rgba(255,196,92,.60) 17deg,  rgba(255,196,92,0) 20deg,
-            rgba(255,238,196,0) 25deg,   rgba(255,238,196,.78) 31deg, rgba(255,238,196,0) 35deg,
-            rgba(255,255,255,0) 39deg,   rgba(255,255,255,.70) 43deg, rgba(255,255,255,0) 47deg,
-            rgba(250,222,150,0) 50deg,   rgba(250,222,150,.62) 55deg, rgba(250,222,150,0) 60deg,
-            rgba(226,180,92,0) 63deg,    rgba(226,180,92,.46) 67deg,  rgba(226,180,92,0) 72deg,
-            rgba(232,196,120,0) 360deg);
+        .hd-well-img {
+          background: url("/bg/fan-day.jpg") center 30% / cover no-repeat;
         }
-        .dark .hd-aura {
-          opacity: 0.85;
-          background: conic-gradient(from 206deg at 50% 128%,
-            rgba(96,110,255,0) 0deg,
-            rgba(96,110,255,.62) 5deg,   rgba(96,110,255,0) 9deg,
-            rgba(140,110,255,0) 13deg,   rgba(140,110,255,.54) 17deg, rgba(140,110,255,0) 20deg,
-            rgba(176,120,255,0) 25deg,   rgba(176,120,255,.58) 31deg, rgba(176,120,255,0) 35deg,
-            rgba(214,110,230,0) 39deg,   rgba(214,110,230,.46) 43deg, rgba(214,110,230,0) 47deg,
-            rgba(167,139,250,0) 50deg,   rgba(167,139,250,.48) 55deg, rgba(167,139,250,0) 60deg,
-            rgba(108,92,231,0) 63deg,    rgba(108,92,231,.38) 67deg,  rgba(108,92,231,0) 72deg,
-            rgba(108,92,231,0) 360deg);
+        .dark .hd-well-img { background-image: url("/bg/fan-night.jpg"); }
+        /* Readability wash: clear at the top (the picture breathes), rising
+           toward the counter so plate, captions and status stay legible. */
+        .hd-well-wash {
+          background: linear-gradient(180deg,
+            rgba(255,253,246,.06) 0%,
+            rgba(255,253,246,.30) 52%,
+            rgba(255,252,242,.78) 100%);
+        }
+        .dark .hd-well-wash {
+          background: linear-gradient(180deg,
+            rgba(12,10,22,.10) 0%,
+            rgba(12,10,22,.34) 52%,
+            rgba(12,10,20,.78) 100%);
         }
 
         /* Light sheen sweeping across the plate — a single glint per cycle */
@@ -1013,13 +1002,16 @@ export default function CampaignView({ token: initialToken }: Props) {
             <h3 className="text-sm font-semibold text-text">Live Activity</h3>
           </div>
 
-          {/* Hero: THE number on a frosted crystal plate. A prismatic aura
-              refracts behind it; a light sheen sweeps across; a crystalline
-              ripple fires each time the counter ticks up. */}
-          <div className="relative px-5 pt-11 pb-8 text-center overflow-hidden shrink-0">
-            <div aria-hidden className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <span className="hd-aura" />
-            </div>
+          {/* Hero: THE number on a frosted crystal plate, standing IN the fan
+              wallpaper itself (Igor 09-12: "в эту рамку вставить картинку ночную
+              и дневную, цифру опустить, блок сделать больше"). The image is the
+              same day/night pair the page backdrop uses, but sharp — this well is
+              the one place it is meant to be SEEN. A soft wash keeps the plate
+              and captions readable on top; the counter sits low in a taller
+              frame, so the picture gets the upper half. */}
+          <div className="hd-well relative px-5 pt-32 pb-10 min-h-[340px] flex flex-col justify-end text-center overflow-hidden shrink-0">
+            <div aria-hidden className="hd-well-img absolute inset-0 pointer-events-none" />
+            <div aria-hidden className="hd-well-wash absolute inset-0 pointer-events-none" />
             <div className="relative flex flex-col items-center">
               <div className="hd-plate">
                 {bumpKey > 0 && <span key={bumpKey} aria-hidden className="hd-ripple pointer-events-none" />}

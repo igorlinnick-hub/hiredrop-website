@@ -10,7 +10,7 @@ function StatCard({ label, value, icon, href, hint }: StatCardProps) {
   const inner = (
     <div
       className={[
-        "group relative hd-glass hd-glass-bloom overflow-hidden rounded-2xl p-5 transition-all duration-200",
+        "group relative hd-glass hd-glass-bloom overflow-hidden rounded-2xl p-4 transition-all duration-200",
         href
           ? "hover:border-accent/40 hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
           : "",
@@ -28,8 +28,12 @@ function StatCard({ label, value, icon, href, hint }: StatCardProps) {
             : "bg-accent/10 text-accent",
         ].join(" ")}>{icon}</div>
       </div>
+      {/* The hint used to sit here as an INVISIBLE line (text-text2/0) that only
+          tinted on hover — a permanently reserved empty row, which is exactly the
+          dead space Igor pointed at (09-12: "сократить место, оно пустует").
+          Now it's always visible and quiet, so the row earns its height. */}
       {hint && (
-        <p className="mt-2 text-[11px] text-text2/0 group-hover:text-accent/70 transition-all duration-200 font-medium">
+        <p className="mt-1.5 text-[11px] text-text2/45 group-hover:text-accent/70 transition-colors duration-200 font-medium">
           {hint}
         </p>
       )}
