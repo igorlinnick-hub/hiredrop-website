@@ -422,7 +422,14 @@ export default function QuickActions({
     try {
       const t = await getFreshToken();
       await savePrefsWith(effPlatforms);
-      await apiPost("/campaign/start", t, { keywords, platforms: effPlatforms, location, job_type: jobType });
+      // The server decides which ROLE leads this run (round-robin, jobflow #187): the walk
+      // searches one phrase at a time starting at index 0, and caps count applications, so
+      // a fixed order means roles 5-7 never get searched at all. Arm the extension with the
+      // order the backend just handed back — sending our own local list would keep the
+      // rotation in the server's record of the run while the browser searched role #1 first.
+      const started = await apiPost<{ filters?: { keywords?: string[] } }>(
+        "/campaign/start", t, { keywords, platforms: effPlatforms, location, job_type: jobType });
+      const runKeywords = started?.filters?.keywords?.length ? started.filters.keywords : keywords;
 
       // Ask the extension to launch, and WAIT for its verdict: it can refuse (e.g.
       // pre-flight found the target platform logged out). Ignoring that left a
@@ -447,7 +454,7 @@ export default function QuickActions({
         window.addEventListener("message", onMsg);
         window.postMessage({
           type: "HIREDROP_START_CAMPAIGN",
-          filters: { keywords, platforms: effPlatforms, location, job_type: jobType, work_setting: workSetting, search_radius_miles: radius, platform_mode: allMode ? "all" : "single" },
+          filters: { keywords: runKeywords, platforms: effPlatforms, location, job_type: jobType, work_setting: workSetting, search_radius_miles: radius, platform_mode: allMode ? "all" : "single" },
         }, "*");
         setTimeout(() => finish(null), 5000);
       });
