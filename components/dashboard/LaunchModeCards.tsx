@@ -99,6 +99,16 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
         .dark .lmc-card.on{box-shadow:0 0 30px -6px var(--color-accent),0 20px 45px -22px rgba(108,92,231,.42)}
         .dark .lmc-card.on-tap{box-shadow:0 0 30px -6px var(--color-green),0 20px 45px -22px rgba(108,92,231,.42)}
 
+        /* The fan pair lives INSIDE the card now (Igor 09-12): the same
+           day/night image the campaign well uses, softly blurred; a veil keeps
+           the scene and captions readable. inset:-12px hides the blur fringe. */
+        .lmc-fan{position:absolute;inset:-12px;pointer-events:none;
+          background:url("/bg/fan-day.jpg") center 72% / cover no-repeat;
+          filter:blur(5px) saturate(1.05)}
+        .dark .lmc-fan{background-image:url("/bg/fan-night.jpg")}
+        .lmc-veil{position:absolute;inset:0;pointer-events:none;background:rgba(255,253,248,.50)}
+        .dark .lmc-veil{background:rgba(10,9,18,.42)}
+
         /* the glass window that the bloom glows through */
         .lmc-body{position:absolute;inset:0;overflow:hidden;
           box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -1px 0 rgba(0,0,0,.15)}
@@ -199,6 +209,8 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
         <button type="button" onClick={onAuto} aria-pressed={mode === "auto"}
           className={`lmc-card ${mode === "auto" ? "on" : ""}`}>
           <div className="lmc-body">
+            <span className="lmc-fan" aria-hidden />
+            <span className="lmc-veil" aria-hidden />
             <span className="lmc-bloom" aria-hidden />
             <div className="lmc-stars" aria-hidden>
               {STARS.map((st, i) => (
@@ -236,6 +248,8 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
         <button type="button" onClick={onTap} aria-pressed={mode === "tap"}
           className={`lmc-card lmc-tap ${mode === "tap" ? "on-tap" : ""}`}>
           <div className="lmc-body">
+            <span className="lmc-fan" aria-hidden />
+            <span className="lmc-veil" aria-hidden />
             <span className="lmc-bloom" aria-hidden />
             <div className="lmc-stars" aria-hidden>
               {STARS.map((st, i) => (

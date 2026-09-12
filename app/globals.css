@@ -320,7 +320,10 @@ h1, h2, h3 {
      и рамок"). The :root greys are violet-biased for the marketing site
      (#F7F7FB / #E8E8F0) — next to cream they read lavender. Same greys, warm
      bias, so cards and hairlines sit in the same light as the fan behind them. */
-  --background: #FAF6EB;
+  /* Day ground is plain WHITE (Igor 09-12: "бекграунд белым, сам дашборд
+     белый" — the fan moved inside the Auto/Tap cards). Warm lives in accents,
+     cards and hairlines, not in the page itself. */
+  --background: #FFFFFF;
   --surface: #FFFEF9;
   --surface2: #F7F1E1;
   --border: #E8DDC2;
@@ -496,16 +499,13 @@ h1, h2, h3 {
    filter; a light wash keeps panels readable. Night gets the violet twin — same
    frame, same geometry, so the theme switch reads as time of day. */
 .hd-dash-root { position: relative; isolation: isolate; }
-.hd-dash-root::before {
+/* The page-wide fan is NIGHT-ONLY now: by day the ground is plain white and
+   the fan lives inside the Auto/Tap cards instead (Igor 09-12). */
+.hd-dash-root.dark::before {
   content: ""; position: fixed; inset: -40px; z-index: -1;
-  background: url("/bg/fan-day.jpg") center / cover no-repeat;
+  background: url("/bg/fan-night.jpg") center / cover no-repeat;
   filter: blur(14px) saturate(1.05);
 }
-.hd-dash-root:not(.dark)::after {
-  content: ""; position: fixed; inset: 0; z-index: -1;
-  background: linear-gradient(180deg, hsla(48, 80%, 98%, .70), hsla(45, 60%, 97%, .58));
-}
-.hd-dash-root.dark::before { background-image: url("/bg/fan-night.jpg"); }
 .hd-dash-root.dark::after {
   content: ""; position: fixed; inset: 0; z-index: -1;
   background: linear-gradient(180deg, rgba(12, 10, 22, .66), rgba(12, 10, 22, .55));
