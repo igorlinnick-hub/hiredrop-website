@@ -364,7 +364,7 @@ h1, h2, h3 {
    near-black would drop the button back to neutral. ── */
 .hd-dash-root:not(.dark) .bg-accent {
   background-image: linear-gradient(180deg, hsla(52, 100%, 99%, .92) 0%, hsla(47, 100%, 86%, .80) 100%);
-  color: hsl(38, 100%, 34%);
+  color: hsl(40, 20%, 10%);
   border: 1px solid hsla(46, 100%, 64%, .95);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -404,7 +404,7 @@ h1, h2, h3 {
 .hd-dash-root:not(.dark) .bg-accent:hover,
 .hd-dash-root:not(.dark) .hover\:bg-accent2:hover {
   background-image: linear-gradient(180deg, hsla(54, 100%, 99%, .95) 0%, hsla(48, 100%, 83%, .86) 100%);
-  color: hsl(38, 100%, 32%);
+  color: hsl(40, 22%, 8%);
 }
 
 /* Quiet buttons / cards on cream: same anatomy, no gold glow. */
