@@ -96,54 +96,96 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.refresh();
   }
 
+  // One class recipe for every nav link — the vertical rail and the mobile
+  // pills stay visually in sync (day override lives in globals.css under
+  // .hd-sidenav/.hd-mobilenav .nav-active).
+  const navLinkCls = (active: boolean, shape: "row" | "pill") =>
+    [
+      shape === "row"
+        ? "flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-[15px] font-medium transition"
+        : "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition",
+      active
+        ? "nav-active bg-accent/10 text-accent"
+        : "text-text2 hover:text-text hover:bg-surface2/60",
+    ].join(" ");
+
+  // Flow-style split: the daily surfaces live at the top of the rail, the
+  // service items (Extension, Settings) sit in their own cluster at the bottom.
+  const railMain = NAV_ITEMS.filter((i) => !["Settings", "Extension"].includes(i.label));
+  const railFoot = NAV_ITEMS.filter((i) => ["Extension", "Settings"].includes(i.label));
+
   return (
     <div className={["min-h-screen bg-background hd-dash-root", dark ? "dark" : ""].join(" ")}>
       {/* Keeps the extension's token fresh while any dashboard page is open. */}
       <ExtensionTokenSync />
-      {/* Top bar */}
-      <header className="border-b border-border bg-surface">
-        <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
-          <Link href="/dashboard" className="text-lg font-bold text-text">
+
+      <div className="flex min-h-screen">
+        {/* Vertical rail (Flow reference, Igor 09-12): icon+label rows, active =
+            soft warm tile; replaces the full-width pill row on desktop. */}
+        <aside
+          className="hd-sidenav hidden lg:flex flex-col w-[236px] shrink-0 sticky top-0 h-screen
+            border-r border-border bg-surface/75 backdrop-blur-xl px-3 py-5"
+        >
+          <Link href="/dashboard" className="px-3.5 mb-7 text-lg font-bold text-text">
             <span className="text-accent">Hire</span>Drop
           </Link>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <FitModeMenu />
-            <ThemeToggle dark={dark} onToggle={toggleTheme} />
-            <ProfileMenu email={email} onLogout={handleLogout} />
-          </div>
-        </div>
-      </header>
-
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-        {/* Reloading the extension orphans this tab's ping.js bridge: the dashboard looks
-            connected but Start never arrives. Mounted here (not per-page) so the warning
-            reaches every dashboard route, /dashboard/tap included. */}
-        <ExtensionBridgeBanner />
-
-        {/* Nav tabs */}
-        <nav className="flex flex-wrap gap-1.5 mb-8">
-          {NAV_ITEMS.map((item) => {
-            const active = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={[
-                  "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition",
-                  active
-                    ? "nav-active bg-accent/10 text-accent"
-                    : "text-text2 hover:text-text hover:bg-surface2/70",
-                ].join(" ")}
-              >
+          <nav className="flex flex-col gap-1">
+            {railMain.map((item) => (
+              <Link key={item.href} href={item.href} className={navLinkCls(pathname === item.href, "row")}>
                 {item.icon}
                 {item.label}
               </Link>
-            );
-          })}
-        </nav>
+            ))}
+          </nav>
 
-        {children}
+          <nav className="mt-auto flex flex-col gap-1">
+            {railFoot.map((item) => (
+              <Link key={item.href} href={item.href} className={navLinkCls(pathname === item.href, "row")}>
+                {item.icon}
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </aside>
+
+        <div className="flex-1 min-w-0">
+          {/* Top bar: on desktop the logo lives in the rail, so only the account
+              controls remain here; on mobile it keeps the old logo + controls. */}
+          <header className="border-b border-border bg-surface">
+            <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
+              <Link href="/dashboard" className="text-lg font-bold text-text lg:hidden">
+                <span className="text-accent">Hire</span>Drop
+              </Link>
+
+              <div className="flex items-center gap-2 sm:gap-3 ml-auto">
+                <FitModeMenu />
+                <ThemeToggle dark={dark} onToggle={toggleTheme} />
+                <ProfileMenu email={email} onLogout={handleLogout} />
+              </div>
+            </div>
+          </header>
+
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
+            {/* Reloading the extension orphans this tab's ping.js bridge: the dashboard looks
+                connected but Start never arrives. Mounted here (not per-page) so the warning
+                reaches every dashboard route, /dashboard/tap included. */}
+            <ExtensionBridgeBanner />
+
+            {/* Mobile nav keeps the horizontal pills — a fixed rail costs too much
+                width below lg. */}
+            <nav className="hd-mobilenav flex flex-wrap gap-1.5 mb-8 lg:hidden">
+              {NAV_ITEMS.map((item) => (
+                <Link key={item.href} href={item.href} className={navLinkCls(pathname === item.href, "pill")}>
+                  {item.icon}
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+
+            {children}
+          </div>
+        </div>
       </div>
     </div>
   );
