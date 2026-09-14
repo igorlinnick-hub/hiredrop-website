@@ -1,6 +1,6 @@
 # design-day-theme — тёплый день аппа, веер, кнопки
 
-Обновлено: 2026-09-12 · ветки: `design/white-ground-fan-cards` + `design/flow-sidebar-nav`
+Обновлено: 2026-09-14 · ветки: `design/flow-sidebar-nav` (website) + `design/popup-day` (jobflow)
 
 ## Состояние
 
@@ -15,7 +15,13 @@
   «два золота спорят»), скоуп-оверрайд в globals.css (`.hd-sidenav/.hd-mobilenav .nav-active`);
   ночь: прежняя accent/10 + гало.
 
-Борд «было/стало» (день/ночь/мобилка, с линейками, проба getComputedStyle пройдена):
+Плюс **попап расширения — день** (Игорь 09-14: «белый, чёрные кнопки, картинка ночная»):
+ветка `design/popup-day` в репо **jobflow** (запушена, на Рабочий стол НЕ синкана). Белый фон,
+тёплые нейтрали, все кнопки = один чёрный рецепт, ночной веер картинкой внутри карточки
+Live process (blur+вуаль, светлый текст); popup.js не тронут. Бывшее правило «popup =
+dark-only» этим отменено. Выкат: «ок» → `scripts/sync-ext.sh` → тумблер OFF/ON.
+
+Борд «было/стало» (рейка день/ночь/мобилка + попап, с линейками):
 https://claude.ai/code/artifact/328a6e81-e876-4b31-8b7a-0241c619f4ee
 
 ## Последний заход
@@ -35,5 +41,5 @@ https://claude.ai/code/artifact/328a6e81-e876-4b31-8b7a-0241c619f4ee
 
 ## Следующий шаг
 
-Игорь смотрит борд → по «мержим» слить `design/flow-sidebar-nav` (несёт в себе white-ground)
-в main одним PR.
+Игорь смотрит борд → «мержим» = слить `design/flow-sidebar-nav` (несёт white-ground) в main
+website; «ок» по попапу = слить `design/popup-day` в main jobflow + sync-ext + OFF/ON.
