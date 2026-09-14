@@ -14,6 +14,7 @@ interface ActivityEntry {
   level: string;
   phase?: string;
   timestamp: string;
+  metadata_json?: { outcome?: string } | null;
 }
 
 interface HealthSummary {
@@ -183,6 +184,8 @@ export default function CampaignView({ token: initialToken }: Props) {
   // Campaign start (from /campaign/status) — scopes the health summary to THIS
   // run, so chips don't show a prior run's cross-platform noise.
   const startedAtRef = useRef<string | null>(null);
+  // Last start we actually observed — survives the backend nulling started_at on stop.
+  const [runStartedAt, setRunStartedAt] = useState<string | null>(null);
 
   // Crossfade: two slots alternate so the outgoing frame stays visible during the fade
   const [slots, setSlots] = useState<[string | null, string | null]>([null, null]);
@@ -280,6 +283,10 @@ export default function CampaignView({ token: initialToken }: Props) {
         t
       );
       startedAtRef.current = status.started_at || null;
+      // Sticky copy for the run-ended banner. The backend's stop() NULLS started_at, so
+      // the ref goes blank at exactly the moment we need to ask "did THIS run end, or am
+      // I looking at yesterday's outcome line?". Only ever moves forward.
+      if (status.started_at) setRunStartedAt(status.started_at);
       setStats({ applied: status.today_applications, found: status.jobs_ready });
       if (status.submit_mode) setSubmitMode(status.submit_mode === "tap" ? "tap" : "auto");
     } catch {}
@@ -435,6 +442,21 @@ export default function CampaignView({ token: initialToken }: Props) {
     !captcha &&
     !reviewPending &&
     (idleDismissedAt === null || lastActivityTs > idleDismissedAt);
+
+  // WHY the run ended, straight from the extension's terminal line (metadata.outcome),
+  // never parsed out of the wording. A run that walks every platform and runs out of jobs
+  // is FINISHED, not dead — but the server only ever says `running: false`, so this screen
+  // printed its single death story ("closing your laptop, quitting Chrome") over an
+  // orderly completion. Igor, 09-13, sitting in front of the machine: a 2m26s run that
+  // exhausted its queue was reported to him as a browser that had gone away.
+  // Only a terminal line from THIS run counts: an outcome older than the run's start is
+  // the previous run's ending, and it must not explain this one.
+  const runStartedTs = runStartedAt ? Date.parse(runStartedAt) : 0;
+  const runEndOutcome =
+    activity.find(
+      (a) => a.metadata_json?.outcome && (!runStartedTs || Date.parse(a.timestamp) >= runStartedTs),
+    )?.metadata_json?.outcome || null;
+  const runCompleted = serverStopped && runEndOutcome === "completed";
 
   // A consent wall, not a bot check. Same pause, different ask — and in pool (tap) mode
   // it PAUSES rather than skipping the pick, because the wall is account-wide: skipping
@@ -725,27 +747,34 @@ export default function CampaignView({ token: initialToken }: Props) {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-6
             bg-background/70 backdrop-blur-md"
-          role="alertdialog"
+          // A completion is an announcement, not an alert — screen readers shouldn't
+          // interrupt with it the way they do for a broken run.
+          role={runCompleted ? "dialog" : "alertdialog"}
           aria-modal="true"
           aria-labelledby="hd-disc-title"
         >
           <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl">
             <div className="flex items-center gap-2.5 mb-3">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-red" />
+              {/* A finished run is not an alarm. Same dialog, honest colour. */}
+              <span className={`inline-block w-2.5 h-2.5 rounded-full ${runCompleted ? "bg-accent" : "bg-red"}`} />
               <h2 id="hd-disc-title" className="font-semibold text-text text-[15px]">
                 {signedOut
                   ? `Signed out of ${activePlatform?.name}`
-                  : serverStopped
-                    ? "Campaign stopped"
-                    : bridgeLost
-                      ? "Automation disconnected"
-                      : "Nothing is happening"}
+                  : runCompleted
+                    ? "Run complete"
+                    : serverStopped
+                      ? "Campaign stopped"
+                      : bridgeLost
+                        ? "Automation disconnected"
+                        : "Nothing is happening"}
               </h2>
             </div>
 
             <p className="text-sm text-text2 leading-relaxed">
               {signedOut
                 ? `${activePlatform?.name} signed you out, so there was nothing left for the campaign to apply to. Sign back in and start it again — your filters are kept.`
+                : runCompleted
+                ? `The campaign worked through every job it could apply to and finished on its own — ${stats.applied} application${stats.applied === 1 ? "" : "s"} sent today. Nothing went wrong. New jobs appear through the day, so starting again later finds more.`
                 : serverStopped
                 ? "The campaign is no longer running. It stops on its own when the browser that was applying goes away — closing your laptop, quitting Chrome, or the automation window being closed."
                 : bridgeLost
@@ -753,7 +782,9 @@ export default function CampaignView({ token: initialToken }: Props) {
                   : `The campaign still reads as active, but nothing has moved for ${formatElapsed(idleSecs)}. That usually means the window doing the applying went away — most often a closed laptop — while the campaign was never told to stop.`}
             </p>
             <p className="text-xs text-text2/70 mt-2.5">
-              Applications already sent are saved — nothing was lost.
+              {runCompleted
+                ? "Every application it sent is saved in your history."
+                : "Applications already sent are saved — nothing was lost."}
             </p>
 
             <div className="flex gap-2.5 mt-5">
