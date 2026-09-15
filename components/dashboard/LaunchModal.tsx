@@ -37,7 +37,13 @@ export default function LaunchModal({
   const eligibleNames = eligible.map((p) => p.name);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      onClick={onClose}
+      data-testid="launch-modal"
+      data-selected={selected ?? ""}
+      data-pick-one={pickOne ? "true" : "false"}
+    >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
       <div
         className="relative w-full max-w-md bg-surface border border-border rounded-2xl shadow-xl p-6"
@@ -48,7 +54,7 @@ export default function LaunchModal({
 
         <div className="flex items-start justify-between gap-3 mb-1">
           <h3 className="text-lg font-bold text-text">Where should we apply today?</h3>
-          <button onClick={onClose} className="text-text2/50 hover:text-text transition -mr-1 -mt-1 p-1">
+          <button onClick={onClose} data-testid="btn-launch-close" className="text-text2/50 hover:text-text transition -mr-1 -mt-1 p-1">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -59,6 +65,7 @@ export default function LaunchModal({
         </p>
 
         <button
+          data-testid="btn-launch-all"
           onClick={() => setPicked(ALL_PLATFORMS_ID)}
           className={[
             "w-full text-left rounded-xl border p-3.5 flex items-center gap-3 transition",
@@ -87,6 +94,7 @@ export default function LaunchModal({
         </button>
 
         <button
+          data-testid="btn-launch-pickone"
           onClick={() => {
             const next = !pickOne;
             setPickOne(next);
@@ -115,6 +123,7 @@ export default function LaunchModal({
               return (
                 <button
                   key={p.id}
+                  data-testid={`btn-launch-platform-${p.id}`}
                   onClick={() => setPicked(p.id)}
                   className={[
                     "w-full text-left rounded-xl border p-3.5 flex items-center gap-3 transition",
@@ -156,6 +165,7 @@ export default function LaunchModal({
         )}
 
         <button
+          data-testid="btn-launch-confirm"
           onClick={() => selected && onLaunch(selected)}
           className="mt-5 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold
             bg-accent text-white hover:bg-accent2 transition shadow-sm"
