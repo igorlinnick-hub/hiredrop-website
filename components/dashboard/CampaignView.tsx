@@ -564,6 +564,24 @@ export default function CampaignView({ token: initialToken }: Props) {
 
   return (
     <DashboardLayout>
+      {/* Machine-readable live state for scripts/e2e.py. Everything a driver needs to
+          tell "running", "stalled on a captcha" and "waiting for a tap" apart — the
+          three outcomes that look identical in a screenshot. Read state, not captions. */}
+      <div
+        hidden
+        data-testid="campaign-state"
+        data-stopped={stopped ? "true" : "false"}
+        data-server-stopped={serverStopped ? "true" : "false"}
+        data-bridge-lost={bridgeLost ? "true" : "false"}
+        data-captcha={captcha ? "true" : "false"}
+        data-review-mode={reviewMode ? "true" : "false"}
+        data-submit-mode={submitMode}
+        data-review-pending={reviewPending ? "true" : "false"}
+        data-applied={String(stats.applied)}
+        data-found={String(stats.found)}
+        data-activity={String(activity.length)}
+        data-run-started={runStartedAt ?? ""}
+      />
       <style>{`
         @keyframes hd-slide-in {
           from { opacity: 0; transform: translateY(-6px); }

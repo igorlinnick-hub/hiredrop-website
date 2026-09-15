@@ -416,6 +416,18 @@ export default function TapView({ token: initialToken }: { token: string }) {
 
   return (
     <DashboardLayout>
+      <div
+        hidden
+        data-testid="tap-state"
+        data-running={running ? "true" : "false"}
+        data-busy={busy ?? ""}
+        data-acting={acting ?? ""}
+        data-deck-loaded={deckLoaded ? "true" : "false"}
+        data-deck-size={String(deck.length)}
+        data-approved={String(approvedCount)}
+        data-card-id={card?.id ?? ""}
+        data-card-platform={card?.platform ?? ""}
+      />
       <style>{`
         @keyframes tapIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
         /* ── Brand glass card — BOTH themes are first-class (Igor 08-05):
@@ -524,7 +536,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
           </div>
         )}
         {running && !remote && (
-          <button onClick={stop} disabled={busy !== null}
+          <button onClick={stop} disabled={busy !== null} data-testid="btn-tap-stop"
             className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition
               bg-red/8 text-red border-red/20 hover:bg-red/15 disabled:opacity-50">
             <span className="inline-block w-2 h-2 rounded bg-red" />
@@ -536,7 +548,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
             2026-09-06: had to fire the postMessage by hand). Same
             ensureReadyThenStart as the empty state. */}
         {!running && !remote && hasSession && (
-          <button onClick={ensureReadyThenStart} disabled={busy !== null}
+          <button onClick={ensureReadyThenStart} disabled={busy !== null} data-testid="btn-tap-start"
             className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition
               bg-accent text-white hover:bg-accent2 disabled:opacity-50 shadow-sm">
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
@@ -701,7 +713,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
                     </div>
 
                     <div className="flex gap-3 pt-2">
-                      <button onClick={() => decide("skip")} disabled={!!acting}
+                      <button onClick={() => decide("skip")} disabled={!!acting} data-testid="btn-tap-skip"
                         className="flex-1 px-4 py-3 rounded-xl text-sm font-semibold border disabled:opacity-50 transition"
                         style={{
                           borderColor: "var(--hdc-skip-bd)", color: "var(--hdc-skip-tx)",
@@ -709,7 +721,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
                         }}>
                         Skip
                       </button>
-                      <button onClick={() => decide("approve")} disabled={!!acting}
+                      <button onClick={() => decide("approve")} disabled={!!acting} data-testid="btn-tap-approve"
                         className="flex-[2] flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold
                           bg-accent text-white hover:bg-accent2 disabled:opacity-50 transition"
                         style={{ boxShadow: "0 0 22px -6px rgba(124,108,255,.7)" }}>
@@ -802,7 +814,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
                 instant. We write the cover letter and submit only for the ones you approve.
               </p>
             </div>
-            <button onClick={ensureReadyThenStart} disabled={busy !== null}
+            <button onClick={ensureReadyThenStart} disabled={busy !== null} data-testid="btn-tap-start-empty"
               className="mt-2 flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold
                 bg-accent text-white hover:bg-accent2 disabled:opacity-50 transition shadow-sm">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -810,7 +822,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
               </svg>
               {busy === "start" ? "Starting…" : "Start"}
             </button>
-            {err && <p className="text-xs text-red">{err}</p>}
+            {err && <p className="text-xs text-red" data-testid="tap-error">{err}</p>}
           </div>
         )}
       </div>

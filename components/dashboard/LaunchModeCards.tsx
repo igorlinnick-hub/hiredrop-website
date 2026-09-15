@@ -206,7 +206,7 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
       {/* AUTO */}
       <div className="lmc-slot">
         <span className="lmc-halo" aria-hidden />
-        <button type="button" onClick={onAuto} aria-pressed={mode === "auto"}
+        <button type="button" onClick={onAuto} aria-pressed={mode === "auto"} data-testid="btn-mode-auto"
           className={`lmc-card ${mode === "auto" ? "on" : ""}`}>
           <div className="lmc-body">
             <span className="lmc-fan" aria-hidden />
@@ -245,7 +245,7 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
       {/* TAP */}
       <div className="lmc-slot">
         <span className="lmc-halo" aria-hidden />
-        <button type="button" onClick={onTap} aria-pressed={mode === "tap"}
+        <button type="button" onClick={onTap} aria-pressed={mode === "tap"} data-testid="btn-mode-tap"
           className={`lmc-card lmc-tap ${mode === "tap" ? "on-tap" : ""}`}>
           <div className="lmc-body">
             <span className="lmc-fan" aria-hidden />

@@ -70,6 +70,7 @@ export default function SubmitModeToggle({ className = "" }: { className?: strin
         type="button"
         onClick={() => save("auto")}
         aria-pressed={mode === "auto"}
+        data-testid="btn-submit-mode-auto"
         title="Auto — HireDrop fills and sends applications for you"
         className={[
           "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition",
@@ -85,6 +86,7 @@ export default function SubmitModeToggle({ className = "" }: { className?: strin
         type="button"
         onClick={() => save("tap")}
         aria-pressed={mode === "tap"}
+        data-testid="btn-submit-mode-tap"
         title="Tap — you review and approve each application before it sends"
         className={[
           "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition",
