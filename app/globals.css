@@ -328,10 +328,12 @@ h1, h2, h3 {
   --background: #FFFFFF;
   --surface: #FFFEF9;
   --surface2: #F7F1E1;
-  /* CONTRAST (Igor 09-14: «все рамки и контуры днём должны быть чёрными,
-     текст чёрный, не серый»): hairlines go ink, secondary text goes ink. */
-  --border: #1A1A22;
-  --text2: #1A1A2E;
+  /* CONTRAST v2 (Igor 09-14): pure-black 1px on EVERYTHING read as a wireframe
+     («дизайн дневной уродский»). Contrast now comes from dark-but-hairline
+     borders + card depth (shadow), and secondary text is a dark slate — far
+     darker than the old washed grey, still one step under primary ink. */
+  --border: rgba(26, 26, 34, 0.18);
+  --text2: #3A3A46;
 
   /* Re-derive the --color-* aliases HERE. @theme inline declares them on :root
      as var(--accent) etc., and a custom property resolves its var() on the
@@ -512,10 +514,19 @@ h1, h2, h3 {
   color: var(--accent);
 }
 
-/* Day text is BLACK, not grey (Igor 09-14). --text2 is already ink, but the
-   alpha'd utilities (text-text2/45 and friends) still render grey — black at
-   45% IS grey — so they are forced to full ink by day. */
-.hd-dash-root:not(.dark) [class*="text-text2"] { color: var(--text); }
+/* Day secondary text never washes out: the alpha'd utilities (text-text2/45
+   and friends) would render pale grey, so they are floored to the SOLID
+   slate — readable, still secondary to the ink primary. */
+.hd-dash-root:not(.dark) [class*="text-text2"] { color: var(--text2); }
+
+/* Day cards lift with light, not outline: soft lit edge + close contact +
+   wide cast (the same depth recipe as the day buttons, #149). */
+.hd-dash-root:not(.dark) .bg-surface.rounded-xl,
+.hd-dash-root:not(.dark) .bg-surface.rounded-2xl {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 1px 2px rgba(26, 26, 34, 0.07),
+    0 12px 28px -14px rgba(26, 26, 34, 0.16);
+}
 
 .dark { color-scheme: dark; }
 
