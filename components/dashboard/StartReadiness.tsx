@@ -143,7 +143,15 @@ export default function StartReadinessModal({
   const failed = checks.filter((c) => !c.ok);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={onClose}>
+    // A driver that clicks Start and sees nothing happen needs to know WHICH modal
+    // intercepted it. `data-blockers` names the unmet checks, so "start did nothing"
+    // becomes "start is gated on: resume, keywords".
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      onClick={onClose}
+      data-testid="readiness-modal"
+      data-blockers={checks.filter((c) => !c.ok).map((c) => c.id).join("|")}
+    >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
       <div
         className="relative w-full max-w-md bg-surface border border-border rounded-2xl shadow-xl p-6"
@@ -154,7 +162,7 @@ export default function StartReadinessModal({
 
         <div className="flex items-start justify-between gap-3 mb-1">
           <h3 className="text-lg font-bold text-text">Almost there</h3>
-          <button onClick={onClose} className="text-text2/50 hover:text-text transition -mr-1 -mt-1 p-1">
+          <button onClick={onClose} data-testid="btn-readiness-close" className="text-text2/50 hover:text-text transition -mr-1 -mt-1 p-1">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
