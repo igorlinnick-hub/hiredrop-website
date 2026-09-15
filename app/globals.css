@@ -508,17 +508,36 @@ h1, h2, h3 {
 
 .dark { color-scheme: dark; }
 
+/* Night greys → BLACK GLASS (Igor 09-14: «кнопки вместо серого чёрными, но
+   прозрачнее… так же и блок с работами»). The grey-blue surface tokens read
+   as panels painted over the wallpaper; translucent black lets it through.
+   Same override pattern as the day scope's .bg-surface repaint. */
+.dark .bg-surface { background-color: rgba(8, 8, 15, 0.60); }
+.dark .bg-surface2 { background-color: rgba(15, 15, 24, 0.65); }
+/* Overlays must stay readable: the sticky table header would ghost rows
+   through it, and dropdown menus sit on arbitrary content. Near-opaque. */
+.dark thead.bg-surface { background-color: rgba(8, 8, 15, 0.94); }
+.dark .profile-menu, .dark [role="menu"], .dark [role="listbox"] {
+  background-color: rgba(10, 10, 18, 0.94);
+}
+
+/* Night digits go WHITE where they sat grey/violet (Igor 09-14) —
+   the count chips on Job Listings tabs. */
+.dark .jt-count { color: rgba(255, 255, 255, 0.92); }
+
 /* Day ground: OUR fan wallpaper behind everything, softly blurred (Igor 09-11:
    "наша картинка на бэкграунде, заблюрено слегка"; кнопки поверх — полупрозрачное
    стекло). A fixed ::before carries image + blur so content never inherits the
    filter; a light wash keeps panels readable. Night gets the violet twin — same
    frame, same geometry, so the theme switch reads as time of day. */
 .hd-dash-root { position: relative; isolation: isolate; }
-/* The page-wide fan is NIGHT-ONLY now: by day the ground is plain white and
-   the fan lives inside the Auto/Tap cards instead (Igor 09-12). */
+/* The page-wide wallpaper is NIGHT-ONLY now: by day the ground is plain white
+   and the fan lives inside the Auto/Tap cards instead (Igor 09-12).
+   09-14: the page ground is a DIFFERENT image (U7, calm deep blue-purple) —
+   the fan stays inside the cards; same image twice read as a mistake. */
 .hd-dash-root.dark::before {
   content: ""; position: fixed; inset: -40px; z-index: -1;
-  background: url("/bg/fan-night.jpg") center / cover no-repeat;
+  background: url("/bg/ground-night.jpg") center / cover no-repeat;
   filter: blur(14px) saturate(1.05);
 }
 .hd-dash-root.dark::after {
