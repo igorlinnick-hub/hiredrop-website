@@ -427,9 +427,17 @@ export default function QuickActions({
       // a fixed order means roles 5-7 never get searched at all. Arm the extension with the
       // order the backend just handed back — sending our own local list would keep the
       // rotation in the server's record of the run while the browser searched role #1 first.
-      const started = await apiPost<{ filters?: { keywords?: string[] } }>(
-        "/campaign/start", t, { keywords, platforms: effPlatforms, location, job_type: jobType });
+      const started = await apiPost<{
+        filters?: { keywords?: string[]; platforms?: string[] };
+        skipped_platforms?: string[];
+      }>("/campaign/start", t, { keywords, platforms: effPlatforms, location, job_type: jobType });
       const runKeywords = started?.filters?.keywords?.length ? started.filters.keywords : keywords;
+      // Same reason for PLATFORMS: an auto run cannot finish a Lever apply (captcha needs a
+      // human), so the server leaves Lever out and names it in `skipped_platforms`. Sending
+      // our own list would walk the extension straight into the board the server excluded.
+      const runPlatforms = started?.filters?.platforms?.length
+        ? started.filters.platforms
+        : effPlatforms;
 
       // Ask the extension to launch, and WAIT for its verdict: it can refuse (e.g.
       // pre-flight found the target platform logged out). Ignoring that left a
@@ -454,7 +462,7 @@ export default function QuickActions({
         window.addEventListener("message", onMsg);
         window.postMessage({
           type: "HIREDROP_START_CAMPAIGN",
-          filters: { keywords: runKeywords, platforms: effPlatforms, location, job_type: jobType, work_setting: workSetting, search_radius_miles: radius, platform_mode: allMode ? "all" : "single" },
+          filters: { keywords: runKeywords, platforms: runPlatforms, location, job_type: jobType, work_setting: workSetting, search_radius_miles: radius, platform_mode: allMode ? "all" : "single" },
         }, "*");
         setTimeout(() => finish(null), 5000);
       });
@@ -474,7 +482,14 @@ export default function QuickActions({
       setCampaignRunning(true);
       router.push("/dashboard/campaign");
     } catch (e) {
-      setErr(e instanceof ApiError ? e.message : String(e));
+      // Lever alone in auto mode: the server refuses rather than starting a run that can
+      // only stall on a captcha. Say it in words, with both ways forward.
+      const raw = e instanceof ApiError ? e.message : String(e);
+      setErr(
+        raw.includes("lever_needs_tap")
+          ? "Lever is the only board selected, and its apply form needs a human for the captcha. Add another platform, or switch to Tap and review the cards yourself."
+          : raw
+      );
       setBusy(null);
     }
   }
