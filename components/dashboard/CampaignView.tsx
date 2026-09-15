@@ -581,6 +581,22 @@ export default function CampaignView({ token: initialToken }: Props) {
         data-found={String(stats.found)}
         data-activity={String(activity.length)}
         data-run-started={runStartedAt ?? ""}
+        /* The COUNT of activity entries is not observation — it was 50 for the whole of
+           the 2026-09-15 run while the run sat dead on an Indeed login wall, and the
+           message naming secure.indeed.com/auth was on screen the entire time. What a
+           watcher needs is the last line and how long it has been the last line: a run
+           that goes quiet is the shape most failures here actually take. */
+        data-last-activity={activity[0] ? activity[0].message : ""}
+        data-last-activity-level={activity[0]?.level ?? ""}
+        data-silent-secs={
+          lastActivityTs ? String(Math.max(0, Math.floor((nowTs - lastActivityTs) / 1000))) : ""
+        }
+        /* Platform sign-in state. The run that prompted these attributes died on an Indeed
+           login wall; the extension already knew (connections carries logged_out) and
+           nothing that watched the run could see it. */
+        data-connections={Object.entries(connections)
+          .map(([id, c]) => `${id}:${c?.status ?? "unknown"}`)
+          .join("|")}
       />
       <style>{`
         @keyframes hd-slide-in {
