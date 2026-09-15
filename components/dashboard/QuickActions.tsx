@@ -513,7 +513,17 @@ export default function QuickActions({
   const jobTypeLabel = JOB_TYPES.find((j) => j.value === jobType)?.label ?? jobType;
 
   return (
-    <div className="mb-6 space-y-3">
+    // Machine-readable run state. A driver (scripts/e2e.py) reads THESE, never the button
+    // captions — a caption is copy and changes with design; these are the state itself.
+    <div
+      className="mb-6 space-y-3"
+      data-testid="quick-actions"
+      data-running={campaignRunning ? "true" : "false"}
+      data-mode={modeLoaded ? mode : ""}
+      data-busy={busy ?? ""}
+      data-keywords={keywords.join("|")}
+      data-platforms={platforms.join("|")}
+    >
 
       {/* How you apply — the primary choice, up top as two big cards. Hidden while a
           campaign is running (mode is a pre-launch decision). */}
@@ -593,7 +603,7 @@ export default function QuickActions({
               <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />
               Watch Live
             </a>
-            <button onClick={stopCampaign} disabled={busy !== null}
+            <button onClick={stopCampaign} disabled={busy !== null} data-testid="btn-stop"
               className="px-4 py-2 text-sm font-medium rounded-xl border bg-red/8 text-red
                 border-red/20 hover:bg-red/15 disabled:opacity-50 transition whitespace-nowrap">
               {busy === "stop" ? "Stopping…" : "Stop"}
@@ -601,7 +611,7 @@ export default function QuickActions({
           </>
         ) : (
           <>
-            <button onClick={findJobs} disabled={busy !== null}
+            <button onClick={findJobs} disabled={busy !== null} data-testid="btn-find-jobs"
               className="px-4 py-2 text-sm font-medium rounded-xl border border-border bg-surface
                 text-text hover:bg-surface2 hover:border-accent/40 disabled:opacity-50 transition whitespace-nowrap">
               {busy === "find" ? "Scanning…" : "Find Jobs"}
@@ -610,7 +620,7 @@ export default function QuickActions({
             {/* Primary action is mode-aware: Auto starts the campaign here; Tap opens
                 the dedicated tap page (its own Start lives there). Prevents the "auto
                 started with tap mode" trap. */}
-            <button onClick={mode === "tap" ? goTap : ensureReadyThenLaunch} disabled={busy !== null || !modeLoaded}
+            <button onClick={mode === "tap" ? goTap : ensureReadyThenLaunch} disabled={busy !== null || !modeLoaded} data-testid="btn-start"
               className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl
                 bg-accent text-white hover:bg-accent2 disabled:opacity-50 transition shadow-sm whitespace-nowrap">
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
@@ -823,7 +833,7 @@ export default function QuickActions({
           just reloaded/updated and this tab still holds the dead content-script bridge.
           Show a friendly, actionable banner (refresh reconnects) instead of raw red text. */}
       {err && (/context_invalidated/.test(err) ? (
-        <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/[0.06] px-3 py-2 text-xs text-text2">
+        <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/[0.06] px-3 py-2 text-xs text-text2" data-testid="qa-stale-bridge">
           <svg className="w-4 h-4 shrink-0 text-accent" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
@@ -831,12 +841,13 @@ export default function QuickActions({
           <button
             onClick={() => window.location.reload()}
             className="shrink-0 rounded-lg bg-accent px-2.5 py-1 font-semibold text-white hover:bg-accent2 transition"
+            data-testid="btn-refresh-bridge"
           >
             Refresh
           </button>
         </div>
       ) : (
-        <p className="text-xs text-red px-1">{err}</p>
+        <p className="text-xs text-red px-1" data-testid="qa-error">{err}</p>
       ))}
 
       {/* Start flow: readiness checklist if something's missing, else the launch
