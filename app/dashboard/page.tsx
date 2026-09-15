@@ -10,6 +10,7 @@ import type { Job } from "@/lib/types";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import StatsCards from "@/components/dashboard/StatsCards";
 import JobsTable from "@/components/dashboard/JobsTable";
+import DevPanel from "@/components/dashboard/DevPanel";
 import QuickActions from "@/components/dashboard/QuickActions";
 import PlatformsIndicator from "@/components/dashboard/PlatformsIndicator";
 import SetupChecklist from "@/components/dashboard/SetupChecklist";
@@ -117,6 +118,9 @@ export default async function DashboardPage() {
 
       {/* Phone visitors: honest hand-off — setup works here, applying runs on the computer */}
       <MobileHandoff campaignRunning={campaignRunning} />
+
+      {/* Hidden unless localStorage hd_dev === "1" (set via /dashboard?dev=1). */}
+      <DevPanel token={token} />
 
       <QuickActions
         token={token}
