@@ -598,10 +598,13 @@ export default function CampaignView({ token: initialToken }: Props) {
            полупрозрачно" — no violet by day. Warm candle-light fan: cream, soft
            butter-yellow, white, a faint honey edge. Alphas kept low so it reads as
            light falling on the plate, not paint. Night keeps the violet spectrum. */
+        /* The auto-apply well gets its OWN image pair (U8 light-wave + daytwin) —
+           Igor 09-14: «у нас разные картинки, почему одну и ту же используешь».
+           The fan pair stays on the Auto/Tap mode cards. */
         .hd-well-img {
-          background: url("/bg/fan-day.jpg") center 30% / cover no-repeat;
+          background: url("/bg/well-day.jpg") center 30% / cover no-repeat;
         }
-        .dark .hd-well-img { background-image: url("/bg/fan-night.jpg"); }
+        .dark .hd-well-img { background-image: url("/bg/well-night.jpg"); }
         /* Readability wash: clear at the top (the picture breathes), rising
            toward the counter so plate, captions and status stay legible. */
         .hd-well-wash {
@@ -996,8 +999,13 @@ export default function CampaignView({ token: initialToken }: Props) {
       {/* Split view */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-5">
 
-        {/* Left — live counter hero + current action; raw log behind a toggle */}
-        <div className="bg-surface border border-border rounded-xl flex flex-col overflow-hidden">
+        {/* Left — live counter hero + current action; raw log behind a toggle.
+            The image FILLS the whole frame (Igor 09-14: «картинка должна
+            заполнять контур рамки») — the well/caption/footer sit on top of it,
+            the wash keeps them readable. */}
+        <div className="relative isolate bg-surface border border-border rounded-xl flex flex-col overflow-hidden">
+          <div aria-hidden className="hd-well-img absolute inset-0 -z-10 pointer-events-none" />
+          <div aria-hidden className="hd-well-wash absolute inset-0 -z-10 pointer-events-none" />
           <div className="px-5 py-3.5 border-b border-border shrink-0">
             <h3 className="text-sm font-semibold text-text">Live Activity</h3>
           </div>
@@ -1010,8 +1018,6 @@ export default function CampaignView({ token: initialToken }: Props) {
               and captions readable on top; the counter sits low in a taller
               frame, so the picture gets the upper half. */}
           <div className="hd-well relative px-5 pt-32 pb-10 min-h-[340px] flex flex-col justify-end text-center overflow-hidden shrink-0">
-            <div aria-hidden className="hd-well-img absolute inset-0 pointer-events-none" />
-            <div aria-hidden className="hd-well-wash absolute inset-0 pointer-events-none" />
             <div className="relative flex flex-col items-center">
               <div className="hd-plate">
                 {bumpKey > 0 && <span key={bumpKey} aria-hidden className="hd-ripple pointer-events-none" />}

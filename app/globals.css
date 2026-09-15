@@ -328,7 +328,10 @@ h1, h2, h3 {
   --background: #FFFFFF;
   --surface: #FFFEF9;
   --surface2: #F7F1E1;
-  --border: #E8DDC2;
+  /* CONTRAST (Igor 09-14: «все рамки и контуры днём должны быть чёрными,
+     текст чёрный, не серый»): hairlines go ink, secondary text goes ink. */
+  --border: #1A1A22;
+  --text2: #1A1A2E;
 
   /* Re-derive the --color-* aliases HERE. @theme inline declares them on :root
      as var(--accent) etc., and a custom property resolves its var() on the
@@ -347,6 +350,7 @@ h1, h2, h3 {
   --color-surface: var(--surface);
   --color-surface2: var(--surface2);
   --color-border: var(--border);
+  --color-text2: var(--text2);
 
   /* ── Depth, by the Refactoring UI rules (Igor 09-11: "плоские, без стека
      глубины"). Three jobs, one box-shadow list — two declarations don't merge:
@@ -507,6 +511,11 @@ h1, h2, h3 {
 .hd-dash-root:not(.dark) .hd-mobilenav .nav-active svg {
   color: var(--accent);
 }
+
+/* Day text is BLACK, not grey (Igor 09-14). --text2 is already ink, but the
+   alpha'd utilities (text-text2/45 and friends) still render grey — black at
+   45% IS grey — so they are forced to full ink by day. */
+.hd-dash-root:not(.dark) [class*="text-text2"] { color: var(--text); }
 
 .dark { color-scheme: dark; }
 
