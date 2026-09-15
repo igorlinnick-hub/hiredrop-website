@@ -227,7 +227,9 @@ h1, h2, h3 {
 .dark .hd-glass {
   --hg-bloomA: rgba(146,138,255,.7);
   --hg-bloomB: rgba(74,98,240,.32);
-  background: linear-gradient(165deg, #1b1830 0%, #100d1c 100%);
+  /* Night cards follow the 09-14 black-glass concept: translucent black so the
+     wallpaper shows through (was an opaque violet gradient). */
+  background: linear-gradient(165deg, rgba(16,14,28,.62) 0%, rgba(7,6,14,.58) 100%);
   border: 1px solid rgba(255,255,255,.1);
   box-shadow: 0 22px 48px -24px rgba(70,48,150,.5), inset 0 1px 0 rgba(255,255,255,.1);
 }
@@ -326,7 +328,12 @@ h1, h2, h3 {
   --background: #FFFFFF;
   --surface: #FFFEF9;
   --surface2: #F7F1E1;
-  --border: #E8DDC2;
+  /* CONTRAST v2 (Igor 09-14): pure-black 1px on EVERYTHING read as a wireframe
+     («дизайн дневной уродский»). Contrast now comes from dark-but-hairline
+     borders + card depth (shadow), and secondary text is a dark slate — far
+     darker than the old washed grey, still one step under primary ink. */
+  --border: rgba(26, 26, 34, 0.18);
+  --text2: #3A3A46;
 
   /* Re-derive the --color-* aliases HERE. @theme inline declares them on :root
      as var(--accent) etc., and a custom property resolves its var() on the
@@ -345,6 +352,7 @@ h1, h2, h3 {
   --color-surface: var(--surface);
   --color-surface2: var(--surface2);
   --color-border: var(--border);
+  --color-text2: var(--text2);
 
   /* ── Depth, by the Refactoring UI rules (Igor 09-11: "плоские, без стека
      глубины"). Three jobs, one box-shadow list — two declarations don't merge:
@@ -506,7 +514,38 @@ h1, h2, h3 {
   color: var(--accent);
 }
 
+/* Day secondary text never washes out: the alpha'd utilities (text-text2/45
+   and friends) would render pale grey, so they are floored to the SOLID
+   slate — readable, still secondary to the ink primary. */
+.hd-dash-root:not(.dark) [class*="text-text2"] { color: var(--text2); }
+
+/* Day cards lift with light, not outline: soft lit edge + close contact +
+   wide cast (the same depth recipe as the day buttons, #149). */
+.hd-dash-root:not(.dark) .bg-surface.rounded-xl,
+.hd-dash-root:not(.dark) .bg-surface.rounded-2xl {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 1px 2px rgba(26, 26, 34, 0.07),
+    0 12px 28px -14px rgba(26, 26, 34, 0.16);
+}
+
 .dark { color-scheme: dark; }
+
+/* Night greys → BLACK GLASS (Igor 09-14: «кнопки вместо серого чёрными, но
+   прозрачнее… так же и блок с работами»). The grey-blue surface tokens read
+   as panels painted over the wallpaper; translucent black lets it through.
+   Same override pattern as the day scope's .bg-surface repaint. */
+.dark .bg-surface { background-color: rgba(8, 8, 15, 0.60); }
+.dark .bg-surface2 { background-color: rgba(15, 15, 24, 0.65); }
+/* Overlays must stay readable: the sticky table header would ghost rows
+   through it, and dropdown menus sit on arbitrary content. Near-opaque. */
+.dark thead.bg-surface { background-color: rgba(8, 8, 15, 0.94); }
+.dark .profile-menu, .dark [role="menu"], .dark [role="listbox"] {
+  background-color: rgba(10, 10, 18, 0.94);
+}
+
+/* Night digits go WHITE where they sat grey/violet (Igor 09-14) —
+   the count chips on Job Listings tabs. */
+.dark .jt-count { color: rgba(255, 255, 255, 0.92); }
 
 /* Day ground: OUR fan wallpaper behind everything, softly blurred (Igor 09-11:
    "наша картинка на бэкграунде, заблюрено слегка"; кнопки поверх — полупрозрачное
@@ -514,11 +553,13 @@ h1, h2, h3 {
    filter; a light wash keeps panels readable. Night gets the violet twin — same
    frame, same geometry, so the theme switch reads as time of day. */
 .hd-dash-root { position: relative; isolation: isolate; }
-/* The page-wide fan is NIGHT-ONLY now: by day the ground is plain white and
-   the fan lives inside the Auto/Tap cards instead (Igor 09-12). */
+/* The page-wide wallpaper is NIGHT-ONLY now: by day the ground is plain white
+   and the fan lives inside the Auto/Tap cards instead (Igor 09-12).
+   09-14: the page ground is a DIFFERENT image (U7, calm deep blue-purple) —
+   the fan stays inside the cards; same image twice read as a mistake. */
 .hd-dash-root.dark::before {
   content: ""; position: fixed; inset: -40px; z-index: -1;
-  background: url("/bg/fan-night.jpg") center / cover no-repeat;
+  background: url("/bg/ground-night.jpg") center / cover no-repeat;
   filter: blur(14px) saturate(1.05);
 }
 .hd-dash-root.dark::after {

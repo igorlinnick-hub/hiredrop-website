@@ -237,7 +237,7 @@ function Pill({
         {icon}
       </svg>
       {label}
-      <span className={["text-[11px] tabular-nums", active ? "text-accent/70" : "text-text2/45"].join(" ")}>
+      <span className={["jt-count text-[11px] tabular-nums", active ? "text-accent/70" : "text-text2/45"].join(" ")}>
         {count}
       </span>
     </button>
