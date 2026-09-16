@@ -57,6 +57,19 @@ const NAV_ITEMS = [
   },
 ];
 
+// Shown only to actual affiliates (codes are issued by hand, so this is a small
+// group) — a permanent "Affiliate" tab for everyone else would advertise a
+// program they can't self-serve into.
+const AFFILIATE_NAV_ITEM = {
+  label: "Affiliate",
+  href: "/dashboard/affiliate",
+  icon: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+};
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -66,11 +79,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // pages use hardcoded light surfaces). Set in an effect (not the initializer) so SSR
   // and first client render agree; the swap is one frame on this authed page.
   const [dark, setDark] = useState(false);
+  // RLS returns this user's own affiliate row or nothing — no extra API surface.
+  const [isAffiliate, setIsAffiliate] = useState(false);
 
   useEffect(() => {
     async function loadUser() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) setEmail(user.email || "");
+      const { data: affiliate } = await supabase
+        .from("affiliates")
+        .select("code")
+        .maybeSingle();
+      setIsAffiliate(!!affiliate);
     }
     loadUser();
     try { setDark(localStorage.getItem("hd_theme") === "dark"); } catch { /* noop */ }
@@ -111,8 +131,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Flow-style split: the daily surfaces live at the top of the rail, the
   // service items (Extension, Settings) sit in their own cluster at the bottom.
-  const railMain = NAV_ITEMS.filter((i) => !["Settings", "Extension"].includes(i.label));
-  const railFoot = NAV_ITEMS.filter((i) => ["Extension", "Settings"].includes(i.label));
+  const navItems = isAffiliate ? [...NAV_ITEMS, AFFILIATE_NAV_ITEM] : NAV_ITEMS;
+  const railMain = navItems.filter((i) => !["Settings", "Extension"].includes(i.label));
+  const railFoot = navItems.filter((i) => ["Extension", "Settings"].includes(i.label));
 
   return (
     <div className={["min-h-screen bg-background hd-dash-root", dark ? "dark" : ""].join(" ")}>
@@ -175,7 +196,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Mobile nav keeps the horizontal pills — a fixed rail costs too much
                 width below lg. */}
             <nav className="hd-mobilenav flex flex-wrap gap-1.5 mb-8 lg:hidden">
-              {NAV_ITEMS.map((item) => (
+              {navItems.map((item) => (
                 <Link key={item.href} href={item.href} className={navLinkCls(pathname === item.href, "pill")}>
                   {item.icon}
                   {item.label}
