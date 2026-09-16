@@ -1,6 +1,5 @@
 import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
-import Link from "next/link";
 
 import { pageMetadata } from "@/lib/seo";
 
@@ -26,7 +25,7 @@ export default function AffiliatePage() {
               <div className="space-y-4 text-sm text-gray-600">
                 <div className="flex gap-3">
                   <span className="w-7 h-7 bg-accent/10 text-accent rounded-full flex items-center justify-center text-xs font-bold shrink-0">1</span>
-                  <p>Sign up for the affiliate program and get your unique referral link.</p>
+                  <p>Ask us for a link — we issue it against your HireDrop account, usually same day.</p>
                 </div>
                 <div className="flex gap-3">
                   <span className="w-7 h-7 bg-accent/10 text-accent rounded-full flex items-center justify-center text-xs font-bold shrink-0">2</span>
@@ -34,7 +33,7 @@ export default function AffiliatePage() {
                 </div>
                 <div className="flex gap-3">
                   <span className="w-7 h-7 bg-accent/10 text-accent rounded-full flex items-center justify-center text-xs font-bold shrink-0">3</span>
-                  <p>Earn 30% recurring commission for every Pro subscriber you refer.</p>
+                  <p>Earn 30% of every payment they make — tracked in your dashboard, paid monthly by PayPal.</p>
                 </div>
               </div>
             </div>
@@ -54,16 +53,27 @@ export default function AffiliatePage() {
               </div>
             </div>
 
+            {/* Links are issued by hand, one conversation at a time (Igor, 09-15):
+                at five to ten partners that beats building a signup funnel, and it
+                keeps the program clear of farmed accounts. So this CTA asks for a
+                link instead of promising a waitlist that nothing drains. */}
             <div className="text-center">
               <p className="text-gray-600 text-sm mb-4">
-                The affiliate program is launching soon. Sign up to be notified.
+                We hand out links one at a time rather than running an open signup. Create a
+                HireDrop account, email us, and you&apos;ll have your link the same day — it shows
+                up under <span className="font-medium text-gray-900">Affiliate</span> in your
+                dashboard, with your referrals and earnings next to it.
               </p>
-              <Link
-                href="/signup"
+              <a
+                href="mailto:support@hiredrop.io?subject=Affiliate%20link%20request"
                 className="inline-block bg-accent hover:bg-accent/90 text-white font-semibold px-8 py-3.5 rounded-[10px] text-lg transition shadow-lg shadow-accent/25"
               >
-                Join Waitlist
-              </Link>
+                Ask for your link
+              </a>
+              <p className="text-gray-500 text-xs mt-4">
+                You must disclose that you earn a commission when you share your link — &ldquo;I
+                get a cut if you sign up&rdquo; or #ad. That&apos;s an FTC rule.
+              </p>
             </div>
           </div>
         </div>
