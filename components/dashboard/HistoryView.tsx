@@ -11,6 +11,8 @@
  *    product invariant's "handed back" surface.
  *  - Applications grouped BY DAY: each row = job, platform, status, applied-time,
  *    and a receipt (verified dot + confirmation screenshot) when we captured one.
+ *    Every row expands into the full stored record: job-posting link, cover letter,
+ *    tailored resume text, and the exact résumé PDF submitted (when they exist).
  *
  * Applications come from the backend (authoritative record, passed as a prop).
  * Receipts + hand-backs come from the extension via the ping.js bridge
@@ -66,6 +68,14 @@ export default function HistoryView({ applications }: { applications: Applicatio
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [handbacks, setHandbacks] = useState<HandBack[]>([]);
   const [openShot, setOpenShot] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
 
   // Pull receipts + hand-backs from the extension (bridge). Non-fatal if absent.
   useEffect(() => {
@@ -179,49 +189,73 @@ export default function HistoryView({ applications }: { applications: Applicatio
             <div className="rounded-xl border border-border bg-surface divide-y divide-border">
               {apps.map((a) => {
                 const r = receiptFor(a);
+                const isOpen = expanded.has(a.id);
                 return (
-                  <div key={a.id} className="p-3.5 flex items-center gap-3 flex-wrap">
-                    <span
-                      className={["inline-block w-2 h-2 rounded-full shrink-0",
-                        r ? (r.verified ? "bg-emerald-500" : "bg-amber-400") : "bg-border"].join(" ")}
-                      title={r ? (r.verified ? `confirmed (${r.signal})` : "submitted — confirmation page not detected") : "no receipt captured"}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-text truncate">{a.title} <span className="text-text2 font-normal">@ {a.company}</span></div>
-                      <div className="text-xs text-text2">
-                        {platformName(a.platform)}
-                        {" · "}
-                        {new Date(a.date_applied).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  <div key={a.id}>
+                    {/* The whole row toggles the detail — same affordance as a job row in
+                        Job Listings. Inner links/buttons stop propagation. */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => toggleExpand(a.id)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleExpand(a.id); } }}
+                      className="p-3.5 flex items-center gap-3 flex-wrap cursor-pointer hover:bg-surface2/50 transition"
+                      data-testid="history-row"
+                    >
+                      <span
+                        className={["inline-block w-2 h-2 rounded-full shrink-0",
+                          r ? (r.verified ? "bg-emerald-500" : "bg-amber-400") : "bg-border"].join(" ")}
+                        title={r ? (r.verified ? `confirmed (${r.signal})` : "submitted — confirmation page not detected") : "no receipt captured"}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium text-text truncate">{a.title} <span className="text-text2 font-normal">@ {a.company}</span></div>
+                        <div className="text-xs text-text2">
+                          {platformName(a.platform)}
+                          {" · "}
+                          {new Date(a.date_applied).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </div>
                       </div>
-                    </div>
-                    <span className={["text-[11px] px-2 py-0.5 rounded-full border shrink-0",
-                      RESPONSE_STATUSES.has(a.status) ? "border-accent/40 text-accent" : "border-border text-text2"].join(" ")}>
-                      {statusLabel(a.status)}
-                    </span>
-                    {/* An interview is the one row where the next move isn't reading the
-                        record — it's getting ready. Put that first, and loudly. */}
-                    {INTERVIEW_STATUSES.has(a.status) && (
-                      <Link
-                        href={`/dashboard/interview/${a.id}`}
-                        className="shrink-0 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-white transition hover:bg-accent-hover"
+                      <span className={["text-[11px] px-2 py-0.5 rounded-full border shrink-0",
+                        RESPONSE_STATUSES.has(a.status) ? "border-accent/40 text-accent" : "border-border text-text2"].join(" ")}>
+                        {statusLabel(a.status)}
+                      </span>
+                      {/* An interview is the one row where the next move isn't reading the
+                          record — it's getting ready. Put that first, and loudly. */}
+                      {INTERVIEW_STATUSES.has(a.status) && (
+                        <Link
+                          href={`/dashboard/interview/${a.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="shrink-0 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-white transition hover:bg-accent-hover"
+                        >
+                          Prep for this
+                        </Link>
+                      )}
+                      {a.link && (
+                        <a href={a.link} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                          className="text-[11px] text-accent hover:underline shrink-0">job post ↗</a>
+                      )}
+                      {r?.shot && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setOpenShot(openShot === r.shot ? null : r.shot!); }}
+                          className="text-[11px] text-accent hover:underline shrink-0"
+                        >
+                          {openShot === r.shot ? "hide proof" : "view proof"}
+                        </button>
+                      )}
+                      <svg
+                        className={["w-3.5 h-3.5 shrink-0 text-text2 transition-transform", isOpen ? "rotate-180" : ""].join(" ")}
+                        viewBox="0 0 20 20" fill="currentColor" aria-hidden
                       >
-                        Prep for this
-                      </Link>
-                    )}
-                    {a.resume_pdf_url && (
-                      <a href={a.resume_pdf_url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent hover:underline shrink-0">résumé sent ↗</a>
-                    )}
-                    {r?.shot && (
-                      <button onClick={() => setOpenShot(openShot === r.shot ? null : r.shot!)} className="text-[11px] text-accent hover:underline shrink-0">
-                        {openShot === r.shot ? "hide proof" : "view proof"}
-                      </button>
-                    )}
-                    {r?.shot && openShot === r.shot && (
-                      <div className="w-full mt-2 rounded-lg border border-border overflow-hidden">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={r.shot} alt="Submission confirmation" className="w-full" />
-                      </div>
-                    )}
+                        <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+                      </svg>
+                      {r?.shot && openShot === r.shot && (
+                        <div className="w-full mt-2 rounded-lg border border-border overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={r.shot} alt="Submission confirmation" className="w-full" />
+                        </div>
+                      )}
+                    </div>
+                    {isOpen && <ApplicationDetail a={a} />}
                   </div>
                 );
               })}
@@ -229,6 +263,63 @@ export default function HistoryView({ applications }: { applications: Applicatio
           </div>
         ))
       )}
+    </div>
+  );
+}
+
+/** Expanded record of one application: everything we durably stored about the submit.
+ *  Documents (cover letter / tailored resume) exist only for applications where the AI
+ *  produced them — older rows honestly say so instead of showing an empty box. */
+function ApplicationDetail({ a }: { a: Application }) {
+  const hasDocs = !!(a.cover_letter || a.tailored_resume || a.resume_pdf_url);
+  return (
+    <div className="px-3.5 pb-4 pt-1 bg-surface2/30" data-testid="history-detail">
+      <div className="flex items-center gap-3 flex-wrap text-[12px] mb-2">
+        {a.link ? (
+          <a href={a.link} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:underline">
+            Open job posting ↗
+          </a>
+        ) : (
+          <span className="text-text2">No job link saved for this one.</span>
+        )}
+        {a.resume_pdf_url && (
+          <a href={a.resume_pdf_url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:underline">
+            Résumé PDF we submitted ↗
+          </a>
+        )}
+      </div>
+      {a.cover_letter && (
+        <DocBlock label="Cover letter we sent" text={a.cover_letter} />
+      )}
+      {a.tailored_resume && (
+        <DocBlock label="Tailored resume" text={a.tailored_resume} />
+      )}
+      {!hasDocs && (
+        <p className="text-[12px] text-text2">
+          No documents stored for this application — it went through with your standard resume,
+          before per-job documents were kept. Newer applications include the cover letter and the
+          exact résumé PDF submitted.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function DocBlock({ label, text }: { label: string; text: string }) {
+  return (
+    <div className="mb-3 last:mb-0">
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className="text-[11px] font-semibold text-accent uppercase tracking-wide">{label}</span>
+        <button
+          onClick={() => navigator.clipboard.writeText(text)}
+          className="ml-auto text-[11px] text-text2 hover:text-accent transition px-2 py-0.5 rounded border border-border"
+        >
+          Copy
+        </button>
+      </div>
+      <pre className="text-xs text-text2 whitespace-pre-wrap font-mono bg-surface border border-border rounded-lg p-3 max-h-72 overflow-y-auto">
+        {text}
+      </pre>
     </div>
   );
 }

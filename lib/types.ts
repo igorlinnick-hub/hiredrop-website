@@ -96,6 +96,7 @@ export interface Application {
   title: string;
   company: string;
   platform: string;
+  link?: string; // job posting URL (snapshot — survives job-row deletion)
   date_applied: string;
   status: string;
   cover_letter?: string;
