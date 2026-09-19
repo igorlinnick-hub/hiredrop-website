@@ -11,8 +11,8 @@ import { PLATFORMS } from "@/lib/constants";
 const CONNECTABLE = PLATFORMS.filter((p) => p.connectable);
 const CONN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-type Conn = { status?: string; checkedAt?: string };
-function isLiveConnected(c?: Conn): boolean {
+export type Conn = { status?: string; checkedAt?: string };
+export function isLiveConnected(c?: Conn): boolean {
   if (!c?.status) return false;
   if (c.checkedAt && Date.now() - Date.parse(c.checkedAt) > CONN_TTL_MS) return false;
   return c.status === "connected";
