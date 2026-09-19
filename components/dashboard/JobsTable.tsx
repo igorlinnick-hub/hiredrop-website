@@ -133,7 +133,7 @@ export default function JobsTable({ jobs }: JobsTableProps) {
                     </td>
                     <td className="px-5 py-3.5 text-text2">{new Date(job.date_found).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</td>
                     <td className="px-5 py-3.5">
-                      <a href={job.link} className="text-accent hover:text-accent2 text-xs font-medium">
+                      <a href={job.link} target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent2 text-xs font-medium">
                         View
                       </a>
                     </td>
