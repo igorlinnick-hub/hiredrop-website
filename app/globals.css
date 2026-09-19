@@ -331,9 +331,19 @@ h1, h2, h3 {
   /* CONTRAST v2 (Igor 09-14): pure-black 1px on EVERYTHING read as a wireframe
      («дизайн дневной уродский»). Contrast now comes from dark-but-hairline
      borders + card depth (shadow), and secondary text is a dark slate — far
-     darker than the old washed grey, still one step under primary ink. */
-  --border: rgba(26, 26, 34, 0.18);
+     darker than the old washed grey, still one step under primary ink.
+     09-19: the hairline goes WARM (the popup's #E8DDC2 family) so it sits in the
+     same light as the cream cards instead of reading as a cool pencil line. */
+  --border: rgba(52, 42, 14, 0.20);
   --text2: #3A3A46;
+
+  /* INK (Igor 09-19: «бело-чёрный как в экстеншне»). The popup's one recipe for
+     every primary action is a BLACK slab — #101014 with white type. Gold stops
+     carrying the weight of buttons and goes back to what it is good at: icons,
+     chips, hairlines and the photography. Two steps so the face can hold a
+     top-lit gradient instead of reading as a flat sticker. */
+  --ink: #101014;
+  --ink2: #26262F;
 
   /* Re-derive the --color-* aliases HERE. @theme inline declares them on :root
      as var(--accent) etc., and a custom property resolves its var() on the
@@ -394,63 +404,81 @@ h1, h2, h3 {
   --yellow: #C2560E;
 }
 
-/* ── Day buttons: WHITE face, gold only as a whisper (Igor 09-11: "максимально
-   светлыми с белым градиентом, золото но очень лёгкое"). The weight no longer
-   comes from a filled colour — it comes from the glow and the gold hairline,
-   which is how Apple's own primary buttons read on a light ground.
-   Text is deep gold, not white: on a white face white text is invisible, and
-   near-black would drop the button back to neutral. ── */
+/* ── Day primary action: BLACK, the extension popup's recipe (Igor 09-19:
+   «дашборд вместо жёлтого сделать бело-чёрным как экстеншн»). The previous
+   pale-gold glass face made every button glow and left nothing for the eye to
+   anchor on; ink gives the page one unmistakable "press here" and lets gold go
+   back to accents and photography.
+   Face is a two-stop gradient (top lit, bottom deep) — a flat #101014 slab reads
+   as a sticker; the lit top edge is how a raised object catches light. ── */
 .hd-dash-root:not(.dark) .bg-accent {
-  background-image: linear-gradient(180deg, hsla(52, 100%, 99%, .92) 0%, hsla(47, 100%, 86%, .80) 100%);
-  color: hsl(40, 20%, 10%);
-  border: 1px solid hsla(46, 100%, 64%, .95);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  /* Two bloom radii, not one: a tight bright halo at the edge plus a wide soft
-     wash — one glow at high alpha reads as a blur; split, it reads as light.
-     Shadow hues sit at 44-47 (sunny gold): the earlier 35-38 read brown. */
+  background-image: linear-gradient(180deg, var(--ink2) 0%, var(--ink) 100%);
+  background-color: var(--ink);
+  color: #fff;
+  border: 1px solid var(--ink);
+}
+/* Depth + motion belong to things you can press, not to 6px status dots that
+   also carry .bg-accent (beads, rails, progress fills stay flat ink). */
+.hd-dash-root:not(.dark) button.bg-accent,
+.hd-dash-root:not(.dark) a.bg-accent,
+.hd-dash-root:not(.dark) label.bg-accent,
+.hd-dash-root:not(.dark) [role="button"].bg-accent {
   box-shadow:
-    inset 0 1px 0 hsl(0, 0%, 100%),
-    inset 0 -10px 18px -12px hsla(46, 100%, 62%, .55),
-    0 1px 2px hsla(45, 65%, 48%, .12),
-    0 8px 18px -6px hsla(44, 80%, 52%, .20),
-    0 0 20px -2px hsla(47, 100%, 60%, .55),
-    0 0 52px -10px hsla(46, 100%, 58%, .40);
+    inset 0 1px 0 rgba(255, 255, 255, .16),
+    0 1px 2px rgba(16, 16, 20, .28),
+    0 8px 18px -8px rgba(16, 16, 20, .40);
   transition: box-shadow .22s cubic-bezier(.3,.9,.4,1), transform .22s cubic-bezier(.3,.9,.4,1), border-color .22s;
 }
-.hd-dash-root:not(.dark) .bg-accent:hover {
-  border-color: hsl(46, 100%, 58%);
-  box-shadow:
-    inset 0 1px 0 hsl(0, 0%, 100%),
-    inset 0 -12px 20px -12px hsla(46, 100%, 60%, .70),
-    0 1px 3px hsla(45, 65%, 48%, .10),
-    0 14px 30px -8px hsla(44, 82%, 52%, .24),
-    0 0 26px -2px hsla(47, 100%, 60%, .78),
-    0 0 72px -12px hsla(46, 100%, 58%, .58);
+/* Hover keeps the black face and adds the gold WHISPER as a halo — the warmth
+   is in the light around the button, never in its fill. */
+.hd-dash-root:not(.dark) button.bg-accent:hover,
+.hd-dash-root:not(.dark) a.bg-accent:hover,
+.hd-dash-root:not(.dark) label.bg-accent:hover,
+.hd-dash-root:not(.dark) [role="button"].bg-accent:hover {
   transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .22),
+    0 1px 3px rgba(16, 16, 20, .24),
+    0 14px 28px -10px rgba(16, 16, 20, .46),
+    0 0 30px -8px hsla(46, 100%, 58%, .45);
 }
-/* Pressed: the glow contracts and an inner shadow replaces the lit edge, so the
-   button sits down onto the surface instead of reading as a sticker. */
-.hd-dash-root:not(.dark) .bg-accent:active {
+/* Pressed: the lit edge is replaced by an inner shadow, so it sits down. */
+.hd-dash-root:not(.dark) button.bg-accent:active,
+.hd-dash-root:not(.dark) a.bg-accent:active,
+.hd-dash-root:not(.dark) [role="button"].bg-accent:active {
   transform: translateY(1px);
   box-shadow:
-    inset 0 2px 6px hsla(45, 80%, 50%, .24),
-    0 1px 1px hsla(45, 60%, 48%, .10),
-    0 0 16px -4px hsla(47, 100%, 60%, .42);
+    inset 0 2px 6px rgba(0, 0, 0, .45),
+    0 1px 1px rgba(16, 16, 20, .20);
 }
-/* Keep hover from repainting the face to a solid accent (Tailwind's bg-accent2). */
+/* Keep Tailwind's hover:bg-accent2 from repainting the face amber. */
 .hd-dash-root:not(.dark) .bg-accent:hover,
 .hd-dash-root:not(.dark) .hover\:bg-accent2:hover {
-  background-image: linear-gradient(180deg, hsla(54, 100%, 99%, .95) 0%, hsla(48, 100%, 83%, .86) 100%);
-  color: hsl(40, 22%, 8%);
+  background-image: linear-gradient(180deg, #32323d 0%, #17171d 100%);
+  color: #fff;
+}
+/* Disabled: ink drops to a flat warm grey — a dimmed black still reads pressable. */
+.hd-dash-root:not(.dark) .bg-accent:disabled {
+  background-image: none;
+  background-color: #F0EBDF;
+  border-color: rgba(52, 42, 14, .16);
+  color: #8C8677;
+  box-shadow: none;
+  transform: none;
 }
 
-/* Selected-Tap ring: day is a one-accent world (Igor 09-12 — "зелёная под
-   Tap" was the odd one out). Night keeps the green ring via the component's
-   .dark rule, which this selector cannot reach. */
+/* Selected mode card, day: the chosen one is RINGED IN INK, not lit in gold
+   (09-19). A glowing card next to a black button made two competing "loudest
+   things"; ink ring + a deeper cast says "selected" without adding colour.
+   Night keeps its violet/green glow via the component's .dark rules, which
+   this selector cannot reach. */
+.hd-dash-root:not(.dark) .lmc-card.on,
 .hd-dash-root:not(.dark) .lmc-card.on-tap {
-  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
-  box-shadow: 0 0 30px -6px var(--accent), 0 20px 45px -22px rgba(178, 138, 58, .38);
+  border-color: rgba(16, 16, 20, .85);
+  box-shadow:
+    0 0 0 1px rgba(16, 16, 20, .55),
+    0 22px 45px -24px rgba(16, 16, 20, .55),
+    0 0 34px -12px hsla(46, 100%, 58%, .38);
 }
 
 /* .hd-glass is the dashboard's standard card, and its violet is HARDCODED in
@@ -459,11 +487,16 @@ h1, h2, h3 {
    gold hairline, honey bloom. Night keeps the violet world via .dark .hd-glass,
    which this selector can't reach. */
 .hd-dash-root:not(.dark) .hd-glass {
-  --hg-bloomA: rgba(255, 204, 106, .30);
-  --hg-bloomB: rgba(255, 236, 190, .12);
-  background: linear-gradient(165deg, #ffffff 0%, #fdf5e3 100%);
-  border: 1px solid rgba(198, 158, 74, .34);
-  box-shadow: 0 10px 26px -16px rgba(172, 132, 44, .38), 0 1px 3px rgba(46, 36, 16, .07), inset 0 1px 0 rgba(255, 255, 255, .92);
+  /* 09-19: the card is PAPER, not a lit panel — the bloom drops to a hint so the
+     ink type and the black buttons are the only strong values on the page. */
+  --hg-bloomA: rgba(255, 210, 122, .18);
+  --hg-bloomB: rgba(255, 240, 205, .06);
+  background: linear-gradient(165deg, #ffffff 0%, #fffdf4 100%);
+  border: 1px solid var(--border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .92),
+    0 1px 2px rgba(26, 22, 10, .06),
+    0 12px 28px -18px rgba(26, 22, 10, .30);
 }
 .hd-dash-root:not(.dark) .hd-halo {
   background: radial-gradient(circle, rgba(255, 202, 96, .30), transparent 62%);
@@ -475,15 +508,16 @@ h1, h2, h3 {
 }
 
 /* Solid-accent HOVER fills (stat-card icon tiles: group-hover:bg-accent +
-   group-hover:text-white) slipped past the .bg-accent face override — the
-   utility compiles to `.group:hover .group-hover\:bg-accent`, a different
-   class. They were the "жирно тёмно-коричневые" squares: full #B07C0A slabs.
-   Same treatment as the buttons: light gold face, near-black ink. */
+   group-hover:text-white) compile to `.group:hover .group-hover\:bg-accent`, a
+   different class than .bg-accent, so they need the ink treatment spelled out.
+   The tile flipping white→black on hover IS the popup's black/white mix, now as
+   a micro-interaction. */
 .hd-dash-root:not(.dark) .group:hover .group-hover\:bg-accent {
-  background-image: linear-gradient(180deg, #FFF9E3, #F6E4AE);
-  background-color: transparent;
+  background-image: linear-gradient(180deg, var(--ink2), var(--ink));
+  background-color: var(--ink);
+  box-shadow: 0 4px 12px -6px rgba(16, 16, 20, .45);
 }
-.hd-dash-root:not(.dark) .group:hover .group-hover\:text-white { color: #3E3006; }
+.hd-dash-root:not(.dark) .group:hover .group-hover\:text-white { color: #fff; }
 
 /* Quiet buttons / cards on cream: same anatomy, no gold glow. */
 .hd-dash-root:not(.dark) .bg-surface {
@@ -499,19 +533,21 @@ h1, h2, h3 {
   transform: translateY(-1px);
 }
 
-/* Nav (rail + mobile pills), day: active = soft amber TILE with BLACK label —
-   the "два золота спорят" button rule applies here too, so only the icon keeps
-   the amber. The Tailwind classes on the link (bg-accent/10 text-accent) are
-   the night look; this scope repaints them for day. */
+/* Nav (rail + mobile pills), day: active = INK tile with a white label and a
+   gold icon (09-19). The cream tile it replaces was legible but quiet — with
+   black now the page's mark of "this one", the rail should use the same word,
+   and the gold icon keeps one warm spark in an otherwise black-and-white rail.
+   The Tailwind classes on the link (bg-accent/10 text-accent) are the night
+   look; this scope repaints them for day. */
 .hd-dash-root:not(.dark) .hd-sidenav .nav-active,
 .hd-dash-root:not(.dark) .hd-mobilenav .nav-active {
-  background: var(--accent-light);
-  color: var(--text);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 2px rgba(62, 48, 6, 0.06);
+  background: linear-gradient(180deg, var(--ink2), var(--ink));
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 6px 14px -8px rgba(16, 16, 20, .45);
 }
 .hd-dash-root:not(.dark) .hd-sidenav .nav-active svg,
 .hd-dash-root:not(.dark) .hd-mobilenav .nav-active svg {
-  color: var(--accent);
+  color: var(--accent2);
 }
 
 /* Day secondary text never washes out: the alpha'd utilities (text-text2/45
@@ -526,6 +562,196 @@ h1, h2, h3 {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75),
     0 1px 2px rgba(26, 26, 34, 0.07),
     0 12px 28px -14px rgba(26, 26, 34, 0.16);
+}
+
+/* ============================================================
+   THE MIX — one inverted tile per row (Igor 09-19, from the popup:
+   black digits on white, white digits on black, no accent in the
+   numbers). The hero metric takes the ink tile; its siblings stay
+   paper. Inverting a SINGLE tile is what makes a row of stats read
+   as a composition instead of three equal boxes.
+   The tile flips with the theme: ink on the day page, paper on the
+   night one — in both it is the odd one out, which is the point.
+   Tokens are redeclared locally (--text/--text2/--accent AND their
+   --color-* aliases) so every Tailwind utility inside follows.
+   ============================================================ */
+.hd-dash-root:not(.dark) .hd-tile-ink {
+  --text: #FFFFFF;
+  --text2: rgba(255, 255, 255, .66);
+  --accent: #F0C874;
+  --accent-light: rgba(255, 255, 255, .10);
+  --border: rgba(255, 255, 255, .14);
+  --color-text: var(--text);
+  --color-text2: var(--text2);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-border: var(--border);
+  --hg-bloomA: rgba(240, 200, 116, .22);
+  --hg-bloomB: rgba(240, 200, 116, .05);
+  background: linear-gradient(165deg, #2A2A34 0%, #0E0E13 100%);
+  border: 1px solid #101014;
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .14),
+    0 1px 2px rgba(16, 16, 20, .28),
+    0 16px 32px -18px rgba(16, 16, 20, .55);
+}
+/* Inside the ink tile the hover fill can't be ink again — it lifts to a pale
+   translucent square instead (same gesture, inverted ground). */
+.hd-dash-root:not(.dark) .group.hd-tile-ink:hover .group-hover\:bg-accent {
+  background-image: none;
+  background-color: rgba(255, 255, 255, .16);
+  box-shadow: none;
+}
+.hd-dash-root:not(.dark) .group.hd-tile-ink:hover .group-hover\:text-white { color: #fff; }
+.dark .hd-tile-ink {
+  --text: #14141C;
+  --text2: #4A4A5A;
+  --accent: #6C5CE7;
+  --accent-light: rgba(108, 92, 231, .12);
+  --border: rgba(20, 20, 28, .12);
+  --color-text: var(--text);
+  --color-text2: var(--text2);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-border: var(--border);
+  --hg-bloomA: rgba(108, 92, 231, .16);
+  --hg-bloomB: rgba(108, 92, 231, .04);
+  background: linear-gradient(165deg, #FFFFFF 0%, #ECE8F8 100%);
+  border: 1px solid rgba(255, 255, 255, .55);
+  color: #14141C;
+  box-shadow: 0 18px 40px -20px rgba(0, 0, 0, .75);
+}
+
+/* ============================================================
+   LIVE ACTIVITY WELL — the campaign's hero card. Moved here from
+   CampaignView's inline <style> so /preview/ink-day renders the
+   real card; only the animated parts (sheen, ripple, droplet,
+   idle breathing) stayed with the component.
+
+   The image FILLS the frame and a wash rises toward the counter,
+   which sits on a frosted plate. Day and night are the same
+   geometry with a different photograph — the theme switch should
+   read as time of day, never as a different object.
+   ============================================================ */
+.hd-plate {
+  position: relative;
+  padding: 18px 36px;
+  border-radius: 24px;
+  background: linear-gradient(155deg, rgba(255,255,255,0.72), rgba(255,255,255,0.30));
+  border: 1px solid rgba(255,255,255,0.75);
+  box-shadow:
+    0 18px 40px -18px rgba(108,92,231,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.9),
+    inset 0 -16px 30px -22px rgba(108,92,231,0.30);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+}
+/* Clips only the sheen to the plate's rounded corners; the plate itself keeps
+   overflow visible so the tick ripple can burst past its edge. */
+.hd-plate-clip {
+  position: absolute; inset: 0; border-radius: inherit;
+  overflow: hidden; pointer-events: none;
+}
+.dark .hd-plate {
+  background: linear-gradient(155deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow:
+    0 20px 44px -18px rgba(0,0,0,0.65),
+    inset 0 1px 0 rgba(255,255,255,0.18),
+    inset 0 -16px 30px -22px rgba(108,92,231,0.40);
+}
+
+/* The well has its OWN image pair (U8 light-wave + its day twin) — Igor 09-14:
+   «у нас разные картинки, почему одну и ту же используешь». The fan pair stays
+   on the Auto/Tap mode cards. */
+.hd-well-img { background: url("/bg/well-day.jpg") center 30% / cover no-repeat; }
+.dark .hd-well-img { background-image: url("/bg/well-night.jpg"); }
+
+/* Readability wash: clear at the top (the picture breathes), rising toward the
+   counter so plate, captions and status stay legible. */
+.hd-well-wash {
+  background: linear-gradient(180deg,
+    rgba(255,253,246,.06) 0%,
+    rgba(255,253,246,.30) 52%,
+    rgba(255,252,242,.78) 100%);
+}
+.dark .hd-well-wash {
+  background: linear-gradient(180deg,
+    rgba(12,10,22,.10) 0%,
+    rgba(12,10,22,.34) 52%,
+    rgba(12,10,20,.78) 100%);
+}
+
+/* Glass digits — solid + legible by default, with an embossed highlight so they
+   read as cut crystal. (A background-clip:text fill glitched the rolling digits
+   in WebKit; solid colour kills that.) */
+.hd-glass-num {
+  color: var(--text);
+  filter: drop-shadow(0 8px 16px rgba(108,92,231,0.22));
+  text-shadow: 0 1px 0 rgba(255,255,255,0.65);
+}
+.dark .hd-glass-num { color: #f2f0ff; text-shadow: 0 1px 0 rgba(255,255,255,0.10); }
+
+/* ── Day: this one card wears the NIGHT skin ──────────────────────────────
+   Igor 09-19: the dashboard goes black-and-white like the extension popup, and
+   the colour lives in PICTURES placed where each belongs. The popup already
+   does exactly this — its Live-process card carries the violet image on an
+   otherwise white popup — so here the live card is the violet moment and the
+   amber fan stays on the Auto/Tap mode cards. Two placed accents beat a page
+   tinted gold.
+   Done by re-declaring the tokens locally: every Tailwind utility inside
+   (text-text, text-text2, border-border, bg-surface2/60) resolves them at the
+   use site, so the whole card flips without touching its markup. ── */
+.hd-dash-root:not(.dark) .hd-wellcard {
+  --text: #F5F3FF;
+  --text2: #C9C5E2;
+  --border: rgba(255, 255, 255, .14);
+  --surface2: rgba(255, 255, 255, .10);
+  --color-text: var(--text);
+  --color-text2: var(--text2);
+  --color-border: var(--border);
+  --color-surface2: var(--surface2);
+  border-color: rgba(108, 92, 231, .40);
+  box-shadow:
+    0 1px 2px rgba(16, 16, 20, .22),
+    0 22px 44px -26px rgba(38, 24, 96, .55);
+}
+.hd-dash-root:not(.dark) .hd-wellcard.bg-surface {
+  background-image: none;
+  background-color: #14121F;
+}
+/* The VIOLET frame, not the well's own night twin: `well-night.jpg` is the
+   chocolate-and-gold pour, so on a day page it would just be a second helping
+   of the same warmth the mode cards already serve. `fan-night.jpg` is the
+   violet one — the very image the popup puts in its live-process card. */
+.hd-dash-root:not(.dark) .hd-wellcard .hd-well-img {
+  background-image: url("/bg/fan-night.jpg");
+  background-position: center 60%;
+}
+.hd-dash-root:not(.dark) .hd-wellcard .hd-well-wash {
+  background: linear-gradient(180deg,
+    rgba(12, 10, 22, .16) 0%,
+    rgba(12, 10, 22, .40) 52%,
+    rgba(12, 10, 20, .80) 100%);
+}
+/* The crystal plate goes dark-glass too — a white frosted plate on the violet
+   photograph would read as a sticker pressed onto the picture. */
+.hd-dash-root:not(.dark) .hd-wellcard .hd-plate {
+  background: linear-gradient(155deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.16);
+  box-shadow:
+    0 20px 44px -18px rgba(0,0,0,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.18),
+    inset 0 -16px 30px -22px rgba(108,92,231,0.40);
+}
+.hd-dash-root:not(.dark) .hd-wellcard .hd-sheen {
+  background: linear-gradient(105deg, transparent, rgba(255,255,255,0.18), transparent);
+}
+.hd-dash-root:not(.dark) .hd-wellcard .hd-glass-num {
+  color: #F2F0FF;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.10);
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,0.45));
 }
 
 .dark { color-scheme: dark; }

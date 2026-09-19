@@ -605,76 +605,13 @@ export default function CampaignView({ token: initialToken }: Props) {
         }
         .hd-entry { animation: hd-slide-in 0.2s ease both; }
 
-        /* ── Glass hero ─────────────────────────────────────────────────────
-           A frosted "crystal" plate holds the counter. The glass reads through
-           three layers: a slow prismatic aura behind it (gives the blur
-           something to refract), a diagonal light sheen that sweeps across, and
-           an inner top highlight. Palette stays on-brand: violet with a faint
-           green refraction at the edges. */
-        .hd-plate {
-          position: relative;
-          padding: 18px 36px;
-          border-radius: 24px;
-          background: linear-gradient(155deg, rgba(255,255,255,0.72), rgba(255,255,255,0.30));
-          border: 1px solid rgba(255,255,255,0.75);
-          box-shadow:
-            0 18px 40px -18px rgba(108,92,231,0.35),
-            inset 0 1px 0 rgba(255,255,255,0.9),
-            inset 0 -16px 30px -22px rgba(108,92,231,0.30);
-          -webkit-backdrop-filter: blur(14px) saturate(160%);
-          backdrop-filter: blur(14px) saturate(160%);
-        }
-        /* Clips only the sheen to the plate's rounded corners; the plate itself
-           keeps overflow visible so the tick ripple can burst past its edge. */
-        .hd-plate-clip {
-          position: absolute; inset: 0; border-radius: inherit;
-          overflow: hidden; pointer-events: none;
-        }
-        .dark .hd-plate {
-          background: linear-gradient(155deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02));
-          border: 1px solid rgba(255,255,255,0.14);
-          box-shadow:
-            0 20px 44px -18px rgba(0,0,0,0.65),
-            inset 0 1px 0 rgba(255,255,255,0.18),
-            inset 0 -16px 30px -22px rgba(108,92,231,0.40);
-        }
+        /* The glass hero's plate + the well's image/wash/digits now live in
+           globals.css («Live Activity well»), so /preview/ink-day renders the
+           same card the dashboard does instead of a drifting copy. Only what is
+           animated stays here: the sheen sweep, the tick ripple, the droplet. */
 
-        /* Prismatic aura — slowly rotating so the refraction never sits still */
-        /* ── Prism fan behind the number (Igor 09-11, "полосы света") ──
-           This replaces the rotating conic halo that used to sit here — same idea
-           (light behind the count) but the source is BELOW the frame, so it reads as
-           a fan of rays instead of a spinning blob. Conic, not linear: linear gives a
-           barcode, conic gives the spread.
-           Night is the same geometry REPAINTED (indigo → violet → magenta), never an
-           inversion: inverting would move the light source to the top and the plate
-           would read as a different object. Static on purpose — the plate already has
-           a sheen sweep and a tick ripple; a third moving thing turns a status screen
-           into a screensaver. */
-        /* Day palette per Igor 09-11: "крем, белый, жёлтый, приятно, слегка
-           полупрозрачно" — no violet by day. Warm candle-light fan: cream, soft
-           butter-yellow, white, a faint honey edge. Alphas kept low so it reads as
-           light falling on the plate, not paint. Night keeps the violet spectrum. */
-        /* The auto-apply well gets its OWN image pair (U8 light-wave + daytwin) —
-           Igor 09-14: «у нас разные картинки, почему одну и ту же используешь».
-           The fan pair stays on the Auto/Tap mode cards. */
-        .hd-well-img {
-          background: url("/bg/well-day.jpg") center 30% / cover no-repeat;
-        }
-        .dark .hd-well-img { background-image: url("/bg/well-night.jpg"); }
-        /* Readability wash: clear at the top (the picture breathes), rising
-           toward the counter so plate, captions and status stay legible. */
-        .hd-well-wash {
-          background: linear-gradient(180deg,
-            rgba(255,253,246,.06) 0%,
-            rgba(255,253,246,.30) 52%,
-            rgba(255,252,242,.78) 100%);
-        }
-        .dark .hd-well-wash {
-          background: linear-gradient(180deg,
-            rgba(12,10,22,.10) 0%,
-            rgba(12,10,22,.34) 52%,
-            rgba(12,10,20,.78) 100%);
-        }
+        /* The well's image pair, readability wash and the day night-spot moved
+           to globals.css («Live Activity well») — shared with /preview/ink-day. */
 
         /* Light sheen sweeping across the plate — a single glint per cycle */
         @keyframes hd-sheen {
@@ -690,16 +627,6 @@ export default function CampaignView({ token: initialToken }: Props) {
           pointer-events: none;
         }
         .dark .hd-sheen { background: linear-gradient(105deg, transparent, rgba(255,255,255,0.16), transparent); }
-
-        /* Glass digits — solid + legible by default; a subtle violet gradient
-           fill only where the engine supports clipping it to the glyphs, with an
-           embossed highlight so they read as cut crystal either way. */
-        .hd-glass-num {
-          color: var(--text);
-          filter: drop-shadow(0 8px 16px rgba(108,92,231,0.22));
-          text-shadow: 0 1px 0 rgba(255,255,255,0.65);
-        }
-        .dark .hd-glass-num { color: #f2f0ff; text-shadow: 0 1px 0 rgba(255,255,255,0.10); }
 
         /* Idle "anticipation": while the count is still 0 the number softly
            breathes + glows — it reads as alive, waiting for the first tick.
@@ -1068,7 +995,7 @@ export default function CampaignView({ token: initialToken }: Props) {
             The image FILLS the whole frame (Igor 09-14: «картинка должна
             заполнять контур рамки») — the well/caption/footer sit on top of it,
             the wash keeps them readable. */}
-        <div className="relative isolate bg-surface border border-border rounded-xl flex flex-col overflow-hidden">
+        <div className="hd-wellcard relative isolate bg-surface border border-border rounded-xl flex flex-col overflow-hidden">
           <div aria-hidden className="hd-well-img absolute inset-0 -z-10 pointer-events-none" />
           <div aria-hidden className="hd-well-wash absolute inset-0 -z-10 pointer-events-none" />
           <div className="px-5 py-3.5 border-b border-border shrink-0">
