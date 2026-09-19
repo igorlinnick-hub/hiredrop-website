@@ -23,6 +23,8 @@ async function apiCall(path: string, token: string, method = "GET", body?: unkno
   return res.json();
 }
 
+type ResumeChoice = "original" | "ats" | "skills";
+
 interface ATSData {
   atsScore: number | null;
   atsIssues: string[];
@@ -31,6 +33,9 @@ interface ATSData {
   atsApproved: boolean;
   atsCheckedAt: string | null;
   resumeUrl: string | null;
+  skillsResumeUrl: string | null;
+  // The explicit dial (profiles.default_resume). null = legacy: atsApproved decides.
+  defaultResume: ResumeChoice | null;
 }
 
 interface QA { question: string; answer: string; }
@@ -79,6 +84,7 @@ export default function ResumeATSPanel() {
   const [data, setData] = useState<ATSData>({
     atsScore: null, atsIssues: [], atsIssueLabels: [], atsResumeUrl: null,
     atsApproved: false, atsCheckedAt: null, resumeUrl: null,
+    skillsResumeUrl: null, defaultResume: null,
   });
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
@@ -86,7 +92,8 @@ export default function ResumeATSPanel() {
   const [approving, setApproving] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [docxUrl, setDocxUrl] = useState<string | null>(null);
-  const [previewKind, setPreviewKind] = useState<"ats" | "original">("ats");
+  const [previewKind, setPreviewKind] = useState<"ats" | "original" | "skills">("ats");
+  const [skillsGenerating, setSkillsGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showQA, setShowQA] = useState(false);
   const [questions, setQuestions] = useState<string[]>([]);
@@ -123,6 +130,8 @@ export default function ResumeATSPanel() {
           atsApproved: p.ats_approved || false,
           atsCheckedAt: p.ats_checked_at || null,
           resumeUrl: p.resume_url || null,
+          skillsResumeUrl: p.skills_resume_url || null,
+          defaultResume: p.default_resume || null,
         });
       }
       setLoading(false);
@@ -226,7 +235,7 @@ export default function ResumeATSPanel() {
   }
 
   async function handleViewATS() {
-    if (previewUrl) { setShowPreview(true); return; }
+    if (previewUrl && previewKind === "ats") { setShowPreview(true); return; }
     setLoadingView(true);
     setError(null);
     try {
@@ -283,30 +292,68 @@ export default function ResumeATSPanel() {
     setDownloading(false);
   }
 
-  async function handleApprove() {
+  async function handleViewSkills() {
+    if (previewUrl && previewKind === "skills") { setShowPreview(true); return; }
+    setLoadingView(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      const result = await apiCall("/profile/resume/skills/url", token);
+      setPreviewUrl(result.url);
+      setPreviewKind("skills");
+      try {
+        const docx = await apiCall("/profile/resume/skills/docx-url", token);
+        setDocxUrl(docx.url || null);
+      } catch { setDocxUrl(null); }
+      setShowPreview(true);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Could not load skills resume");
+    }
+    setLoadingView(false);
+  }
+
+  async function handleGenerateSkills() {
+    setSkillsGenerating(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      const result = await apiCall("/profile/resume/skills/generate", token, "POST", {});
+      setData(prev => ({ ...prev, skillsResumeUrl: result.skills_resume_url || null }));
+      if (result.preview_url) {
+        setPreviewUrl(result.preview_url);
+        setDocxUrl(result.docx_url || null);
+        setPreviewKind("skills");
+        setShowPreview(true);
+      }
+      flash("Skills resume generated — review it, then make it your default if you like it.");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Could not generate skills resume");
+    }
+    setSkillsGenerating(false);
+  }
+
+  // ONE dial for which resume applications use. The legacy ats_approved flag is
+  // kept in sync so older surfaces (and the null-dial fallback) never disagree.
+  async function handleSetDefault(choice: ResumeChoice) {
     setApproving(true);
     setError(null);
     try {
       const token = await getToken();
-      await apiCall("/profile/ats/approve", token, "POST");
-      setData(prev => ({ ...prev, atsApproved: true }));
+      await apiCall("/profile/resume/default", token, "POST", { choice });
+      await apiCall(choice === "ats" ? "/profile/ats/approve" : "/profile/ats/decline", token, "POST")
+        .catch(() => { /* legacy sync is best-effort */ });
+      setData(prev => ({ ...prev, defaultResume: choice, atsApproved: choice === "ats" }));
       setShowPreview(false);
-      flash("ATS version is now active — will be sent to all employers.");
+      flash(
+        choice === "original"
+          ? "Original resume is now your default."
+          : choice === "ats"
+            ? "ATS version is now your default — will be sent to employers."
+            : "Skills version is now your default — will be sent to employers."
+      );
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Could not save");
     }
-    setApproving(false);
-  }
-
-  async function handleDecline() {
-    setApproving(true);
-    try {
-      const token = await getToken();
-      await apiCall("/profile/ats/decline", token, "POST");
-      setData(prev => ({ ...prev, atsApproved: false }));
-      setShowPreview(false);
-      flash("Original resume is now active.");
-    } catch { /* best effort */ }
     setApproving(false);
   }
 
@@ -321,6 +368,9 @@ export default function ResumeATSPanel() {
 
   const hasResume = !!data.resumeUrl;
   const hasATS = !!data.atsResumeUrl;
+  const hasSkills = !!data.skillsResumeUrl;
+  // What applying actually uses: the dial when set, legacy atsApproved otherwise.
+  const effectiveDefault: ResumeChoice = data.defaultResume ?? (data.atsApproved ? "ats" : "original");
   const wasChecked = data.atsScore !== null;
   // A resume "passes" only with no design blockers AND a score over threshold.
   // Design blocks (columns/tables/images/floating blocks) force regeneration.
@@ -340,12 +390,12 @@ export default function ResumeATSPanel() {
         {hasResume && (
           <div className={[
             "flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border flex-shrink-0",
-            data.atsApproved
+            effectiveDefault !== "original"
               ? "bg-green/10 border-green text-green"
               : "bg-surface2 border-border text-text2",
           ].join(" ")}>
-            <span className={`w-1.5 h-1.5 rounded-full ${data.atsApproved ? "bg-green" : "bg-text2"}`} />
-            {data.atsApproved ? "ATS version active" : "Original active"}
+            <span className={`w-1.5 h-1.5 rounded-full ${effectiveDefault !== "original" ? "bg-green" : "bg-text2"}`} />
+            {effectiveDefault === "ats" ? "ATS version active" : effectiveDefault === "skills" ? "Skills version active" : "Original active"}
           </div>
         )}
       </div>
@@ -365,14 +415,24 @@ export default function ResumeATSPanel() {
             <div className="flex-1 min-w-0">
               <p className="text-xs text-text2">Base resume for applications</p>
               <p className="text-sm font-semibold text-text">
-                {data.atsApproved ? "Your ATS-optimized resume" : "Your original resume"}
+                {effectiveDefault === "ats"
+                  ? "Your ATS-optimized resume"
+                  : effectiveDefault === "skills"
+                    ? "Your skills-first resume"
+                    : "Your original resume"}
               </p>
               <p className="text-xs text-text2 mt-0.5">Tailored to strong-match roles when you apply.</p>
             </div>
             <Button
               variant="secondary"
               size="sm"
-              onClick={data.atsApproved ? handleViewATS : handleViewOriginal}
+              onClick={
+                effectiveDefault === "ats"
+                  ? handleViewATS
+                  : effectiveDefault === "skills"
+                    ? handleViewSkills
+                    : handleViewOriginal
+              }
               disabled={loadingView}
             >
               {loadingView ? "Loading…" : "View"}
@@ -385,8 +445,16 @@ export default function ResumeATSPanel() {
             <button
               onClick={() =>
                 downloadFile(
-                  data.atsApproved ? "/profile/ats/resume/url" : "/profile/resume/url",
-                  data.atsApproved ? "resume_ats.pdf" : "resume.pdf"
+                  effectiveDefault === "ats"
+                    ? "/profile/ats/resume/url"
+                    : effectiveDefault === "skills"
+                      ? "/profile/resume/skills/url"
+                      : "/profile/resume/url",
+                  effectiveDefault === "ats"
+                    ? "resume_ats.pdf"
+                    : effectiveDefault === "skills"
+                      ? "resume_skills.pdf"
+                      : "resume.pdf"
                 )
               }
               disabled={downloading}
@@ -394,9 +462,18 @@ export default function ResumeATSPanel() {
             >
               PDF
             </button>
-            {hasATS && (
+            {effectiveDefault === "ats" && hasATS && (
               <button
                 onClick={() => downloadFile("/profile/ats/resume/docx-url", "resume_ats.docx")}
+                disabled={downloading}
+                className="text-sm font-medium text-accent hover:underline disabled:opacity-50"
+              >
+                Word (.docx)
+              </button>
+            )}
+            {effectiveDefault === "skills" && hasSkills && (
+              <button
+                onClick={() => downloadFile("/profile/resume/skills/docx-url", "resume_skills.docx")}
                 disabled={downloading}
                 className="text-sm font-medium text-accent hover:underline disabled:opacity-50"
               >
@@ -467,15 +544,15 @@ export default function ResumeATSPanel() {
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-text2 uppercase tracking-wide">ATS-Optimized Version</span>
             {hasATS && (
-              <span className={`text-xs font-semibold ${data.atsApproved ? "text-green" : "text-text2"}`}>
-                {data.atsApproved ? "Active" : "Not active"}
+              <span className={`text-xs font-semibold ${effectiveDefault === "ats" ? "text-green" : "text-text2"}`}>
+                {effectiveDefault === "ats" ? "Active" : "Not active"}
               </span>
             )}
           </div>
 
           <p className="text-sm text-text2">
             {hasATS
-              ? data.atsApproved
+              ? effectiveDefault === "ats"
                 ? "This clean version is your baseline — then tailored to each job when you apply."
                 : "Generated. Activate it to make it your baseline."
               : "We'll ask you a few quick questions, then generate a clean version."}
@@ -490,18 +567,63 @@ export default function ResumeATSPanel() {
             <Button variant="secondary" size="sm" onClick={handleOpenQA} disabled={generating || loadingView}>
               {generating ? "Generating…" : hasATS ? "Regenerate" : "Generate ATS Version"}
             </Button>
-            {hasATS && !data.atsApproved && (
-              <Button size="sm" onClick={handleApprove} disabled={approving}>
+            {hasATS && effectiveDefault !== "ats" && (
+              <Button size="sm" onClick={() => handleSetDefault("ats")} disabled={approving}>
                 {approving ? "Saving…" : "Use ATS Version"}
               </Button>
             )}
-            {hasATS && data.atsApproved && (
-              <Button variant="secondary" size="sm" onClick={handleDecline} disabled={approving}>
+            {hasATS && effectiveDefault === "ats" && (
+              <Button variant="secondary" size="sm" onClick={() => handleSetDefault("original")} disabled={approving}>
                 {approving ? "Saving…" : "Use Original"}
               </Button>
             )}
           </div>
           <p className="text-xs text-text2">To change content — upload a new resume and regenerate.</p>
+        </div>
+      )}
+
+      {/* Skills-First Version — the second resume style: grouped skills lead, each
+          job compressed to 1-2 lines. A style choice, not a fix, so it's not gated
+          on the ATS score. */}
+      {hasResume && (
+        <div className="p-4 bg-surface2 rounded-xl border border-border space-y-3" data-testid="skills-resume-block">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-text2 uppercase tracking-wide">Skills-First Version</span>
+            {hasSkills && (
+              <span className={`text-xs font-semibold ${effectiveDefault === "skills" ? "text-green" : "text-text2"}`}>
+                {effectiveDefault === "skills" ? "Active" : "Not active"}
+              </span>
+            )}
+          </div>
+
+          <p className="text-sm text-text2">
+            {hasSkills
+              ? effectiveDefault === "skills"
+                ? "Grouped skills lead the page; each role is one compact line. This is your baseline."
+                : "Generated. Make it your default if you prefer leading with skills."
+              : "A second resume style: your skills grouped and up front, work history compressed to 1-2 lines per role. Good when your skills say more than your job titles."}
+          </p>
+
+          <div className="flex flex-wrap gap-2">
+            {hasSkills && (
+              <Button variant="secondary" size="sm" onClick={handleViewSkills} disabled={loadingView || skillsGenerating}>
+                {loadingView ? "Loading…" : "View"}
+              </Button>
+            )}
+            <Button variant="secondary" size="sm" onClick={handleGenerateSkills} disabled={skillsGenerating || loadingView}>
+              {skillsGenerating ? "Generating…" : hasSkills ? "Regenerate" : "Generate Skills Version"}
+            </Button>
+            {hasSkills && effectiveDefault !== "skills" && (
+              <Button size="sm" onClick={() => handleSetDefault("skills")} disabled={approving}>
+                {approving ? "Saving…" : "Use Skills Version"}
+              </Button>
+            )}
+            {hasSkills && effectiveDefault === "skills" && (
+              <Button variant="secondary" size="sm" onClick={() => handleSetDefault("original")} disabled={approving}>
+                {approving ? "Saving…" : "Use Original"}
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
@@ -570,12 +692,18 @@ export default function ResumeATSPanel() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <div>
                 <h3 className="font-semibold text-text">
-                  {previewKind === "ats" ? "ATS-Optimized Resume" : "Your Current Resume"}
+                  {previewKind === "ats"
+                    ? "ATS-Optimized Resume"
+                    : previewKind === "skills"
+                      ? "Skills-First Resume"
+                      : "Your Current Resume"}
                 </h3>
                 <p className="text-xs text-text2 mt-0.5">
                   {previewKind === "ats"
                     ? "Same content · ATS-safe format"
-                    : "This is the file employers receive right now"}
+                    : previewKind === "skills"
+                      ? "Grouped skills lead · compact work history"
+                      : "This is the file employers receive right now"}
                 </p>
               </div>
               <button onClick={() => setShowPreview(false)} className="text-text2 hover:text-text p-1">
@@ -588,14 +716,14 @@ export default function ResumeATSPanel() {
               <iframe src={previewUrl} className="w-full h-full" style={{ minHeight: 500 }} title="ATS Resume" />
             </div>
             <div className="flex items-center gap-3 px-5 py-4 border-t border-border">
-              {/* Approve/decline only make sense for the generated ATS version */}
-              {previewKind === "ats" && (
-                !data.atsApproved ? (
-                  <Button onClick={handleApprove} disabled={approving}>
+              {/* Make-default actions only make sense for the generated versions */}
+              {previewKind !== "original" && (
+                effectiveDefault !== previewKind ? (
+                  <Button onClick={() => handleSetDefault(previewKind)} disabled={approving}>
                     {approving ? "Saving…" : "Use This Version"}
                   </Button>
                 ) : (
-                  <Button variant="secondary" onClick={handleDecline} disabled={approving}>
+                  <Button variant="secondary" onClick={() => handleSetDefault("original")} disabled={approving}>
                     {approving ? "Saving…" : "Use Original Instead"}
                   </Button>
                 )
@@ -603,13 +731,23 @@ export default function ResumeATSPanel() {
               <div className="ml-auto flex items-center gap-3">
                 <a
                   href={previewUrl}
-                  download={previewKind === "ats" ? "resume_ats.pdf" : "resume.pdf"}
+                  download={
+                    previewKind === "ats"
+                      ? "resume_ats.pdf"
+                      : previewKind === "skills"
+                        ? "resume_skills.pdf"
+                        : "resume.pdf"
+                  }
                   className="text-sm text-accent hover:underline"
                 >
                   Download PDF
                 </a>
-                {previewKind === "ats" && docxUrl && (
-                  <a href={docxUrl} download="resume_ats.docx" className="text-sm text-accent hover:underline">
+                {previewKind !== "original" && docxUrl && (
+                  <a
+                    href={docxUrl}
+                    download={previewKind === "ats" ? "resume_ats.docx" : "resume_skills.docx"}
+                    className="text-sm text-accent hover:underline"
+                  >
                     Download Word
                   </a>
                 )}
