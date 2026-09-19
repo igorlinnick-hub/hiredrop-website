@@ -36,6 +36,9 @@ interface ATSData {
   skillsResumeUrl: string | null;
   // The explicit dial (profiles.default_resume). null = legacy: atsApproved decides.
   defaultResume: ResumeChoice | null;
+  // The user's own words about their skills (persisted) + the generated grouping.
+  skillsDescription: string;
+  skillGroups: { group: string; skills: string[] }[];
 }
 
 interface QA { question: string; answer: string; }
@@ -84,7 +87,7 @@ export default function ResumeATSPanel() {
   const [data, setData] = useState<ATSData>({
     atsScore: null, atsIssues: [], atsIssueLabels: [], atsResumeUrl: null,
     atsApproved: false, atsCheckedAt: null, resumeUrl: null,
-    skillsResumeUrl: null, defaultResume: null,
+    skillsResumeUrl: null, defaultResume: null, skillsDescription: "", skillGroups: [],
   });
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
@@ -94,6 +97,9 @@ export default function ResumeATSPanel() {
   const [docxUrl, setDocxUrl] = useState<string | null>(null);
   const [previewKind, setPreviewKind] = useState<"ats" | "original" | "skills">("ats");
   const [skillsGenerating, setSkillsGenerating] = useState(false);
+  const [showSkillsModal, setShowSkillsModal] = useState(false);
+  const [skillsDraft, setSkillsDraft] = useState("");
+  const [savingSkills, setSavingSkills] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showQA, setShowQA] = useState(false);
   const [questions, setQuestions] = useState<string[]>([]);
@@ -132,6 +138,8 @@ export default function ResumeATSPanel() {
           resumeUrl: p.resume_url || null,
           skillsResumeUrl: p.skills_resume_url || null,
           defaultResume: p.default_resume || null,
+          skillsDescription: p.skills_description || "",
+          skillGroups: p.skill_groups || [],
         });
       }
       setLoading(false);
@@ -312,13 +320,45 @@ export default function ResumeATSPanel() {
     setLoadingView(false);
   }
 
-  async function handleGenerateSkills() {
-    setSkillsGenerating(true);
+  // Opens the describe-your-skills step first — the user's words are the input
+  // that makes the second resume theirs, and they persist to the profile.
+  function handleOpenSkills() {
+    setSkillsDraft(data.skillsDescription);
+    setShowSkillsModal(true);
+  }
+
+  async function handleSaveSkillsOnly() {
+    setSavingSkills(true);
     setError(null);
     try {
       const token = await getToken();
-      const result = await apiCall("/profile/resume/skills/generate", token, "POST", {});
-      setData(prev => ({ ...prev, skillsResumeUrl: result.skills_resume_url || null }));
+      const result = await apiCall("/profile/skills/describe", token, "POST", {
+        description: skillsDraft,
+      });
+      setData(prev => ({ ...prev, skillsDescription: result.skills_description || "" }));
+      setShowSkillsModal(false);
+      flash("Skills saved to your profile.");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Could not save skills");
+    }
+    setSavingSkills(false);
+  }
+
+  async function handleGenerateSkills() {
+    setSkillsGenerating(true);
+    setShowSkillsModal(false);
+    setError(null);
+    try {
+      const token = await getToken();
+      const result = await apiCall("/profile/resume/skills/generate", token, "POST", {
+        description: skillsDraft,
+      });
+      setData(prev => ({
+        ...prev,
+        skillsResumeUrl: result.skills_resume_url || null,
+        skillsDescription: skillsDraft.trim(),
+        skillGroups: result.skill_groups || prev.skillGroups,
+      }));
       if (result.preview_url) {
         setPreviewUrl(result.preview_url);
         setDocxUrl(result.docx_url || null);
@@ -610,7 +650,7 @@ export default function ResumeATSPanel() {
                 {loadingView ? "Loading…" : "View"}
               </Button>
             )}
-            <Button variant="secondary" size="sm" onClick={handleGenerateSkills} disabled={skillsGenerating || loadingView}>
+            <Button variant="secondary" size="sm" onClick={handleOpenSkills} disabled={skillsGenerating || loadingView}>
               {skillsGenerating ? "Generating…" : hasSkills ? "Regenerate" : "Generate Skills Version"}
             </Button>
             {hasSkills && effectiveDefault !== "skills" && (
@@ -623,6 +663,65 @@ export default function ResumeATSPanel() {
                 {approving ? "Saving…" : "Use Original"}
               </Button>
             )}
+          </div>
+
+          {/* The grouping we built from the resume + the user's description */}
+          {data.skillGroups.length > 0 && (
+            <div className="space-y-1.5 pt-1">
+              {data.skillGroups.map((g, i) => (
+                <p key={i} className="text-xs text-text2 leading-relaxed">
+                  <span className="font-semibold text-text">{g.group}:</span>{" "}
+                  {(g.skills || []).join(" · ")}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Describe-your-skills modal — the words persist to the profile either way */}
+      {showSkillsModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-surface border border-border rounded-2xl w-full max-w-lg" data-testid="skills-describe-modal">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-border">
+              <div>
+                <h3 className="font-semibold text-text">Describe your skills</h3>
+                <p className="text-xs text-text2 mt-0.5">
+                  In your own words: hard skills, soft skills, tools — what did each job level up?
+                  We combine this with your resume and group everything for the skills-first version.
+                </p>
+              </div>
+              <button onClick={() => setShowSkillsModal(false)} className="text-text2 hover:text-text p-1 ml-4 flex-shrink-0">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-6 py-5">
+              <textarea
+                value={skillsDraft}
+                onChange={e => setSkillsDraft(e.target.value)}
+                rows={6}
+                maxLength={4000}
+                placeholder="e.g. 4 years of React and TypeScript; ran Meta Ads campaigns; strong client communication; learned Figma and basic SQL at my last job…"
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-text placeholder-text2 focus:outline-none focus:border-accent resize-y"
+                data-testid="skills-describe-input"
+              />
+              <p className="text-xs text-text2 mt-1.5">
+                Saved to your profile — it pre-fills here next time. Leaving it empty is fine: we&apos;ll group from the resume alone.
+              </p>
+            </div>
+            <div className="px-6 py-4 border-t border-border flex flex-wrap gap-3">
+              <Button onClick={handleGenerateSkills} disabled={skillsGenerating || savingSkills}>
+                {skillsGenerating ? "Generating…" : "Save & Generate"}
+              </Button>
+              <Button variant="secondary" onClick={handleSaveSkillsOnly} disabled={savingSkills || skillsGenerating}>
+                {savingSkills ? "Saving…" : "Save only"}
+              </Button>
+              <Button variant="secondary" onClick={() => setShowSkillsModal(false)}>
+                Cancel
+              </Button>
+            </div>
           </div>
         </div>
       )}

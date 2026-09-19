@@ -19,6 +19,8 @@ interface Props {
   onboardingComplete: boolean;
   hasResume: boolean;
   hasKeywords: boolean;
+  // Either source counts: generated skill_groups or the typed skills_description.
+  hasSkills: boolean;
 }
 
 const CONNECTABLE = PLATFORMS.filter((p) => p.connectable);
@@ -30,9 +32,9 @@ const CONNECTABLE = PLATFORMS.filter((p) => p.connectable);
 // (same protocol as PlatformsIndicator). The card hides only when EVERYTHING
 // is done — the old version hid on profile+resume while still listing an
 // extension step that was hardcoded undone.
-export default function SetupChecklist({ onboardingComplete, hasResume, hasKeywords }: Props) {
+export default function SetupChecklist({ onboardingComplete, hasResume, hasKeywords, hasSkills }: Props) {
   const profileDone = onboardingComplete && hasKeywords;
-  const serverDone = profileDone && hasResume;
+  const serverDone = profileDone && hasResume && hasSkills;
 
   // null = still probing. While probing AND the server steps are done we render
   // nothing: the common visitor is fully set up, and flashing a checklist at
@@ -108,6 +110,15 @@ export default function SetupChecklist({ onboardingComplete, hasResume, hasKeywo
       done: hasResume,
       href: "/dashboard/settings",
       cta: "Upload resume →",
+    },
+    {
+      id: "skills",
+      label: "List your skills",
+      description:
+        "Describe what you're good at in Settings → Resume & ATS — we group your skills and build a skills-first resume from them.",
+      done: hasSkills,
+      href: "/dashboard/settings",
+      cta: "Describe skills →",
     },
     {
       id: "extension",
