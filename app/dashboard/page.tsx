@@ -35,7 +35,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("onboarding_completed, name, resume_url, keywords, location, job_type, platforms, salary_min, salary_max, salary_listed_only, search_radius_miles")
+    .select("onboarding_completed, name, resume_url, keywords, location, job_type, platforms, salary_min, salary_max, salary_listed_only, search_radius_miles, skill_groups, skills_description")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -49,6 +49,10 @@ export default async function DashboardPage() {
   const onboardingIncomplete = !profile.onboarding_completed;
   const resumeMissing = !profile.resume_url;
   const hasKeywords = (profile.keywords ?? []).length > 0;
+  // Skills are "listed" once EITHER source exists: the generated grouping
+  // (skill_groups) or the user's own description typed in Settings.
+  const hasSkillsListed =
+    (profile.skill_groups ?? []).length > 0 || !!(profile.skills_description ?? "").trim();
 
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
@@ -114,6 +118,7 @@ export default async function DashboardPage() {
         onboardingComplete={!onboardingIncomplete}
         hasResume={!resumeMissing}
         hasKeywords={hasKeywords}
+        hasSkills={hasSkillsListed}
       />
 
       {/* Phone visitors: honest hand-off — setup works here, applying runs on the computer */}
