@@ -4,13 +4,17 @@ interface StatCardProps {
   icon: React.ReactNode;
   href?: string;
   hint?: string;
+  /** Inverts this tile against its siblings — see .hd-tile-ink in globals.css.
+   *  One per row, on the metric that matters most. */
+  ink?: boolean;
 }
 
-function StatCard({ label, value, icon, href, hint }: StatCardProps) {
+function StatCard({ label, value, icon, href, hint, ink }: StatCardProps) {
   const inner = (
     <div
       className={[
         "group relative hd-glass hd-glass-bloom overflow-hidden rounded-2xl p-4 transition-all duration-200",
+        ink ? "hd-tile-ink" : "",
         href
           ? "hover:border-accent/40 hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
           : "",
@@ -93,6 +97,7 @@ export default function StatsCards({
       <StatCard
         label="Applied Today"
         value={applicationsToday}
+        ink
         href="/dashboard/history"
         hint="View today's applications →"
         icon={
