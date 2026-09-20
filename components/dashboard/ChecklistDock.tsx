@@ -13,6 +13,12 @@ interface Props {
   hasKeywords: boolean;
   // Either source counts: generated skill_groups or the typed skills_description.
   hasSkills: boolean;
+  // How many job titles this user searches with — one keyword is one narrow sweep.
+  keywordCount: number;
+  // Approved-but-unsent Tap swipes (#185). Auto never picks these up, so they sit
+  // forever until someone opens the deck — the sharpest "do this now" we have.
+  approvedWaiting: number;
+  submitMode?: string | null;
   // Usage, folded in from the old full-width UsageBanner card (Igor, 09-19:
   // "слишком большой он") — one line in the panel, plus a warning state on the
   // collapsed pill so a free user still sees the taste running out.
@@ -26,6 +32,9 @@ interface Props {
 
 const CONNECTABLE = PLATFORMS.filter((p) => p.connectable);
 const COLLAPSE_KEY = "hd_dock_collapsed";
+// Below this, more titles is the cheapest win available: each keyword is its own
+// sweep of the boards, so one keyword is one narrow search.
+const KEYWORDS_TARGET = 3;
 
 type Item = {
   id: string;
@@ -35,28 +44,33 @@ type Item = {
   href?: string;
   cta?: string;
   badge?: string;
+  urgent?: boolean;
   onClick?: () => void;
 };
 
 /**
- * Left-hand setup dock — the activation checklist as a small floating popup
- * instead of a full-width card stack at the top of the dashboard (Igor, 09-19).
+ * The left-hand dock: everything this user still has to do to get the most out of
+ * HireDrop, as a small popup instead of a stack of full-width cards at the top of
+ * the dashboard (Igor, 09-19).
  *
- * It also owns the two settings rows that used to sit loose in the page flow:
- * Job platforms (was PlatformsIndicator) and Letter voice (was a row inside
- * QuickActions). Both are "is my account set up" questions — they belong with
- * the other five, not between the filters and the campaign.
+ * It is NOT an install checklist. Setup steps are in it because an unfinished
+ * profile costs applications, but so is anything else that costs applications:
+ * approved swipes nobody sent, one keyword where three would sweep three times as
+ * much, two of three platforms logged out, cover letters in nobody's voice.
  *
- * The dock never unmounts itself: unlike the old card it stays reachable after
- * every step is done, because Letter voice and Platforms live in here now.
- * Done state only changes how it presents — a quiet check pill instead of a
- * counted, accented one.
+ * Because of that it never unmounts itself — "all done" is a state it passes
+ * through, not an exit. The collapsed pill carries whatever is most urgent
+ * (stranded swipes, a free taste about to run out) so closing the dock doesn't
+ * silence it.
  */
-export default function SetupDock({
+export default function ChecklistDock({
   onboardingComplete,
   hasResume,
   hasKeywords,
   hasSkills,
+  keywordCount,
+  approvedWaiting,
+  submitMode,
   tier,
   tierLabel,
   usedToday,
@@ -129,7 +143,7 @@ export default function SetupDock({
           setLetterStyle(data.writing_style);
           setLetterDraft(data.writing_style);
         }
-      } catch { /* the row just reads "Not set" */ }
+      } catch { /* the row just reads "not set" */ }
     })();
   }, []);
 
@@ -150,15 +164,35 @@ export default function SetupDock({
 
   const connectedCount = CONNECTABLE.filter((p) => isLiveConnected(connections[p.id])).length;
   const platformsDone = connectedCount > 0;
+  const allPlatformsDone = connectedCount === CONNECTABLE.length;
   const extDone = extPresent === true;
   const chromium = browser === "chromium";
   const probing = extPresent === null;
 
-  const items: Item[] = [
+  // Stranded swipes are only stranded while the run isn't Tap (#185 reasoning:
+  // an unknown mode still shows it — a link to the deck costs a tap user nothing).
+  const swipesWaiting = submitMode === "tap" ? 0 : Math.max(0, approvedWaiting);
+
+  const items: Item[] = [];
+
+  if (swipesWaiting > 0) {
+    const s = swipesWaiting === 1 ? "swipe" : "swipes";
+    items.push({
+      id: "swipes",
+      label: `Send your ${swipesWaiting} approved ${s}`,
+      hint: `Approved on the Tap deck. Auto searches job boards and never picks ${swipesWaiting === 1 ? "it" : "them"} up.`,
+      done: false,
+      urgent: true,
+      href: "/dashboard/tap",
+      cta: "Open deck",
+    });
+  }
+
+  items.push(
     {
       id: "profile",
       label: "Complete your profile",
-      hint: "Name, job keywords, location.",
+      hint: "Name, job keywords, location — the search runs off these.",
       done: profileDone,
       href: onboardingComplete ? "/dashboard/settings" : "/onboarding",
       cta: onboardingComplete ? "Edit" : "Start",
@@ -166,7 +200,7 @@ export default function SetupDock({
     {
       id: "resume",
       label: "Upload your resume",
-      hint: "Fills forms and feeds every cover letter.",
+      hint: "Fills application forms and feeds every cover letter.",
       done: hasResume,
       href: "/dashboard/settings",
       cta: "Upload",
@@ -174,18 +208,29 @@ export default function SetupDock({
     {
       id: "skills",
       label: "List your skills",
-      hint: "Settings → Resume & ATS — builds a skills-first resume.",
+      hint: "Settings → Resume & ATS — builds a skills-first resume for ATS screens.",
       done: hasSkills,
       href: "/dashboard/settings",
       cta: "Describe",
     },
     {
+      id: "keywords",
+      label: "Add more job titles",
+      hint: keywordCount <= 1
+        ? `You search with ${keywordCount === 1 ? "one title" : "no titles"} — each extra one is another sweep of the boards.`
+        : `${keywordCount} titles searched. Three or more keeps the daily cap fed.`,
+      done: keywordCount >= KEYWORDS_TARGET,
+      badge: `${keywordCount}`,
+      href: "/dashboard/settings",
+      cta: "Add",
+    },
+    {
       id: "extension",
       label: "Install the Chrome extension",
       hint: chromium
-        ? "It's what actually submits. Install, then reload this page."
+        ? "It's what actually submits. Install it, then reload this page."
         : browser === "mobile"
-          ? "Applying runs in Chrome on your computer — finish there."
+          ? "Applying runs in Chrome on your computer — finish this there."
           : "Open this page in Chrome to install the extension.",
       done: extDone,
       href: chromium ? "/extension" : undefined,
@@ -193,23 +238,25 @@ export default function SetupDock({
     },
     {
       id: "platforms",
-      label: "Job platforms",
-      hint: extDone
-        ? platformsDone
-          ? "Log in to more platforms to widen your reach."
-          : "Log in to Indeed and ZipRecruiter so HireDrop can apply as you."
-        : "Needs the extension first — it checks that you're logged in.",
-      done: platformsDone,
+      label: "Connect every job platform",
+      hint: !extDone
+        ? "Needs the extension first — it checks that you're logged in."
+        : allPlatformsDone
+          ? "All connected — the widest reach we can give you."
+          : platformsDone
+            ? "Each platform you log into is another board we can apply on."
+            : "Log in to Indeed and ZipRecruiter so HireDrop can apply as you.",
+      done: allPlatformsDone,
       badge: probing ? undefined : `${connectedCount}/${CONNECTABLE.length}`,
       href: extDone ? "/dashboard/platforms" : undefined,
-      cta: extDone ? "Manage" : undefined,
+      cta: extDone ? "Connect" : undefined,
     },
     {
       id: "letter",
-      label: "Letter voice",
+      label: "Teach it your letter voice",
       hint: letterStyle
         ? `“${letterStyle.slice(0, 60)}${letterStyle.length > 60 ? "…" : ""}”`
-        : "Teach cover letters how you write — otherwise they stay plain.",
+        : "Without it every cover letter goes out in the same plain tone.",
       done: !!letterStyle,
       cta: letterStyle ? "Edit" : "Teach",
       onClick: () => {
@@ -217,23 +264,36 @@ export default function SetupDock({
         setLetterOpen((v) => !v);
       },
     },
-  ];
+  );
 
-  // The extension steps aren't actionable outside desktop Chromium — don't count
-  // them against the visitor there (MobileHandoff already explains where applying runs).
+  // The two extension-bound items aren't actionable outside desktop Chromium —
+  // don't hold the count against a visitor there (MobileHandoff explains where
+  // applying actually runs).
   const counted = chromium ? items : items.filter((i) => i.id !== "extension" && i.id !== "platforms");
-  const doneCount = counted.filter((i) => i.done).length;
-  const allDone = doneCount === counted.length;
+  const left = counted.filter((i) => !i.done).length;
+  const doneCount = counted.length - left;
+  const allDone = left === 0;
   const pct = Math.round((doneCount / counted.length) * 100);
 
-  // Free taste (lifetime cap) — the one number a free user lives by. Kept on the
-  // collapsed pill so the warning survives the dock being shut.
+  // Free taste (lifetime cap) — the one number a free user lives by.
   const hasFreeTaste = tier === "free" && typeof freeLimit === "number" && freeLimit > 0;
   const freeLeft = hasFreeTaste ? Math.max(0, freeLimit - Math.min(freeUsed ?? 0, freeLimit)) : 0;
   const freeWarning = hasFreeTaste && freeLeft <= 10;
   const isAdmin = tier === "admin";
 
-  // Open by default while setup is unfinished, unless this browser shut it before.
+  // Whatever the collapsed pill has to say for itself. Urgent first: shutting the
+  // dock must not silence stranded swipes or a free taste about to run out.
+  const pillNote = swipesWaiting > 0
+    ? `${swipesWaiting} approved ${swipesWaiting === 1 ? "swipe" : "swipes"} waiting`
+    : freeWarning
+      ? freeLeft === 0 ? "Free applications used up" : `${freeLeft} free applications left`
+      : allDone
+        ? "Nothing left — you're at full reach"
+        : "Do these for the most applications";
+  const pillAlert = swipesWaiting > 0 || freeWarning;
+
+  // Open by default while something is still worth doing, unless this browser
+  // shut it before.
   useEffect(() => {
     if (probing) return;
     let collapsed = false;
@@ -250,19 +310,22 @@ export default function SetupDock({
     });
   }
 
-  const ring = allDone ? "var(--green, #16a34a)" : "var(--accent)";
+  const planLink = isAdmin
+    ? { href: "/dashboard/ats-protocol", label: "ATS Protocol ↗" }
+    : (tier === "free" || tier === "pro")
+      ? { href: "/dashboard/settings?tab=billing", label: "Upgrade →" }
+      : null;
 
   return (
     <div
-      className="fixed z-40 bottom-4 left-4 lg:left-[252px] flex flex-col-reverse items-start gap-2
-        print:hidden"
-      data-testid="setup-dock"
+      className="fixed z-40 bottom-4 left-4 lg:left-[252px] flex flex-col-reverse items-start gap-2 print:hidden"
+      data-testid="checklist-dock"
     >
-      {/* Collapsed pill — always present, so Letter voice and Platforms stay one click away */}
+      {/* Collapsed pill — always present, so the list stays one click away */}
       <button
         type="button"
         onClick={toggle}
-        data-testid="setup-dock-toggle"
+        data-testid="checklist-dock-toggle"
         className="hd-glass flex items-center gap-2.5 rounded-full pl-2 pr-3.5 py-2 shadow-lg shadow-black/5
           hover:border-accent/40 transition group"
       >
@@ -272,27 +335,25 @@ export default function SetupDock({
             <circle cx="18" cy="18" r="15" fill="none" strokeWidth="4" className="stroke-surface2" />
             <circle
               cx="18" cy="18" r="15" fill="none" strokeWidth="4" strokeLinecap="round"
-              stroke={ring}
+              stroke={allDone ? "var(--green, #16a34a)" : "var(--accent)"}
               strokeDasharray={`${(pct / 100) * 94.2} 94.2`}
               className="transition-all duration-500"
             />
           </svg>
           <span className="absolute text-[9px] font-bold tabular-nums text-text">
-            {allDone ? "✓" : `${doneCount}`}
+            {allDone ? "✓" : left}
           </span>
         </span>
 
         <span className="text-left leading-tight">
           <span className="block text-[13px] font-semibold text-text">
-            {allDone ? "Setup" : `Setup · ${doneCount} of ${counted.length}`}
+            {allDone ? "Your checklist" : `${left} ${left === 1 ? "thing" : "things"} left to do`}
           </span>
           <span className={[
             "block text-[11px]",
-            freeWarning ? "text-amber-600 font-semibold" : "text-text2/70",
+            pillAlert ? "text-amber-600 font-semibold" : "text-text2/70",
           ].join(" ")}>
-            {freeWarning
-              ? freeLeft === 0 ? "Free applications used up" : `${freeLeft} free applications left`
-              : allDone ? "Voice, platforms, profile" : "Finish to start applying"}
+            {pillNote}
           </span>
         </span>
 
@@ -314,36 +375,27 @@ export default function SetupDock({
         >
           <style>{`@keyframes hdDockIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}`}</style>
 
-          {/* Header: title + the usage line that replaced the full-width banner */}
+          {/* Header: what the list is for + the usage line that replaced the banner */}
           <div className="px-4 pt-3.5 pb-3 border-b border-border">
             <div className="flex items-center gap-2">
               <p className="text-sm font-semibold text-text">
-                {allDone ? "Your setup" : "Get ready to launch"}
+                {allDone ? "You're at full reach" : "For the most applications"}
               </p>
 
-              {/* Plan action rides on the title row — the usage line below is a
-                  reading, not a place to put a button. */}
-              {isAdmin ? (
+              {planLink && (
                 <a
-                  href="/dashboard/ats-protocol"
+                  href={planLink.href}
                   className="ml-auto text-[11px] font-medium text-accent hover:text-accent2 whitespace-nowrap"
                 >
-                  ATS Protocol ↗
+                  {planLink.label}
                 </a>
-              ) : (tier === "free" || tier === "pro") ? (
-                <a
-                  href="/dashboard/settings?tab=billing"
-                  className="ml-auto text-[11px] font-medium text-accent hover:text-accent2 whitespace-nowrap"
-                >
-                  Upgrade →
-                </a>
-              ) : null}
+              )}
 
               <button
                 type="button"
                 onClick={toggle}
-                aria-label="Close setup"
-                className={`${isAdmin || tier === "free" || tier === "pro" ? "" : "ml-auto "}text-text2/50 hover:text-text transition`}
+                aria-label="Close checklist"
+                className={`${planLink ? "" : "ml-auto "}text-text2/50 hover:text-text transition`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -372,7 +424,7 @@ export default function SetupDock({
             </p>
           </div>
 
-          {/* Steps */}
+          {/* Items */}
           <div className="divide-y divide-border">
             {items.map((item, i) => {
               const inner = (
@@ -381,12 +433,16 @@ export default function SetupDock({
                     "mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold",
                     item.done
                       ? "bg-green/15 text-green"
-                      : "bg-accent/10 text-accent border border-accent/20",
+                      : item.urgent
+                        ? "bg-accent text-white"
+                        : "bg-accent/10 text-accent border border-accent/20",
                   ].join(" ")}>
                     {item.done ? (
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
+                    ) : item.urgent ? (
+                      "!"
                     ) : (
                       i + 1
                     )}
@@ -420,7 +476,10 @@ export default function SetupDock({
                 </>
               );
 
-              const cls = "w-full flex items-start gap-2.5 px-4 py-2.5 text-left hover:bg-surface2/60 transition";
+              const cls = [
+                "w-full flex items-start gap-2.5 px-4 py-2.5 text-left transition",
+                item.urgent ? "bg-accent-light hover:bg-accent-light/70" : "hover:bg-surface2/60",
+              ].join(" ");
 
               return (
                 <div key={item.id} data-testid={`checklist-step-${item.id}`}>
@@ -429,7 +488,7 @@ export default function SetupDock({
                   ) : item.href ? (
                     <a href={item.href} className={cls}>{inner}</a>
                   ) : (
-                    <div className={`${cls} cursor-default hover:bg-transparent`}>{inner}</div>
+                    <div className={`${cls} cursor-default`}>{inner}</div>
                   )}
 
                   {/* Letter voice editor, in place — same behaviour it had in QuickActions */}

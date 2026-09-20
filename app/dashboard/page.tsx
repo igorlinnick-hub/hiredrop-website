@@ -12,11 +12,10 @@ import StatsCards from "@/components/dashboard/StatsCards";
 import JobsTable from "@/components/dashboard/JobsTable";
 import DevPanel from "@/components/dashboard/DevPanel";
 import QuickActions from "@/components/dashboard/QuickActions";
-import SetupDock from "@/components/dashboard/SetupDock";
+import ChecklistDock from "@/components/dashboard/ChecklistDock";
 import MobileHandoff from "@/components/dashboard/MobileHandoff";
 import FreeTastePaywall from "@/components/dashboard/FreeTastePaywall";
 import CheckoutSuccessBanner from "@/components/dashboard/CheckoutSuccessBanner";
-import ApprovedWaitingBanner from "@/components/dashboard/ApprovedWaitingBanner";
 
 export const metadata = {
   title: "Dashboard — HireDrop",
@@ -82,12 +81,6 @@ export default async function DashboardPage() {
       {/* Post-payment confirmation — the redirect target used to say nothing. */}
       <CheckoutSuccessBanner tier={statsData?.tier ?? "free"} />
 
-      {/* Approved swipes nothing will ever pick up while the run is Auto (#185). */}
-      <ApprovedWaitingBanner
-        count={campaignData?.approved_waiting ?? 0}
-        submitMode={campaignData?.submit_mode}
-      />
-
       {freeTasteExhausted && statsData && (
         <FreeTastePaywall
           freeUsed={statsData.free_used ?? statsData.free_limit ?? 0}
@@ -95,15 +88,20 @@ export default async function DashboardPage() {
         />
       )}
 
-      {/* Activation checklist — a small dock at the left edge instead of a stack of
-          full-width cards on top of the dashboard (Igor, 09-19). It also absorbed the
-          loose Job platforms row (PlatformsIndicator) and the Letter voice row from
-          QuickActions, plus the usage line from the old UsageBanner card. */}
-      <SetupDock
+      {/* Everything still worth doing, as a dock at the left edge instead of a stack
+          of full-width cards on top of the dashboard (Igor, 09-19). Not just setup:
+          stranded Tap swipes, thin keywords and half-connected platforms cost
+          applications too, so they're items here — along with the Job platforms row
+          (was PlatformsIndicator), Letter voice (was a row in QuickActions) and the
+          usage line from the old UsageBanner card. */}
+      <ChecklistDock
         onboardingComplete={!onboardingIncomplete}
         hasResume={!resumeMissing}
         hasKeywords={hasKeywords}
         hasSkills={hasSkillsListed}
+        keywordCount={(profile.keywords ?? []).length}
+        approvedWaiting={campaignData?.approved_waiting ?? 0}
+        submitMode={campaignData?.submit_mode}
         tier={statsData?.tier ?? "free"}
         tierLabel={(statsData?.tier ?? "free").charAt(0).toUpperCase() + (statsData?.tier ?? "free").slice(1)}
         usedToday={statsData?.applications_today ?? 0}

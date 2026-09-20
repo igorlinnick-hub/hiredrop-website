@@ -1,7 +1,7 @@
-import SetupDock from "@/components/dashboard/SetupDock";
+import ChecklistDock from "@/components/dashboard/ChecklistDock";
 import StatsCards from "@/components/dashboard/StatsCards";
 
-export const metadata = { title: "Setup dock — preview" };
+export const metadata = { title: "Checklist dock — preview" };
 
 // Logged-out look at the left-edge setup dock, staged over a stand-in for the
 // dashboard it floats on (the real one needs a session). The dock itself is the
@@ -72,11 +72,14 @@ export default function SetupDockPreview() {
         </div>
       </div>
 
-      <SetupDock
+      <ChecklistDock
         onboardingComplete
         hasResume
         hasKeywords
         hasSkills={false}
+        keywordCount={1}
+        approvedWaiting={4}
+        submitMode="auto"
         tier="admin"
         tierLabel="Admin"
         usedToday={0}
