@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Button from "@/components/ui/Button";
+import SkillsCard from "./SkillsCard";
 import SkillsModal, { MIN_SKILLS, SKILLS_EXAMPLE, countSkills } from "./SkillsModal";
 
 const API_BASE =
@@ -420,7 +421,7 @@ export default function ResumeATSPanel() {
     iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null;
 
   if (loading) return (
-    <section className="bg-surface border border-border rounded-xl p-6">
+    <section className="hd-panel p-6">
       <div className="animate-pulse h-4 w-40 bg-surface2 rounded" />
     </section>
   );
@@ -439,7 +440,7 @@ export default function ResumeATSPanel() {
   const passes = wasChecked && !hasStructural && (data.atsScore ?? 0) >= ATS_PASS_THRESHOLD;
 
   return (
-    <section className="bg-surface border border-border rounded-xl p-6 space-y-5">
+    <section className="hd-panel p-6 space-y-5">
 
       {/* Header + active badge */}
       <div className="flex items-start justify-between gap-3">
@@ -465,10 +466,10 @@ export default function ResumeATSPanel() {
 
       {/* What employers actually receive — single source of truth */}
       {hasResume && (
-        <div className="p-4 rounded-xl bg-accent/5 border border-accent/20">
+        <div className="rounded-xl border border-border bg-surface2/60 p-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-accent/15 flex items-center justify-center flex-shrink-0">
-              <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-9 h-9 rounded-lg bg-text/10 flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
@@ -500,7 +501,7 @@ export default function ResumeATSPanel() {
           </div>
 
           {/* Direct downloads */}
-          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-accent/15">
+          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
             <span className="text-xs text-text2">{downloading ? "Preparing…" : "Download"}</span>
             <button
               onClick={() =>
@@ -518,7 +519,7 @@ export default function ResumeATSPanel() {
                 )
               }
               disabled={downloading}
-              className="text-sm font-medium text-accent hover:underline disabled:opacity-50"
+              className="text-sm font-medium text-text underline underline-offset-2 hover:opacity-70 disabled:opacity-50"
             >
               PDF
             </button>
@@ -526,7 +527,7 @@ export default function ResumeATSPanel() {
               <button
                 onClick={() => downloadFile("/profile/ats/resume/docx-url", "resume_ats.docx")}
                 disabled={downloading}
-                className="text-sm font-medium text-accent hover:underline disabled:opacity-50"
+                className="text-sm font-medium text-text underline underline-offset-2 hover:opacity-70 disabled:opacity-50"
               >
                 Word (.docx)
               </button>
@@ -535,7 +536,7 @@ export default function ResumeATSPanel() {
               <button
                 onClick={() => downloadFile("/profile/resume/skills/docx-url", "resume_skills.docx")}
                 disabled={downloading}
-                className="text-sm font-medium text-accent hover:underline disabled:opacity-50"
+                className="text-sm font-medium text-text underline underline-offset-2 hover:opacity-70 disabled:opacity-50"
               >
                 Word (.docx)
               </button>
@@ -547,7 +548,7 @@ export default function ResumeATSPanel() {
       {/* Resume file row */}
       <div className="flex items-center gap-3 p-4 bg-surface2 rounded-xl border border-border">
         <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
-          <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
@@ -642,65 +643,22 @@ export default function ResumeATSPanel() {
         </div>
       )}
 
-      {/* Skills-First Version — the second resume style: grouped skills lead, each
-          job compressed to 1-2 lines. A style choice, not a fix, so it's not gated
-          on the ATS score. */}
+      {/* Skills-First Version — dark "inserted picture" card with the grouping
+          animating in; see SkillsCard for why it looks unlike the panels above. */}
       {hasResume && (
-        <div
-          id="skills"
-          className="p-4 bg-surface2 rounded-xl border border-border space-y-3 scroll-mt-24"
-          data-testid="skills-resume-block"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-text2 uppercase tracking-wide">Skills-First Version</span>
-            {hasSkills && (
-              <span className={`text-xs font-semibold ${effectiveDefault === "skills" ? "text-green" : "text-text2"}`}>
-                {effectiveDefault === "skills" ? "Active" : "Not active"}
-              </span>
-            )}
-          </div>
-
-          <p className="text-sm text-text2">
-            {hasSkills
-              ? effectiveDefault === "skills"
-                ? "Grouped skills lead the page; each role is one compact line. This is your baseline."
-                : "Generated. Make it your default if you prefer leading with skills."
-              : "A second resume style: you list your skills, we group them and put them up front, with work history compressed to 1-2 lines per role. Good when your skills say more than your job titles."}
-          </p>
-
-          <div className="flex flex-wrap gap-2">
-            {hasSkills && (
-              <Button variant="secondary" size="sm" onClick={handleViewSkills} disabled={loadingView || skillsGenerating}>
-                {loadingView ? "Loading…" : "View"}
-              </Button>
-            )}
-            <Button variant="secondary" size="sm" onClick={handleOpenSkills} disabled={skillsGenerating || loadingView}>
-              {skillsGenerating ? "Generating…" : hasSkills ? "Edit skills & regenerate" : "List your skills"}
-            </Button>
-            {hasSkills && effectiveDefault !== "skills" && (
-              <Button size="sm" onClick={() => handleSetDefault("skills")} disabled={approving}>
-                {approving ? "Saving…" : "Use Skills Version"}
-              </Button>
-            )}
-            {hasSkills && effectiveDefault === "skills" && (
-              <Button variant="secondary" size="sm" onClick={() => handleSetDefault("original")} disabled={approving}>
-                {approving ? "Saving…" : "Use Original"}
-              </Button>
-            )}
-          </div>
-
-          {/* The grouping we built from the resume + the user's description */}
-          {data.skillGroups.length > 0 && (
-            <div className="space-y-1.5 pt-1">
-              {data.skillGroups.map((g, i) => (
-                <p key={i} className="text-xs text-text2 leading-relaxed">
-                  <span className="font-semibold text-text">{g.group}:</span>{" "}
-                  {(g.skills || []).join(" · ")}
-                </p>
-              ))}
-            </div>
-          )}
-        </div>
+        <SkillsCard
+          hasSkills={hasSkills}
+          isDefault={effectiveDefault === "skills"}
+          groups={data.skillGroups}
+          busy={skillsGenerating || loadingView}
+          onView={handleViewSkills}
+          onEdit={handleOpenSkills}
+          onMakeDefault={() => handleSetDefault("skills")}
+          onUseOriginal={() => handleSetDefault("original")}
+          viewing={loadingView}
+          generating={skillsGenerating}
+          saving={approving}
+        />
       )}
 
       {/* Describe-your-skills modal — the words persist to the profile either way */}
