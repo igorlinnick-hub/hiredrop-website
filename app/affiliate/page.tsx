@@ -53,22 +53,21 @@ export default function AffiliatePage() {
               </div>
             </div>
 
-            {/* Links are issued by hand, one conversation at a time (Igor, 09-15):
-                at five to ten partners that beats building a signup funnel, and it
-                keeps the program clear of farmed accounts. So this CTA asks for a
-                link instead of promising a waitlist that nothing drains. */}
+            {/* Applications, not a waitlist: the form asks the six things a
+                human needs to decide, and every one is read by hand. The old
+                mailto CTA had nowhere to send a stranger with a printed QR. */}
             <div className="text-center">
               <p className="text-gray-600 text-sm mb-4">
-                We hand out links one at a time rather than running an open signup. Create a
-                HireDrop account, email us, and you&apos;ll have your link the same day — it shows
-                up under <span className="font-medium text-gray-900">Affiliate</span> in your
-                dashboard, with your referrals and earnings next to it.
+                Tell us who you&apos;d share it with and the link you want. We read every
+                application ourselves — usually within a day or two. Approved links show up
+                under <span className="font-medium text-gray-900">Affiliate</span> in your
+                HireDrop dashboard, with your referrals and earnings next to them.
               </p>
               <a
-                href="mailto:support@hiredrop.io?subject=Affiliate%20link%20request"
+                href="/affiliate/apply"
                 className="inline-block bg-accent hover:bg-accent/90 text-white font-semibold px-8 py-3.5 rounded-[10px] text-lg transition shadow-lg shadow-accent/25"
               >
-                Ask for your link
+                Apply for your link
               </a>
               <p className="text-gray-500 text-xs mt-4">
                 You must disclose that you earn a commission when you share your link — &ldquo;I
