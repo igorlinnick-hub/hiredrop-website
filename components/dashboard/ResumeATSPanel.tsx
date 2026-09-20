@@ -9,6 +9,32 @@ const API_BASE =
 
 const ATS_PASS_THRESHOLD = 80;
 
+// We ask for at least this many skills — the grouping is only as good as what the
+// candidate actually lists. Mirrors MIN_SKILLS in modules/skills_resume.py.
+const MIN_SKILLS = 10;
+
+// Same separators the backend's count_skill_items uses, so the counter here and the
+// count the API reports never disagree.
+function countSkills(text: string): number {
+  if (!text) return 0;
+  return text
+    .split(/[,;\n•·|]+|(?<=[a-z])\s+and\s+(?=[A-Za-z])/)
+    .map(p => p.replace(/^[\s\t\-–—.]+|[\s\t\-–—.]+$/g, ""))
+    .filter(p => p.length >= 2).length;
+}
+
+const SKILLS_EXAMPLE = `Customer support over live chat and email (3 years, Zendesk)
+Handling angry customers without escalating — de-escalation
+Writing help-center articles in plain English
+Excel: pivot tables, VLOOKUP, basic charts
+Google Sheets + importing CSV reports
+Shopify admin: refunds, order edits, tracking issues
+Slack and Notion for daily team coordination
+Training new hires — wrote our onboarding checklist
+Scheduling shifts for a team of 6
+Basic HTML for editing email templates
+Spanish (conversational) for Spanish-speaking customers`;
+
 async function apiCall(path: string, token: string, method = "GET", body?: unknown) {
   const res = await fetch(`${API_BASE}/api/v1${path}`, {
     method,
@@ -409,6 +435,7 @@ export default function ResumeATSPanel() {
   const hasResume = !!data.resumeUrl;
   const hasATS = !!data.atsResumeUrl;
   const hasSkills = !!data.skillsResumeUrl;
+  const skillCount = countSkills(skillsDraft);
   // What applying actually uses: the dial when set, legacy atsApproved otherwise.
   const effectiveDefault: ResumeChoice = data.defaultResume ?? (data.atsApproved ? "ats" : "original");
   const wasChecked = data.atsScore !== null;
@@ -641,7 +668,7 @@ export default function ResumeATSPanel() {
               ? effectiveDefault === "skills"
                 ? "Grouped skills lead the page; each role is one compact line. This is your baseline."
                 : "Generated. Make it your default if you prefer leading with skills."
-              : "A second resume style: your skills grouped and up front, work history compressed to 1-2 lines per role. Good when your skills say more than your job titles."}
+              : "A second resume style: you list your skills, we group them and put them up front, with work history compressed to 1-2 lines per role. Good when your skills say more than your job titles."}
           </p>
 
           <div className="flex flex-wrap gap-2">
@@ -651,7 +678,7 @@ export default function ResumeATSPanel() {
               </Button>
             )}
             <Button variant="secondary" size="sm" onClick={handleOpenSkills} disabled={skillsGenerating || loadingView}>
-              {skillsGenerating ? "Generating…" : hasSkills ? "Regenerate" : "Generate Skills Version"}
+              {skillsGenerating ? "Generating…" : hasSkills ? "Edit skills & regenerate" : "List your skills"}
             </Button>
             {hasSkills && effectiveDefault !== "skills" && (
               <Button size="sm" onClick={() => handleSetDefault("skills")} disabled={approving}>
@@ -682,13 +709,17 @@ export default function ResumeATSPanel() {
       {/* Describe-your-skills modal — the words persist to the profile either way */}
       {showSkillsModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-surface border border-border rounded-2xl w-full max-w-lg" data-testid="skills-describe-modal">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-border">
+          <div
+            className="bg-surface border border-border rounded-2xl w-full max-w-xl flex flex-col"
+            style={{ maxHeight: "90vh" }}
+            data-testid="skills-describe-modal"
+          >
+            <div className="flex items-start justify-between px-6 py-5 border-b border-border">
               <div>
-                <h3 className="font-semibold text-text">Describe your skills</h3>
+                <h3 className="font-semibold text-text">List your skills</h3>
                 <p className="text-xs text-text2 mt-0.5">
-                  In your own words: hard skills, soft skills, tools — what did each job level up?
-                  We combine this with your resume and group everything for the skills-first version.
+                  Write them yourself, in your own words — we only fix spelling and grammar,
+                  then sort them into groups. We never add skills you didn&apos;t write.
                 </p>
               </div>
               <button onClick={() => setShowSkillsModal(false)} className="text-text2 hover:text-text p-1 ml-4 flex-shrink-0">
@@ -697,30 +728,80 @@ export default function ResumeATSPanel() {
                 </svg>
               </button>
             </div>
-            <div className="px-6 py-5">
-              <textarea
-                value={skillsDraft}
-                onChange={e => setSkillsDraft(e.target.value)}
-                rows={6}
-                maxLength={4000}
-                placeholder="e.g. 4 years of React and TypeScript; ran Meta Ads campaigns; strong client communication; learned Figma and basic SQL at my last job…"
-                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-text placeholder-text2 focus:outline-none focus:border-accent resize-y"
-                data-testid="skills-describe-input"
-              />
-              <p className="text-xs text-text2 mt-1.5">
-                Saved to your profile — it pre-fills here next time. Leaving it empty is fine: we&apos;ll group from the resume alone.
+
+            <div className="px-6 py-5 space-y-4 overflow-y-auto">
+              {/* A real example, not a hint: people write one word per line until they
+                  see what "detailed" looks like. */}
+              <details className="rounded-lg border border-border bg-surface2/50" open={!skillsDraft}>
+                <summary className="px-3 py-2 text-xs font-semibold text-text cursor-pointer select-none">
+                  Example — this is the level of detail we&apos;re after
+                </summary>
+                <pre className="px-3 pb-3 text-[11px] leading-relaxed text-text2 whitespace-pre-wrap font-sans">
+{SKILLS_EXAMPLE}
+                </pre>
+                <p className="px-3 pb-3 text-[11px] text-text2">
+                  Notice: tools are <em>named</em>, years and levels are stated, and soft skills
+                  say what actually happened. One skill per line is easiest.
+                </p>
+              </details>
+
+              <div>
+                <textarea
+                  value={skillsDraft}
+                  onChange={e => setSkillsDraft(e.target.value)}
+                  rows={10}
+                  maxLength={4000}
+                  placeholder={"One skill per line. Name the tools, say how long, say what you did with it.\n\nCustomer support over live chat (3 years, Zendesk)\nExcel: pivot tables, VLOOKUP\nTraining new hires — wrote our onboarding checklist"}
+                  className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-text placeholder-text2 focus:outline-none focus:border-accent resize-y"
+                  data-testid="skills-describe-input"
+                />
+                <div className="flex items-center justify-between gap-3 mt-2">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="h-1.5 flex-1 max-w-[140px] rounded-full bg-surface2 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${skillCount >= MIN_SKILLS ? "bg-green" : "bg-accent"}`}
+                        style={{ width: `${Math.min(100, (skillCount / MIN_SKILLS) * 100)}%` }}
+                      />
+                    </div>
+                    <span
+                      className={`text-xs font-semibold tabular-nums ${skillCount >= MIN_SKILLS ? "text-green" : "text-text2"}`}
+                      data-testid="skills-count"
+                    >
+                      {skillCount} / {MIN_SKILLS}
+                    </span>
+                  </div>
+                  <span className="text-xs text-text2 text-right">
+                    {skillCount >= MIN_SKILLS
+                      ? "Enough to build a real skills section — more is still better."
+                      : `Add ${MIN_SKILLS - skillCount} more skill${MIN_SKILLS - skillCount === 1 ? "" : "s"}.`}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs text-text2">
+                Saved to your profile — it pre-fills here next time, so you can build the list over
+                several sittings.
               </p>
             </div>
-            <div className="px-6 py-4 border-t border-border flex flex-wrap gap-3">
-              <Button onClick={handleGenerateSkills} disabled={skillsGenerating || savingSkills}>
+
+            <div className="px-6 py-4 border-t border-border flex flex-wrap items-center gap-3">
+              <Button
+                onClick={handleGenerateSkills}
+                disabled={skillsGenerating || savingSkills || skillCount < MIN_SKILLS}
+              >
                 {skillsGenerating ? "Generating…" : "Save & Generate"}
               </Button>
               <Button variant="secondary" onClick={handleSaveSkillsOnly} disabled={savingSkills || skillsGenerating}>
-                {savingSkills ? "Saving…" : "Save only"}
+                {savingSkills ? "Saving…" : "Save for later"}
               </Button>
               <Button variant="secondary" onClick={() => setShowSkillsModal(false)}>
                 Cancel
               </Button>
+              {skillCount < MIN_SKILLS && (
+                <span className="text-xs text-text2">
+                  Generating needs {MIN_SKILLS} skills — saving works any time.
+                </span>
+              )}
             </div>
           </div>
         </div>
