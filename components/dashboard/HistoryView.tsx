@@ -20,7 +20,7 @@
  * Theme-safe: semantic tokens only.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { Application } from "@/lib/types";
 import { PLATFORMS, JOB_STATUSES } from "@/lib/constants";
@@ -230,15 +230,22 @@ export default function HistoryView({ applications }: { applications: Applicatio
                           Prep for this
                         </Link>
                       )}
-                      {a.link && (
+                      {/* Hidden while open — the expanded record carries its own
+                          "Job posting" chip, and two of the same link on one row
+                          is noise. */}
+                      {a.link && !isOpen && (
                         <a href={a.link} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-                          className="text-[11px] text-accent hover:underline shrink-0">job post ↗</a>
+                          className="hd-chip hd-chip-ghost shrink-0">
+                          <IconExternal />
+                          job post
+                        </a>
                       )}
                       {r?.shot && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setOpenShot(openShot === r.shot ? null : r.shot!); }}
-                          className="text-[11px] text-accent hover:underline shrink-0"
+                          className="hd-chip hd-chip-ghost shrink-0"
                         >
+                          <IconEye />
                           {openShot === r.shot ? "hide proof" : "view proof"}
                         </button>
                       )}
@@ -273,29 +280,33 @@ export default function HistoryView({ applications }: { applications: Applicatio
 function ApplicationDetail({ a }: { a: Application }) {
   const hasDocs = !!(a.cover_letter || a.tailored_resume || a.resume_pdf_url);
   return (
-    <div className="px-3.5 pb-4 pt-1 bg-surface2/30" data-testid="history-detail">
-      <div className="flex items-center gap-3 flex-wrap text-[12px] mb-2">
+    <div className="px-3.5 pb-4 pt-2 bg-surface2/30 hd-detail-in" data-testid="history-detail">
+      <div className="flex items-center gap-2 flex-wrap mb-3">
         {a.link ? (
-          <a href={a.link} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:underline">
-            Open job posting ↗
+          <a href={a.link} target="_blank" rel="noopener noreferrer"
+            className="hd-chip hd-rise" style={{ animationDelay: "40ms" }}>
+            <IconExternal />
+            Job posting
           </a>
         ) : (
-          <span className="text-text2">No job link saved for this one.</span>
+          <span className="text-[12px] text-text2">No job link saved for this one.</span>
         )}
         {a.resume_pdf_url && (
-          <a href={a.resume_pdf_url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:underline">
-            Résumé PDF we submitted ↗
+          <a href={a.resume_pdf_url} target="_blank" rel="noopener noreferrer"
+            className="hd-chip hd-rise" style={{ animationDelay: "90ms" }}>
+            <IconDocument />
+            Résumé PDF we submitted
           </a>
         )}
       </div>
       {a.cover_letter && (
-        <DocBlock label="Cover letter we sent" text={a.cover_letter} />
+        <DocBlock label="Cover letter we sent" text={a.cover_letter} delay={140} />
       )}
       {a.tailored_resume && (
-        <DocBlock label="Tailored resume" text={a.tailored_resume} />
+        <DocBlock label="Tailored resume" text={a.tailored_resume} delay={190} />
       )}
       {!hasDocs && (
-        <p className="text-[12px] text-text2">
+        <p className="text-[12px] text-text2 hd-rise" style={{ animationDelay: "90ms" }}>
           No documents stored for this application — it went through with your standard resume,
           before per-job documents were kept. Newer applications include the cover letter and the
           exact résumé PDF submitted.
@@ -305,21 +316,74 @@ function ApplicationDetail({ a }: { a: Application }) {
   );
 }
 
-function DocBlock({ label, text }: { label: string; text: string }) {
+function DocBlock({ label, text, delay = 0 }: { label: string; text: string; delay?: number }) {
+  // Copy → "Copied" for a beat: the feedback lives on the button itself, no toast.
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  const copy = () => {
+    navigator.clipboard.writeText(text).catch(() => {});
+    setCopied(true);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCopied(false), 1800);
+  };
   return (
-    <div className="mb-3 last:mb-0">
+    <div className="mb-3 last:mb-0 hd-rise" style={{ animationDelay: `${delay}ms` }}>
       <div className="flex items-center gap-2 mb-1.5">
         <span className="text-[11px] font-semibold text-accent uppercase tracking-wide">{label}</span>
-        <button
-          onClick={() => navigator.clipboard.writeText(text)}
-          className="ml-auto text-[11px] text-text2 hover:text-accent transition px-2 py-0.5 rounded border border-border"
-        >
-          Copy
+        <button onClick={copy} aria-live="polite"
+          className={["ml-auto hd-chip", copied ? "hd-chip-done" : ""].join(" ")}>
+          {copied
+            ? <span className="hd-copied-pop inline-flex"><IconCheck /></span>
+            : <IconCopy />}
+          {copied ? "Copied" : "Copy"}
         </button>
       </div>
       <pre className="text-xs text-text2 whitespace-pre-wrap font-mono bg-surface border border-border rounded-lg p-3 max-h-72 overflow-y-auto">
         {text}
       </pre>
     </div>
+  );
+}
+
+/* ── Chip icons: 20×20 stroke glyphs, sized/colored by the .hd-chip recipe.
+   The external-link arrow carries .hd-chip-ext so hover slips it out of frame. ── */
+function IconExternal() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M9 4.5H5.5A1.5 1.5 0 0 0 4 6v8.5A1.5 1.5 0 0 0 5.5 16H14a1.5 1.5 0 0 0 1.5-1.5V11" />
+      <path className="hd-chip-ext" d="M12 4h4v4M16 4l-6.5 6.5" />
+    </svg>
+  );
+}
+function IconDocument() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 3H6.5A1.5 1.5 0 0 0 5 4.5v11A1.5 1.5 0 0 0 6.5 17h7a1.5 1.5 0 0 0 1.5-1.5V6l-3-3Z" />
+      <path d="M12 3v3h3M8 10.5h4M8 13.5h4" />
+    </svg>
+  );
+}
+function IconEye() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M2.5 10s3-5.5 7.5-5.5S17.5 10 17.5 10s-3 5.5-7.5 5.5S2.5 10 2.5 10Z" />
+      <circle cx="10" cy="10" r="2.2" />
+    </svg>
+  );
+}
+function IconCopy() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="7" y="7" width="9" height="9" rx="1.5" />
+      <path d="M13 7V5.5A1.5 1.5 0 0 0 11.5 4h-6A1.5 1.5 0 0 0 4 5.5v6A1.5 1.5 0 0 0 5.5 13H7" />
+    </svg>
+  );
+}
+function IconCheck() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4.5 10.5l4 4L16 6" />
+    </svg>
   );
 }
