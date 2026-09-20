@@ -92,14 +92,13 @@ export default function SkillsModal({
       {/* The border earns its keep in dark mode: the writing pane and the page
           behind it are both near-black, so without it the frame disappears. */}
       <div
-        className="relative w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl
-          flex flex-col"
-        style={{ maxHeight: "92vh" }}
+        className="relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden
+          rounded-2xl border border-border bg-surface shadow-2xl"
         data-testid="skills-describe-modal"
       >
         {/* ── Night pane: the worked example, made the picture ───────────────── */}
         <aside
-          className="relative shrink-0 overflow-hidden px-7 py-5 lg:px-10 lg:py-6"
+          className="relative max-h-[38vh] shrink-0 overflow-y-auto px-7 py-5 lg:px-10 lg:py-6"
           style={{ background: "#07030F" }}
         >
           {/* The storyboard background from public/bg — the fan is the same art the
@@ -157,7 +156,7 @@ export default function SkillsModal({
         </aside>
 
         {/* ── Writing pane: black and white, nothing competing with the text ──── */}
-        <section className="flex min-h-0 flex-1 flex-col px-7 py-6 lg:px-10 lg:py-7">
+        <section className="flex min-h-0 flex-1 flex-col overflow-y-auto px-7 py-6 lg:px-10 lg:py-7">
           <div className="flex items-start justify-between gap-6">
             <div>
               <h3 className="text-[26px] font-bold leading-tight tracking-[-0.02em] text-text">
