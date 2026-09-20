@@ -1,5 +1,7 @@
 "use client";
 
+import { IllustrationTailored } from "@/components/illustrations";
+
 /**
  * "List your skills" — the one screen where the user writes the raw material for
  * their skills-first resume.
@@ -91,13 +93,13 @@ export default function SkillsModal({
           behind it are both near-black, so without it the frame disappears. */}
       <div
         className="relative w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl
-          flex flex-col lg:flex-row lg:aspect-[16/9]"
+          flex flex-col"
         style={{ maxHeight: "92vh" }}
         data-testid="skills-describe-modal"
       >
         {/* ── Night pane: the worked example, made the picture ───────────────── */}
         <aside
-          className="relative shrink-0 overflow-hidden px-7 py-7 lg:w-[42%] lg:px-9 lg:py-10 lg:overflow-y-auto"
+          className="relative shrink-0 overflow-hidden px-7 py-5 lg:px-10 lg:py-6"
           style={{
             background:
               "radial-gradient(120% 90% at 12% 0%, #3B1580 0%, #1B0940 42%, #07030F 100%)",
@@ -124,45 +126,44 @@ export default function SkillsModal({
             </svg>
           ))}
 
-          <div className="relative">
-            <div className="flex items-center gap-3">
-              {/* the AI orb — the brand's own focal motif */}
-              <span
-                className="h-7 w-7 shrink-0 rounded-full"
-                style={{
-                  background: "radial-gradient(circle at 34% 30%, #E9E4FF 0%, #A78BFA 42%, #6C5CE7 100%)",
-                  boxShadow: "0 0 22px rgba(167,139,250,.55)",
-                }}
-              />
+          {/* Wide, not tall: the band runs the full width and the example sits in
+              two columns beside the illustration, so it costs the dialog ~200px of
+              height instead of a whole column. */}
+          <div className="relative flex items-center gap-7 lg:gap-9">
+            {/* The existing spot illustration from components/illustrations — the
+                set the rest of the product already uses. Nothing new drawn here. */}
+            <IllustrationTailored size={86} className="hidden shrink-0 sm:block" />
+
+            <div className="min-w-0 flex-1">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-200/80">
                 Ten skills, like this
               </p>
+              <ul className="mt-3 grid gap-x-8 gap-y-1.5 sm:grid-cols-2">
+                {example.split("\n").map((line, i) => (
+                  <li key={i} className="flex gap-2.5 text-[14px] leading-snug text-white/90">
+                    <span aria-hidden className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-violet-300/70" />
+                    <span className="truncate">{line}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-[12.5px] leading-relaxed text-violet-200/75">
+                Tools are <em className="not-italic font-medium text-white/90">named</em>. Years and
+                levels are stated. Soft skills say what actually happened. One per line.
+              </p>
             </div>
-
-            <ul className="mt-6 space-y-2.5">
-              {example.split("\n").map((line, i) => (
-                <li key={i} className="flex gap-3 text-[15px] leading-snug text-white/90">
-                  <span aria-hidden className="mt-2 h-1 w-1 shrink-0 rounded-full bg-violet-300/70" />
-                  <span>{line}</span>
-                </li>
-              ))}
-            </ul>
-
-            <p className="mt-7 border-t border-white/10 pt-5 text-[13.5px] leading-relaxed text-violet-200/75">
-              Tools are <em className="text-white/90 not-italic font-medium">named</em>. Years and
-              levels are stated. Soft skills say what actually happened. One per line.
-            </p>
           </div>
         </aside>
 
         {/* ── Writing pane: black and white, nothing competing with the text ──── */}
-        <section className="flex min-h-0 flex-1 flex-col px-7 py-7 lg:px-10 lg:py-9">
+        <section className="flex min-h-0 flex-1 flex-col px-7 py-6 lg:px-10 lg:py-7">
           <div className="flex items-start justify-between gap-6">
             <div>
               <h3 className="text-[26px] font-bold leading-tight tracking-[-0.02em] text-text">
                 List your skills
               </h3>
-              <p className="mt-2 max-w-md text-[15px] leading-relaxed text-text2">
+              {/* Full-contrast, not muted: this is the promise the user is acting on,
+                  not a caption (Igor, 09-20). */}
+              <p className="mt-1.5 max-w-xl text-[15px] leading-relaxed text-text">
                 You write them. We fix spelling and grammar and sort them into groups —
                 we never add skills you didn&apos;t write.
               </p>
@@ -192,13 +193,13 @@ export default function SkillsModal({
             onChange={e => onChange(e.target.value)}
             maxLength={4000}
             placeholder="One skill per line…"
-            className="mt-5 min-h-[180px] w-full flex-1 resize-none rounded-xl border border-border bg-background
+            className="mt-4 min-h-[96px] w-full flex-1 resize-none rounded-xl border border-border bg-background
               px-4 py-3.5 text-[16px] leading-relaxed text-text placeholder:text-[15px] placeholder:text-text2/40
               focus:border-text focus:outline-none"
             data-testid="skills-describe-input"
           />
 
-          <div className="mt-4 flex items-center gap-4">
+          <div className="mt-3 flex items-center gap-4">
             <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-surface2">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${met ? "bg-green" : "bg-text"}`}
@@ -213,13 +214,13 @@ export default function SkillsModal({
             </span>
           </div>
 
-          <p className="mt-2.5 text-[13.5px] text-text2">
+          <p className="mt-2.5 text-[14px] text-text">
             {met
               ? "Enough for a real skills section — more is still better."
               : `Add ${remaining} more skill${remaining === 1 ? "" : "s"}. Saved to your profile either way.`}
           </p>
 
-          <div className="mt-6 flex flex-wrap items-center gap-2.5">
+          <div className="mt-4 flex flex-wrap items-center gap-2.5">
             <button
               onClick={onGenerate}
               disabled={generating || saving || !met || !hasResume}
