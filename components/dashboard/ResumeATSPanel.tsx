@@ -126,6 +126,9 @@ export default function ResumeATSPanel() {
   const [showSkillsModal, setShowSkillsModal] = useState(false);
   const [skillsDraft, setSkillsDraft] = useState("");
   const [savingSkills, setSavingSkills] = useState(false);
+  // Errors from inside the skills modal belong inside it — the panel-level banner
+  // would be hidden behind the overlay the user is still looking at.
+  const [skillsError, setSkillsError] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showQA, setShowQA] = useState(false);
   const [questions, setQuestions] = useState<string[]>([]);
@@ -169,6 +172,18 @@ export default function ResumeATSPanel() {
         });
       }
       setLoading(false);
+
+      // Deep link from the setup checklist ("List your skills"). Settings is a long
+      // page and this panel sits at the bottom, so landing at the top looked like
+      // the feature wasn't there. Arriving with #skills means the user asked for
+      // exactly this box: scroll to it and open it, pre-filled with what they saved.
+      if (window.location.hash === "#skills") {
+        setSkillsDraft(p?.skills_description || "");
+        setShowSkillsModal(true);
+        requestAnimationFrame(() =>
+          document.getElementById("skills")?.scrollIntoView({ block: "center" })
+        );
+      }
     }
     load();
   }, [supabase]);
@@ -350,12 +365,13 @@ export default function ResumeATSPanel() {
   // that makes the second resume theirs, and they persist to the profile.
   function handleOpenSkills() {
     setSkillsDraft(data.skillsDescription);
+    setSkillsError(null);
     setShowSkillsModal(true);
   }
 
   async function handleSaveSkillsOnly() {
     setSavingSkills(true);
-    setError(null);
+    setSkillsError(null);
     try {
       const token = await getToken();
       const result = await apiCall("/profile/skills/describe", token, "POST", {
@@ -365,14 +381,13 @@ export default function ResumeATSPanel() {
       setShowSkillsModal(false);
       flash("Skills saved to your profile.");
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Could not save skills");
+      setSkillsError(e instanceof Error ? e.message : "Could not save skills");
     }
     setSavingSkills(false);
   }
 
   async function handleGenerateSkills() {
     setSkillsGenerating(true);
-    setShowSkillsModal(false);
     setError(null);
     try {
       const token = await getToken();
@@ -385,6 +400,9 @@ export default function ResumeATSPanel() {
         skillsDescription: skillsDraft.trim(),
         skillGroups: result.skill_groups || prev.skillGroups,
       }));
+      // Only now: a failed generation must leave the typed list on screen, not
+      // dump the user back to a closed modal with their words seemingly gone.
+      setShowSkillsModal(false);
       if (result.preview_url) {
         setPreviewUrl(result.preview_url);
         setDocxUrl(result.docx_url || null);
@@ -393,7 +411,7 @@ export default function ResumeATSPanel() {
       }
       flash("Skills resume generated — review it, then make it your default if you like it.");
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Could not generate skills resume");
+      setSkillsError(e instanceof Error ? e.message : "Could not generate skills resume");
     }
     setSkillsGenerating(false);
   }
@@ -653,7 +671,11 @@ export default function ResumeATSPanel() {
           job compressed to 1-2 lines. A style choice, not a fix, so it's not gated
           on the ATS score. */}
       {hasResume && (
-        <div className="p-4 bg-surface2 rounded-xl border border-border space-y-3" data-testid="skills-resume-block">
+        <div
+          id="skills"
+          className="p-4 bg-surface2 rounded-xl border border-border space-y-3 scroll-mt-24"
+          data-testid="skills-resume-block"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-text2 uppercase tracking-wide">Skills-First Version</span>
             {hasSkills && (
@@ -730,6 +752,12 @@ export default function ResumeATSPanel() {
             </div>
 
             <div className="px-6 py-5 space-y-4 overflow-y-auto">
+              {skillsError && (
+                <div className="p-3 rounded-lg bg-red/10 border border-red/20 text-red text-sm">
+                  {skillsError}
+                </div>
+              )}
+
               {/* A real example, not a hint: people write one word per line until they
                   see what "detailed" looks like. */}
               <details className="rounded-lg border border-border bg-surface2/50" open={!skillsDraft}>
@@ -787,7 +815,7 @@ export default function ResumeATSPanel() {
             <div className="px-6 py-4 border-t border-border flex flex-wrap items-center gap-3">
               <Button
                 onClick={handleGenerateSkills}
-                disabled={skillsGenerating || savingSkills || skillCount < MIN_SKILLS}
+                disabled={skillsGenerating || savingSkills || skillCount < MIN_SKILLS || !hasResume}
               >
                 {skillsGenerating ? "Generating…" : "Save & Generate"}
               </Button>
@@ -797,11 +825,15 @@ export default function ResumeATSPanel() {
               <Button variant="secondary" onClick={() => setShowSkillsModal(false)}>
                 Cancel
               </Button>
-              {skillCount < MIN_SKILLS && (
+              {!hasResume ? (
+                <span className="text-xs text-text2">
+                  Upload a resume above to generate — your skills save fine without one.
+                </span>
+              ) : skillCount < MIN_SKILLS ? (
                 <span className="text-xs text-text2">
                   Generating needs {MIN_SKILLS} skills — saving works any time.
                 </span>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

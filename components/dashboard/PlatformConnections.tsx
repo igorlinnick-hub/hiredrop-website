@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PLATFORMS } from "@/lib/constants";
+import { CONNECTABLE_PLATFORMS, PLATFORMS } from "@/lib/constants";
 
 /**
  * Platform connection manager.
@@ -17,7 +17,9 @@ import { PLATFORMS } from "@/lib/constants";
  * (ping.js relays it, reading chrome.storage.local directly).
  */
 
-const CONNECTABLE = PLATFORMS.filter((p) => p.connectable);
+// The full roster, "coming soon" ones included: this page is where a user SEES
+// what exists. Counting surfaces use LIVE_CONNECTABLE_PLATFORMS instead.
+const CONNECTABLE = CONNECTABLE_PLATFORMS;
 // Auto-apply platforms that need NO account (Greenhouse today) — full-auto and
 // ready to run out of the box. They earn a real card, not a footnote.
 const READY_AUTO = PLATFORMS.filter((p) => !p.connectable && p.autoApply);

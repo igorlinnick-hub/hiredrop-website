@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { PLATFORMS } from "@/lib/constants";
+import { LIVE_CONNECTABLE_PLATFORMS } from "@/lib/constants";
 
 // Compact dashboard pill that replaces the full PlatformConnections panel — the
 // panel now lives on its own /dashboard/platforms tab. Reads the same live login
 // state over the ping.js bridge and shows "N/M connected" with a link to manage.
 
-const CONNECTABLE = PLATFORMS.filter((p) => p.connectable);
+// Counts only platforms that apply today — a pill reading "1/3" where the third
+// can never be connected is a lie about the user's own setup.
+const CONNECTABLE = LIVE_CONNECTABLE_PLATFORMS;
 const CONN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export type Conn = { status?: string; checkedAt?: string };
