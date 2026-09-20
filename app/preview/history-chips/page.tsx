@@ -67,7 +67,7 @@ export default function PreviewHistoryChips() {
               <span className="text-accent">Hire</span>Drop — history doc chips
             </h1>
             <p className="text-xs text-text2 mt-1">
-              Expand a row: paper chips for the stored record, Copy turns into Copied.
+              Expand a row for the stored record. The status chip opens a picker — that is how a reply gets marked.
             </p>
           </div>
           <button
@@ -77,7 +77,9 @@ export default function PreviewHistoryChips() {
             {dark ? "☀︎ Day" : "☾ Night"}
           </button>
         </header>
-        <HistoryView applications={APPS} />
+        {/* No session on a public preview — swallow the write so the picker is
+            still clickable and the chip still moves. */}
+        <HistoryView applications={APPS} onSetStatus={async () => {}} />
       </div>
     </div>
   );

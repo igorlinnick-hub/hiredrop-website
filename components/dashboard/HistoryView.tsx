@@ -24,6 +24,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { Application } from "@/lib/types";
 import { PLATFORMS, JOB_STATUSES } from "@/lib/constants";
+import { createClient } from "@/lib/supabase/client";
+import { apiPatch } from "@/lib/api";
 
 type Receipt = {
   at: string; job_title: string; company: string; platform: string;
@@ -50,6 +52,28 @@ const REASON_MAP: [RegExp, string][] = [
 const userReason = (raw: string) => REASON_MAP.find(([re]) => re.test(raw))?.[1] ?? "we couldn't finish this one automatically";
 
 const RESPONSE_STATUSES = new Set(["interview", "interview_invite", "rejected", "received", "hired"]);
+// What the user may set by hand, in the order a search actually moves. Mirrors the
+// backend's USER_SETTABLE_STATUSES (routers/applications.py) — `applied_unconfirmed`
+// is missing from BOTH on purpose: it is the executor saying "we clicked but could
+// not confirm", and a self-reported version of that is worth nothing. `applied` is
+// here only so a mis-tap can be undone.
+const SETTABLE: { value: string; label: string; hint: string }[] = [
+  { value: "applied", label: "Applied", hint: "No reply yet" },
+  { value: "received", label: "Received", hint: "They confirmed they got it" },
+  { value: "interview", label: "Interview", hint: "They want to talk" },
+  { value: "rejected", label: "Rejected", hint: "They passed" },
+];
+// Colour carries the meaning, so the row is readable without reading: green = they
+// answered and it is good news, red = they answered and it is not, neutral = silence.
+const STATUS_TONE: Record<string, string> = {
+  interview: "border-green/45 text-green bg-green/5",
+  interview_invite: "border-green/45 text-green bg-green/5",
+  hired: "border-green/45 text-green bg-green/5",
+  rejected: "border-red/40 text-red bg-red/5",
+  received: "border-accent/40 text-accent bg-accent/5",
+  applied_unconfirmed: "border-border text-text2",
+};
+const statusTone = (s: string) => STATUS_TONE[s] ?? "border-border text-text2";
 const INTERVIEW_STATUSES = new Set(["interview", "interview_invite"]);
 const platformName = (id: string) => PLATFORMS.find((p) => p.id === id)?.name ?? id;
 const statusLabel = (s: string) => JOB_STATUSES.find((x) => x.value === s)?.label ?? s;
@@ -64,8 +88,20 @@ const prettyDay = (key: string) => {
   return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
 };
 
-export default function HistoryView({ applications }: { applications: Application[] }) {
+export default function HistoryView({
+  applications,
+  onSetStatus,
+}: {
+  applications: Application[];
+  /** Injected by /preview/history-chips so the picker works without a session.
+   *  Real dashboard leaves it undefined and the live PATCH is used. */
+  onSetStatus?: (id: string, status: string) => Promise<void>;
+}) {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
+  // Optimistic status edits, keyed by application id. The server is the record;
+  // this is only so the chip changes under the finger instead of after a round trip.
+  const [statusEdits, setStatusEdits] = useState<Record<string, string>>({});
+  const [statusError, setStatusError] = useState<string | null>(null);
   const [handbacks, setHandbacks] = useState<HandBack[]>([]);
   const [openShot, setOpenShot] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -76,6 +112,25 @@ export default function HistoryView({ applications }: { applications: Applicatio
       if (!next.delete(id)) next.add(id);
       return next;
     });
+
+  // Mark what the employer answered. Optimistic, and it puts the old value back
+  // if the write fails — a status that silently didn't save is worse than none.
+  const setStatus = async (id: string, status: string, previous: string) => {
+    setStatusEdits((prev) => ({ ...prev, [id]: status }));
+    setStatusError(null);
+    try {
+      if (onSetStatus) {
+        await onSetStatus(id, status);
+        return;
+      }
+      const { data: { session } } = await createClient().auth.getSession();
+      if (!session?.access_token) throw new Error("Not signed in");
+      await apiPatch(`/applications/${id}/status`, session.access_token, { status });
+    } catch {
+      setStatusEdits((prev) => ({ ...prev, [id]: previous }));
+      setStatusError("Couldn't save that — check your connection and try again.");
+    }
+  };
 
   // Pull receipts + hand-backs from the extension (bridge). Non-fatal if absent.
   useEffect(() => {
@@ -115,25 +170,32 @@ export default function HistoryView({ applications }: { applications: Applicatio
   // right for a "this week" counter anyway.
   const [now] = useState(() => Date.now());
 
+  // Everything downstream reads the edited status, so the metrics strip and the
+  // "Prep for this" affordance move the moment the user marks a reply.
+  const rows = useMemo(
+    () => applications.map((a) => (statusEdits[a.id] ? { ...a, status: statusEdits[a.id] } : a)),
+    [applications, statusEdits]
+  );
+
   const metrics = useMemo(() => {
-    const week = applications.filter((a) => now - new Date(a.date_applied).getTime() < 7 * 86400000).length;
-    const responses = applications.filter((a) => RESPONSE_STATUSES.has(a.status)).length;
+    const week = rows.filter((a) => now - new Date(a.date_applied).getTime() < 7 * 86400000).length;
+    const responses = rows.filter((a) => RESPONSE_STATUSES.has(a.status)).length;
     return {
-      total: applications.length,
+      total: rows.length,
       week,
       responses,
-      rate: applications.length ? Math.round((responses / applications.length) * 100) : 0,
+      rate: rows.length ? Math.round((responses / rows.length) * 100) : 0,
     };
-  }, [applications, now]);
+  }, [rows, now]);
 
   const byDay = useMemo(() => {
     const groups = new Map<string, Application[]>();
-    for (const a of applications) {
+    for (const a of rows) {
       const k = dayKey(a.date_applied);
       (groups.get(k) ?? groups.set(k, []).get(k)!).push(a);
     }
     return Array.from(groups.entries()).sort((a, b) => (a[0] < b[0] ? 1 : -1));
-  }, [applications]);
+  }, [rows]);
 
   return (
     <div className="space-y-6">
@@ -156,6 +218,10 @@ export default function HistoryView({ applications }: { applications: Applicatio
           </div>
         ))}
       </div>
+
+      {statusError && (
+        <p className="text-[12px] text-red" role="alert">{statusError}</p>
+      )}
 
       {/* Couldn't submit these (hand-backs) */}
       {handbacks.length > 0 && (
@@ -215,10 +281,10 @@ export default function HistoryView({ applications }: { applications: Applicatio
                           {new Date(a.date_applied).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </div>
                       </div>
-                      <span className={["text-[11px] px-2 py-0.5 rounded-full border shrink-0",
-                        RESPONSE_STATUSES.has(a.status) ? "border-accent/40 text-accent" : "border-border text-text2"].join(" ")}>
-                        {statusLabel(a.status)}
-                      </span>
+                      <StatusPicker
+                        status={a.status}
+                        onPick={(next) => setStatus(a.id, next, a.status)}
+                      />
                       {/* An interview is the one row where the next move isn't reading the
                           record — it's getting ready. Put that first, and loudly. */}
                       {INTERVIEW_STATUSES.has(a.status) && (
@@ -269,6 +335,81 @@ export default function HistoryView({ applications }: { applications: Applicatio
             </div>
           </div>
         ))
+      )}
+    </div>
+  );
+}
+
+/** The status chip, made pressable: the user's only channel for "the employer
+ *  answered". The automatic one (a shared inbox matched by company name across
+ *  every user) stays off, and the honest replacement is the person who already
+ *  has the reply in their own mail.
+ *
+ *  Sits inside a row that is itself a button, so every handler stops propagation —
+ *  picking a status must never also expand the record. */
+function StatusPicker({ status, onPick }: { status: string; onPick: (next: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (!wrap.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={wrap} className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`Status: ${statusLabel(status)}. Change it.`}
+        data-testid="status-picker"
+        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+        className={["hd-chip rounded-full py-1 text-[11px]", statusTone(status)].join(" ")}
+      >
+        {statusLabel(status)}
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden
+          className={["w-3 h-3 opacity-60 transition-transform duration-200", open ? "rotate-180" : ""].join(" ")}>
+          <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+        </svg>
+      </button>
+      {open && (
+        <div role="listbox" aria-label="Application status"
+          className="hd-menu absolute right-0 top-full mt-1.5 z-20 w-56 rounded-xl border border-border bg-surface p-1">
+          {SETTABLE.map((opt) => {
+            // interview_invite and interview are the same thing to a human, so the
+            // legacy value must still light up the "Interview" row as current.
+            const current = opt.value === status
+              || (opt.value === "interview" && status === "interview_invite");
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                role="option"
+                aria-selected={current}
+                onClick={(e) => { e.stopPropagation(); setOpen(false); if (!current) onPick(opt.value); }}
+                className="hd-menu-item w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left"
+              >
+                <span className="w-3.5 shrink-0 text-accent">
+                  {current && <IconCheck />}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[12px] font-medium text-text">{opt.label}</span>
+                  <span className="block text-[11px] text-text2">{opt.hint}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
       )}
     </div>
   );
