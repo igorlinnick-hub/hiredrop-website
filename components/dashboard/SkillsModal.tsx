@@ -1,5 +1,7 @@
 "use client";
 
+import { IllustrationTailored } from "@/components/illustrations";
+
 /**
  * "List your skills" — the one screen where the user writes the raw material for
  * their skills-first resume.
@@ -97,7 +99,7 @@ export default function SkillsModal({
       >
         {/* ── Night pane: the worked example, made the picture ───────────────── */}
         <aside
-          className="relative shrink-0 overflow-hidden px-7 py-7 lg:w-[42%] lg:px-9 lg:py-10 lg:overflow-y-auto"
+          className="relative shrink-0 overflow-hidden px-7 py-7 lg:w-[42%] lg:px-9 lg:py-8 lg:overflow-y-auto"
           style={{
             background:
               "radial-gradient(120% 90% at 12% 0%, #3B1580 0%, #1B0940 42%, #07030F 100%)",
@@ -125,21 +127,14 @@ export default function SkillsModal({
           ))}
 
           <div className="relative">
-            <div className="flex items-center gap-3">
-              {/* the AI orb — the brand's own focal motif */}
-              <span
-                className="h-7 w-7 shrink-0 rounded-full"
-                style={{
-                  background: "radial-gradient(circle at 34% 30%, #E9E4FF 0%, #A78BFA 42%, #6C5CE7 100%)",
-                  boxShadow: "0 0 22px rgba(167,139,250,.55)",
-                }}
-              />
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-200/80">
-                Ten skills, like this
-              </p>
-            </div>
+            {/* The existing spot illustration from components/illustrations — the
+                set the rest of the product already uses. Nothing new drawn here. */}
+            <IllustrationTailored size={72} className="-ml-1.5" />
+            <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-200/80">
+              Ten skills, like this
+            </p>
 
-            <ul className="mt-6 space-y-2.5">
+            <ul className="mt-5 space-y-2">
               {example.split("\n").map((line, i) => (
                 <li key={i} className="flex gap-3 text-[15px] leading-snug text-white/90">
                   <span aria-hidden className="mt-2 h-1 w-1 shrink-0 rounded-full bg-violet-300/70" />
@@ -148,7 +143,7 @@ export default function SkillsModal({
               ))}
             </ul>
 
-            <p className="mt-7 border-t border-white/10 pt-5 text-[13.5px] leading-relaxed text-violet-200/75">
+            <p className="mt-5 border-t border-white/10 pt-4 text-[13px] leading-relaxed text-violet-200/75">
               Tools are <em className="text-white/90 not-italic font-medium">named</em>. Years and
               levels are stated. Soft skills say what actually happened. One per line.
             </p>
@@ -162,7 +157,9 @@ export default function SkillsModal({
               <h3 className="text-[26px] font-bold leading-tight tracking-[-0.02em] text-text">
                 List your skills
               </h3>
-              <p className="mt-2 max-w-md text-[15px] leading-relaxed text-text2">
+              {/* Full-contrast, not muted: this is the promise the user is acting on,
+                  not a caption (Igor, 09-20). */}
+              <p className="mt-2 max-w-md text-[15px] leading-relaxed text-text">
                 You write them. We fix spelling and grammar and sort them into groups —
                 we never add skills you didn&apos;t write.
               </p>
@@ -213,7 +210,7 @@ export default function SkillsModal({
             </span>
           </div>
 
-          <p className="mt-2.5 text-[13.5px] text-text2">
+          <p className="mt-2.5 text-[14px] text-text">
             {met
               ? "Enough for a real skills section — more is still better."
               : `Add ${remaining} more skill${remaining === 1 ? "" : "s"}. Saved to your profile either way.`}
