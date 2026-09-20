@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import ExtensionTokenSync from "@/components/dashboard/ExtensionTokenSync";
 import ExtensionBridgeBanner from "@/components/dashboard/ExtensionBridgeBanner";
 import FitModeMenu from "@/components/dashboard/FitModeMenu";
+import ChecklistCard from "@/components/dashboard/ChecklistCard";
 
 const NAV_ITEMS = [
   {
@@ -160,6 +161,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             ))}
           </nav>
 
+          {/* What's left to get the most applications — its own framed block under the
+              nav, not a card stacked on top of the dashboard (Igor, 09-19). */}
+          <div className="mt-6">
+            <ChecklistCard />
+          </div>
+
           <nav className="mt-auto flex flex-col gap-1">
             {railFoot.map((item) => (
               <Link key={item.href} href={item.href} className={navLinkCls(pathname === item.href, "row")}>
@@ -203,6 +210,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </Link>
               ))}
             </nav>
+
+            {/* No rail below lg — the same block rides under the pills. */}
+            <div className="mb-8 lg:hidden max-w-sm">
+              <ChecklistCard />
+            </div>
 
             {children}
           </div>

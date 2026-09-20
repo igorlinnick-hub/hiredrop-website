@@ -12,7 +12,6 @@ import StatsCards from "@/components/dashboard/StatsCards";
 import JobsTable from "@/components/dashboard/JobsTable";
 import DevPanel from "@/components/dashboard/DevPanel";
 import QuickActions from "@/components/dashboard/QuickActions";
-import ChecklistDock from "@/components/dashboard/ChecklistDock";
 import MobileHandoff from "@/components/dashboard/MobileHandoff";
 import FreeTastePaywall from "@/components/dashboard/FreeTastePaywall";
 import CheckoutSuccessBanner from "@/components/dashboard/CheckoutSuccessBanner";
@@ -87,28 +86,6 @@ export default async function DashboardPage() {
           freeLimit={statsData.free_limit ?? 0}
         />
       )}
-
-      {/* Everything still worth doing, as a dock at the left edge instead of a stack
-          of full-width cards on top of the dashboard (Igor, 09-19). Not just setup:
-          stranded Tap swipes, thin keywords and half-connected platforms cost
-          applications too, so they're items here — along with the Job platforms row
-          (was PlatformsIndicator), Letter voice (was a row in QuickActions) and the
-          usage line from the old UsageBanner card. */}
-      <ChecklistDock
-        onboardingComplete={!onboardingIncomplete}
-        hasResume={!resumeMissing}
-        hasKeywords={hasKeywords}
-        hasSkills={hasSkillsListed}
-        keywordCount={(profile.keywords ?? []).length}
-        approvedWaiting={campaignData?.approved_waiting ?? 0}
-        submitMode={campaignData?.submit_mode}
-        tier={statsData?.tier ?? "free"}
-        tierLabel={(statsData?.tier ?? "free").charAt(0).toUpperCase() + (statsData?.tier ?? "free").slice(1)}
-        usedToday={statsData?.applications_today ?? 0}
-        dailyLimit={statsData?.daily_limit ?? 0}
-        freeUsed={statsData?.free_used}
-        freeLimit={statsData?.free_limit}
-      />
 
       {/* Phone visitors: honest hand-off — setup works here, applying runs on the computer */}
       <MobileHandoff campaignRunning={campaignRunning} />

@@ -1,17 +1,16 @@
-import ChecklistDock from "@/components/dashboard/ChecklistDock";
+import ChecklistCard from "@/components/dashboard/ChecklistCard";
 import StatsCards from "@/components/dashboard/StatsCards";
 
-export const metadata = { title: "Checklist dock — preview" };
+export const metadata = { title: "Checklist — preview" };
 
-// Logged-out look at the left-edge setup dock, staged over a stand-in for the
-// dashboard it floats on (the real one needs a session). The dock itself is the
-// real component: no session here, so the live probes resolve to "extension not
-// installed / nothing connected" and the server steps come from the props below.
-export default function SetupDockPreview() {
+// Logged-out look at the rail checklist, staged in a stand-in for the dashboard
+// shell (the real one needs a session). The block is the real component, so with
+// no session every row reads undone — that's the empty state, not a mock.
+export default function ChecklistPreview() {
   return (
     <div className="min-h-screen bg-background hd-dash-root">
       <div className="flex min-h-screen">
-        {/* Stand-in for the nav rail — the dock clears it on lg (left-[252px]) */}
+        {/* Stand-in for the nav rail — the checklist block sits inside it */}
         <aside className="hd-sidenav hidden lg:flex flex-col w-[236px] shrink-0 sticky top-0 h-screen
           border-r border-border bg-surface/75 backdrop-blur-xl px-3 py-5">
           <span className="px-3.5 mb-7 text-lg font-bold text-text">
@@ -23,6 +22,10 @@ export default function SetupDockPreview() {
               i === 0 ? "nav-active bg-accent/10 text-accent" : "text-text2",
             ].join(" ")}>{l}</span>
           ))}
+          <div className="mt-6">
+            <ChecklistCard />
+          </div>
+
           <div className="mt-auto flex flex-col gap-1">
             {["Extension", "Settings"].map((l) => (
               <span key={l} className="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-[15px] font-medium text-text2">{l}</span>
@@ -40,8 +43,8 @@ export default function SetupDockPreview() {
 
           <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
             <p className="text-xs text-text2/70">
-              Preview — the dock is the real component; everything behind it is a stand-in
-              for the dashboard.
+              Preview — the checklist in the rail is the real component; everything else is a
+              stand-in for the dashboard.
             </p>
 
             {/* Where the search filters + Start live on the real page */}
@@ -72,19 +75,6 @@ export default function SetupDockPreview() {
         </div>
       </div>
 
-      <ChecklistDock
-        onboardingComplete
-        hasResume
-        hasKeywords
-        hasSkills={false}
-        keywordCount={1}
-        approvedWaiting={4}
-        submitMode="auto"
-        tier="admin"
-        tierLabel="Admin"
-        usedToday={0}
-        dailyLimit={0}
-      />
     </div>
   );
 }
