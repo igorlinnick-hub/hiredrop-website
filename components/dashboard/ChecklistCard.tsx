@@ -39,14 +39,16 @@ type Row = {
  * Self-fetching on purpose — it rides the layout, so every dashboard route gets
  * it without threading props through pages that don't care.
  */
-export default function ChecklistCard() {
-  const [ready, setReady] = useState(false);
-  const [profileDone, setProfileDone] = useState(false);
-  const [hasResume, setHasResume] = useState(false);
+export default function ChecklistCard({ demo = false }: { demo?: boolean } = {}) {
+  // `demo` is for /preview/checklist only: with no session every row would read
+  // undone, which shows neither the green ticks nor the urgent row.
+  const [ready, setReady] = useState(demo);
+  const [profileDone, setProfileDone] = useState(demo);
+  const [hasResume, setHasResume] = useState(demo);
   const [hasSkills, setHasSkills] = useState(false);
-  const [keywordCount, setKeywordCount] = useState(0);
+  const [keywordCount, setKeywordCount] = useState(demo ? 1 : 0);
   const [letterStyle, setLetterStyle] = useState("");
-  const [approvedWaiting, setApprovedWaiting] = useState(0);
+  const [approvedWaiting, setApprovedWaiting] = useState(demo ? 4 : 0);
   const [submitMode, setSubmitMode] = useState<string | null>(null);
   const [tier, setTier] = useState("free");
   const [freeLeft, setFreeLeft] = useState<number | null>(null);
@@ -62,6 +64,7 @@ export default function ChecklistCard() {
   // Profile + backend state. Failures leave the card in its last good state
   // rather than claiming a step is undone.
   useEffect(() => {
+    if (demo) return;
     let cancelled = false;
     (async () => {
       try {
@@ -107,10 +110,11 @@ export default function ChecklistCard() {
       } catch { /* keep whatever we already know */ }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [demo]);
 
   // The two steps the server can't know: extension on THIS browser, platform logins.
   useEffect(() => {
+    if (demo) return;
     let cancelled = false;
     const probe = () =>
       checkExtensionPresent().then((v) => {
@@ -144,7 +148,7 @@ export default function ChecklistCard() {
       window.removeEventListener("focus", onVisible);
       clearInterval(iv);
     };
-  }, []);
+  }, [demo]);
 
   async function saveLetterStyle() {
     setLetterSaving(true);
@@ -243,21 +247,21 @@ export default function ChecklistCard() {
   return (
     <>
       <div
-        className="rounded-xl border border-accent/25 bg-accent/[0.04] px-2.5 py-2.5"
+        className="rounded-xl border border-border bg-surface px-2.5 py-2.5"
         data-testid="setup-checklist"
       >
         {/* Header: what's left, and the bar that shows how far along it is */}
         <div className="flex items-baseline gap-1.5 px-1">
-          <span className="text-[11px] font-bold uppercase tracking-wide text-accent">
+          <span className="text-[11px] font-bold uppercase tracking-wide text-text">
             {left === 0 ? "All done" : `${left} left`}
           </span>
           <span className="text-[10px] text-text2/70">
             {left === 0 ? "full reach" : "for more applications"}
           </span>
         </div>
-        <div className="mx-1 mt-1.5 h-1 rounded-full bg-surface2 overflow-hidden">
+        <div className="mx-1 mt-1.5 h-1 rounded-full bg-text/10 overflow-hidden">
           <div
-            className="h-full rounded-full bg-accent transition-all duration-500"
+            className="h-full rounded-full bg-text transition-all duration-500"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -271,8 +275,8 @@ export default function ChecklistCard() {
                   row.done
                     ? "bg-green/15 text-green"
                     : row.urgent
-                      ? "bg-accent text-white"
-                      : "border border-accent/40",
+                      ? "bg-text text-surface"
+                      : "border border-text2/40",
                 ].join(" ")}>
                   {row.done ? (
                     <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -311,7 +315,7 @@ export default function ChecklistCard() {
 
             const cls = [
               "w-full flex items-start gap-2 rounded-lg px-1 py-1.5 text-left text-[12.5px] transition",
-              row.urgent ? "bg-accent/10 hover:bg-accent/15" : "hover:bg-surface2/70",
+              row.urgent ? "bg-surface2 hover:bg-surface2/70" : "hover:bg-surface2/70",
             ].join(" ");
 
             return row.onClick ? (

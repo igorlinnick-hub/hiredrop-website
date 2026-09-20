@@ -4,8 +4,9 @@ import StatsCards from "@/components/dashboard/StatsCards";
 export const metadata = { title: "Checklist — preview" };
 
 // Logged-out look at the rail checklist, staged in a stand-in for the dashboard
-// shell (the real one needs a session). The block is the real component, so with
-// no session every row reads undone — that's the empty state, not a mock.
+// shell (the real one needs a session). The block is the real component in `demo`
+// mode — seeded state, so both marks (green tick, empty ring) and the urgent row
+// are visible without logging in.
 export default function ChecklistPreview() {
   return (
     <div className="min-h-screen bg-background hd-dash-root">
@@ -23,7 +24,7 @@ export default function ChecklistPreview() {
             ].join(" ")}>{l}</span>
           ))}
           <div className="mt-6">
-            <ChecklistCard />
+            <ChecklistCard demo />
           </div>
 
           <div className="mt-auto flex flex-col gap-1">
