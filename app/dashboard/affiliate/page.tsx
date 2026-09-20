@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { apiGet } from "@/lib/api";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import AffiliateView, {
   type AffiliateStats,
@@ -32,6 +33,49 @@ export default async function AffiliatePage() {
   const stats = (statsRows?.[0] ?? null) as AffiliateStats | null;
 
   if (!stats) {
+    // Not an affiliate — but they may have applied. "Under review" and "not in
+    // the program" are different answers, and telling someone who applied the
+    // second one reads as being forgotten.
+    const { data: { session } } = await supabase.auth.getSession();
+    const applied = session?.access_token
+      ? await apiGet<{ application: { desired_code: string; status: string } | null }>(
+          "/affiliate/application",
+          session.access_token,
+        ).catch(() => null)
+      : null;
+    const application = applied?.application ?? null;
+
+    if (application && application.status === "new") {
+      return (
+        <DashboardLayout>
+          <div className="max-w-xl">
+            <h1 className="text-2xl font-bold text-text">Affiliate</h1>
+            <p className="text-text2 mt-2">
+              Your application for{" "}
+              <span className="font-medium text-text">hiredrop.io/?ref={application.desired_code}</span>{" "}
+              is with us. A person reads every one — usually within a day or two. Nothing to do
+              here until then.
+            </p>
+          </div>
+        </DashboardLayout>
+      );
+    }
+
+    if (application && application.status === "approved") {
+      return (
+        <DashboardLayout>
+          <div className="max-w-xl">
+            <h1 className="text-2xl font-bold text-text">Affiliate</h1>
+            <p className="text-text2 mt-2">
+              You&apos;re approved — your link is{" "}
+              <span className="font-medium text-text">hiredrop.io/?ref={application.desired_code}</span>.
+              Your earnings will appear here as soon as someone you referred pays.
+            </p>
+          </div>
+        </DashboardLayout>
+      );
+    }
+
     return (
       <DashboardLayout>
         <div className="max-w-xl">
@@ -42,14 +86,14 @@ export default async function AffiliatePage() {
             own HireDrop free.
           </p>
           <p className="text-text2 mt-3">
-            We hand out links one at a time rather than running an open signup, so getting one is a
-            short conversation.
+            Applications are read by a person, so it&apos;s a short form rather than an instant
+            signup — tell us who you&apos;d share it with and pick the link you want.
           </p>
           <Link
-            href="/affiliate"
+            href="/affiliate/apply"
             className="inline-block mt-5 bg-accent hover:bg-accent/90 text-white font-semibold px-6 py-3 rounded-xl transition"
           >
-            Read how it works
+            Apply for a link
           </Link>
         </div>
       </DashboardLayout>

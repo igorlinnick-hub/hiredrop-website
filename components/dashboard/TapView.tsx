@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import Link, { useLinkStatus } from "next/link";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import StartReadinessModal, { gateStart, type ReadinessCheck } from "@/components/dashboard/StartReadiness";
 import { apiGet, apiPost, apiPatch } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
+import { startTapRun, markTapSessionStart } from "@/lib/tap-run";
 import { PLATFORMS } from "@/lib/constants";
 import type { Job } from "@/lib/types";
 
@@ -281,31 +283,10 @@ export default function TapView({ token: initialToken }: { token: string }) {
     if (busy) return;
     setBusy("start"); setErr(null);
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      let prefs: { keywords?: string[]; platforms?: string[]; location?: string; job_type?: string } = {};
-      if (user) {
-        const { data } = await supabase.from("profiles")
-          .select("keywords, platforms, location, job_type").eq("user_id", user.id).single();
-        prefs = data || {};
-      }
-      const filters = {
-        keywords: prefs.keywords || [],
-        platforms: prefs.platforms || [],
-        location: prefs.location || "",
-        job_type: prefs.job_type || "",
-      };
-      // Using the tapalka = TAP mode. Persist submit_mode=tap so the extension builds the
-      // by-link POOL from the jobs you swiped/approved — NOT the AUTO platform search-walk.
-      // Without this, submit_mode stayed 'auto' and a swipe kicked an Indeed auto-walk
-      // (→ Cloudflare "Additional Verification Required", 0 applied) instead of applying the
-      // cards you swiped (live 2026-07-30). Symmetric with the auto flow persisting 'auto'.
-      try {
-        const { data: { user: u } } = await supabase.auth.getUser();
-        if (u) await supabase.from("profiles").update({ submit_mode: "tap" }).eq("user_id", u.id);
-      } catch { /* non-fatal — extension also has a swipe-first guard */ }
-      window.postMessage({ type: "HIREDROP_SET_REVIEW", on: false }, "*");
-      window.postMessage({ type: "HIREDROP_START_CAMPAIGN", filters }, "*");
+      // Persist submit_mode=tap + arm the executor. Lives in lib/tap-run so the deck and
+      // the progress dock start a run the SAME way — the mode write is what keeps a swipe
+      // from kicking an auto platform walk (live 2026-07-30).
+      await startTapRun();
       setTimeout(() => setBusy((b) => (b === "start" ? null : b)), 45000);
       loadDeck();
     } catch (e) {
@@ -358,6 +339,9 @@ export default function TapView({ token: initialToken }: { token: string }) {
     });
     if (decision === "approve") {
       setApprovedCount((n) => n + 1);
+      // Stamp the start of this sitting so the dashboard arch can say "3 of 7" — it
+      // measures against today's count at the moment the batch began (lib/tap-run).
+      markTapSessionStart(applied);
       // Kick the background executor on the FIRST approval so applying starts without a
       // separate "Start" click. Desktop only (the phone can't drive the computer's
       // extension). Await the PATCH first so the extension sees this job as approved
@@ -504,13 +488,23 @@ export default function TapView({ token: initialToken }: { token: string }) {
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.push("/dashboard")}
-          className="flex items-center gap-1.5 text-sm text-text2 hover:text-text transition">
+        {/* Back to the dashboard. A <button> + router.push had no prefetch and no
+            pressed state, so the click sat there while the server rendered a page that
+            fetches /stats, /jobs and /campaign/status — the old screen stayed put and
+            the button felt dead (Igor 09-19). <Link prefetch> pulls the RSC payload
+            while this sits in view, the tile lights on hover and dips on press, and
+            the hint below spins if a navigation still has to wait. */}
+        <Link href="/dashboard" prefetch data-testid="tap-back"
+          className="-ml-1.5 flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-text2
+            hover:text-text hover:bg-surface2/70 active:scale-[.97] active:bg-surface2
+            transition duration-150 focus-visible:outline-none focus-visible:ring-2
+            focus-visible:ring-accent/40">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           Dashboard
-        </button>
+          <NavPending />
+        </Link>
         <div className="flex items-center gap-2 ml-1">
           <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-accent/12 text-accent">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2"
@@ -882,5 +876,23 @@ function DropWait({ clip }: { clip: string }) {
       </g>
       <ellipse cx="38" cy="50" rx="7" ry="12" fill="#fff" opacity=".3" transform="rotate(-18 38 50)" />
     </svg>
+  );
+}
+
+// Pending hint for the back link. Prefetch usually makes the navigation instant and
+// this never shows; it covers the case the docs name — a dynamic destination whose
+// prefetch hasn't landed yet — so a slow click still says "heard you". Fixed size and
+// always rendered (only opacity moves), so it can't shift the row.
+function NavPending() {
+  const { pending } = useLinkStatus();
+  return (
+    <span
+      aria-hidden
+      className={[
+        "ml-0.5 inline-block w-3 h-3 rounded-full border-[1.5px] border-current border-r-transparent",
+        "transition-opacity duration-150",
+        pending ? "opacity-70 animate-spin" : "opacity-0",
+      ].join(" ")}
+    />
   );
 }
