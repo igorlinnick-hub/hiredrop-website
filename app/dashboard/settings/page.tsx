@@ -204,7 +204,7 @@ export default function SettingsPage() {
         )}
 
         {/* Personal Info */}
-        <section className="bg-surface border border-border rounded-xl p-6 space-y-4">
+        <section className="hd-panel p-6 space-y-4">
           <h3 className="font-semibold text-text">Personal Information</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="First name" value={profile.name} onChange={(e) => update({ name: e.target.value })} />
@@ -294,7 +294,7 @@ export default function SettingsPage() {
             snapshot it loaded, so a Save here for an unrelated field silently reverted
             the filters a live campaign was started with. What's left in Settings is who
             you are — the things a form asks about you. */}
-        <section className="bg-surface border border-border rounded-xl p-6">
+        <section className="hd-panel p-6">
           <h3 className="font-semibold text-text">Your search</h3>
           <p className="text-sm text-text2 mt-1.5 leading-relaxed">
             Keywords, location, job type, where to apply, whether we send or you tap, and
@@ -305,7 +305,7 @@ export default function SettingsPage() {
             <a
               href="/dashboard"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs
-                font-medium bg-accent text-white hover:opacity-90 transition"
+                font-medium bg-text text-background hover:opacity-90 transition"
             >
               Search &amp; apply settings
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
