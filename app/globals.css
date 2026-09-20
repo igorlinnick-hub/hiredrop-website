@@ -1075,3 +1075,113 @@ h1, h2, h3 {
 }
 /* the crown overhangs its bar, so a stacked preview needs the headroom */
 .hd-dock-static section { padding-top: 26px; }
+
+/* ============================================================
+   HISTORY DOC CHIPS — the actions inside a History row's
+   expanded record (job posting / résumé PDF / copy a document).
+   The ink-day vocabulary reserves ink for THE primary action,
+   so these are paper chips: quiet at rest; on hover they lift
+   and catch the accent halo — gold whisper by day, violet by
+   night (both come free from var(--accent)).
+   ============================================================ */
+.hd-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    transform .2s cubic-bezier(.3, .9, .4, 1),
+    box-shadow .2s cubic-bezier(.3, .9, .4, 1),
+    border-color .2s, color .2s, background-color .2s;
+}
+.hd-chip svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  color: var(--text2);
+  transition: color .2s, transform .25s cubic-bezier(.3, .9, .4, 1);
+}
+.hd-chip:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  box-shadow:
+    0 6px 16px -6px rgba(16, 16, 20, .18),
+    0 0 22px -6px color-mix(in srgb, var(--accent) 38%, transparent);
+}
+.hd-chip:hover svg { color: var(--accent); }
+.hd-chip:active { transform: translateY(0) scale(.97); box-shadow: none; }
+/* the external-link arrow slips out of frame on hover — "opens elsewhere" wink */
+.hd-chip:hover .hd-chip-ext { transform: translate(1.5px, -1.5px); }
+
+/* Quiet inline variant for actions living ON the dense row itself: invisible
+   frame at rest (reads as a text link), materializes into a chip on hover. */
+.hd-chip-ghost {
+  padding: 4px 8px;
+  font-size: 11px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--accent);
+}
+.hd-chip-ghost svg { color: var(--accent); }
+.hd-chip-ghost:hover { background: var(--surface); }
+
+/* Copy → Copied: the chip settles into a green "done" state for a beat. */
+.hd-chip-done,
+.hd-chip-done:hover {
+  border-color: color-mix(in srgb, var(--green) 55%, var(--border));
+  color: var(--green);
+  box-shadow: none;
+  transform: none;
+}
+.hd-chip-done svg,
+.hd-chip-done:hover svg { color: var(--green); }
+
+/* Entrances: the expanded record fades down into place; its children rise
+   in with per-item delays set inline. Light, one-shot, sub-300ms. */
+@keyframes hdDetailIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hd-detail-in { animation: hdDetailIn .28s cubic-bezier(.3, .9, .4, 1) both; }
+@keyframes hdRise {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hd-rise { animation: hdRise .3s cubic-bezier(.3, .9, .4, 1) both; }
+@keyframes hdCopiedPop {
+  0%   { transform: scale(.6);  opacity: 0; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.hd-copied-pop { animation: hdCopiedPop .3s cubic-bezier(.3, .9, .4, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hd-detail-in, .hd-rise, .hd-copied-pop { animation: none; }
+  .hd-chip, .hd-chip:hover, .hd-chip:active { transform: none; }
+}
+
+/* ── Status menu: the History row's "what did the employer answer" picker.
+   Small, anchored, and animated from its top edge so it reads as unfolding
+   OUT of the chip that opened it. ── */
+@keyframes hdMenuIn {
+  from { opacity: 0; transform: translateY(-4px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.hd-menu {
+  transform-origin: top right;
+  animation: hdMenuIn .16s cubic-bezier(.3, .9, .4, 1) both;
+  box-shadow: 0 18px 40px -18px rgba(16, 16, 20, .45), 0 2px 6px rgba(16, 16, 20, .10);
+}
+.hd-menu-item {
+  transition: background-color .14s, color .14s;
+}
+.hd-menu-item:hover { background: var(--surface2); }
+@media (prefers-reduced-motion: reduce) { .hd-menu { animation: none; } }
