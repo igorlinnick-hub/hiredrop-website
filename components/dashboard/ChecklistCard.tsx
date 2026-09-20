@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { apiGet, type StatsResponse } from "@/lib/api";
 
@@ -10,6 +11,21 @@ import { isLiveConnected, type Conn } from "./PlatformsIndicator";
 
 const CONNECTABLE = PLATFORMS.filter((p) => p.connectable);
 const COLLAPSE_KEY = "hd_checklist_collapsed";
+// Last painted state. Without it every hard load paints "nothing is done" for as
+// long as the profile round-trip takes, then snaps — the flash Igor caught on 09-19.
+const SNAPSHOT_KEY = "hd_checklist_snapshot";
+
+type Snapshot = {
+  profile: boolean; resume: boolean; skills: boolean;
+  letter: boolean; ext: boolean; conns: number;
+};
+
+// Module scope, so it survives the remount a route change causes: every dashboard
+// page renders its own <DashboardLayout>, so React tears the rail down and builds
+// it again on navigation. Reading localStorage in an effect would still cost one
+// blank frame; this makes the second mount paint the known state synchronously.
+// Written only on the client — on the server it stays null, so SSR still matches.
+let cachedSnap: Snapshot | null = null;
 
 type Row = {
   id: string;
@@ -18,10 +34,47 @@ type Row = {
   // 212px wide, and the first pass at full sentences just truncated into "…".
   hint: string;
   done: boolean;
+  // 0..1. Binary steps are 0 or 1; "Connect job platforms" is a real fraction —
+  // one of three logged in is a third of that step, not a blank circle.
+  progress: number;
   href?: string;
   badge?: string;
   onClick?: () => void;
 };
+
+/** The step marker: a ring that fills, so partial progress reads as partial. */
+function Ring({ p }: { p: number }) {
+  const C = 2 * Math.PI * 6;
+  const done = p >= 1;
+  return (
+    <span className="relative mt-[3px] shrink-0 w-3.5 h-3.5">
+      {/* Colours go through stroke/fill utilities on purpose: a text-text2 class here
+          loses its alpha to the day-theme override in globals.css and the ring
+          comes out solid black. */}
+      <svg viewBox="0 0 16 16" className="w-full h-full -rotate-90">
+        <circle cx="8" cy="8" r="6" fill="none" strokeWidth="1.5" className="stroke-text2/30" />
+        {done && <circle cx="8" cy="8" r="6" className="fill-green/15" />}
+        {p > 0 && (
+          <circle
+            cx="8" cy="8" r="6" fill="none" strokeWidth="2" strokeLinecap="round"
+            className={done ? "stroke-green" : "stroke-text"}
+            style={{
+              strokeDasharray: C,
+              strokeDashoffset: C * (1 - Math.min(1, p)),
+              transition: "stroke-dashoffset .45s ease",
+            }}
+          />
+        )}
+      </svg>
+      {done && (
+        <svg className="absolute inset-0 m-auto w-2 h-2 text-green" fill="none"
+          stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={5} d="M5 13l4 4L19 7" />
+        </svg>
+      )}
+    </span>
+  );
+}
 
 /**
  * "What's left to get the most applications", as a framed block at the bottom of
@@ -44,6 +97,11 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
   const [hasSkills, setHasSkills] = useState(false);
   const [letterStyle, setLetterStyle] = useState("");
   const [tier, setTier] = useState("free");
+  // Which sources have answered. Until one has, we paint its last known value
+  // instead of a false "undone" — see SNAPSHOT_KEY.
+  const [profileLoaded, setProfileLoaded] = useState(demo);
+  const [connsAnswered, setConnsAnswered] = useState(false);
+  const [snap, setSnap] = useState<Snapshot | null>(cachedSnap);
   const [freeLeft, setFreeLeft] = useState<number | null>(null);
 
   const [extPresent, setExtPresent] = useState<boolean | null>(null);
@@ -72,16 +130,19 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
           .select("onboarding_completed, resume_url, keywords, skill_groups, skills_description, writing_style")
           .eq("user_id", user.id)
           .maybeSingle();
-        if (cancelled || !data) return;
-        const kw = (data.keywords ?? []) as string[];
-        setProfileDone(!!data.onboarding_completed && kw.length > 0);
-        setHasResume(!!data.resume_url);
-        setHasSkills(
-          ((data.skill_groups ?? []) as unknown[]).length > 0 ||
-          !!(data.skills_description ?? "").trim()
-        );
-        setLetterStyle(data.writing_style || "");
-        setLetterDraft(data.writing_style || "");
+        if (cancelled) return;
+        if (data) {
+          const kw = (data.keywords ?? []) as string[];
+          setProfileDone(!!data.onboarding_completed && kw.length > 0);
+          setHasResume(!!data.resume_url);
+          setHasSkills(
+            ((data.skill_groups ?? []) as unknown[]).length > 0 ||
+            !!(data.skills_description ?? "").trim()
+          );
+          setLetterStyle(data.writing_style || "");
+          setLetterDraft(data.writing_style || "");
+        }
+        setProfileLoaded(true);
 
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
@@ -113,6 +174,7 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
       if (e.source !== window || !e.data || typeof e.data !== "object") return;
       if (e.data.type === "HIREDROP_PLATFORM_CONNECTIONS" && e.data.ok) {
         setConnections(e.data.connections || {});
+        setConnsAnswered(true);
       }
     }
     window.addEventListener("message", onMsg);
@@ -137,7 +199,15 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
 
   useEffect(() => {
     try { setOpen(localStorage.getItem(COLLAPSE_KEY) !== "1"); } catch { /* stays open */ }
-  }, []);
+    if (demo) return;
+    try {
+      const raw = localStorage.getItem(SNAPSHOT_KEY);
+      if (raw) {
+        cachedSnap = JSON.parse(raw) as Snapshot;
+        setSnap(cachedSnap);
+      }
+    } catch { /* no snapshot, first paint is the empty state */ }
+  }, [demo]);
 
   function toggle() {
     setOpen((v) => {
@@ -162,30 +232,57 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
     setLetterSaving(false);
   }
 
-  const connectedCount = CONNECTABLE.filter((p) => isLiveConnected(connections[p.id])).length;
-  const extDone = extPresent === true;
+  // demo (= /preview/checklist) seeds one of three platforms and the extension, so
+  // the preview shows what the rail actually looks like mid-setup: a partial ring.
+  const connectedCount = demo ? 1 : connsAnswered
+    ? CONNECTABLE.filter((p) => isLiveConnected(connections[p.id])).length
+    : (snap?.conns ?? 0);
+  const extDone = demo ? true : extPresent !== null ? extPresent : (snap?.ext ?? false);
+  const doneProfile = profileLoaded ? profileDone : (snap?.profile ?? false);
+  const doneResume = profileLoaded ? hasResume : (snap?.resume ?? false);
+  const doneSkills = profileLoaded ? hasSkills : (snap?.skills ?? false);
+  const doneLetter = profileLoaded ? !!letterStyle : (snap?.letter ?? false);
   const chromium = browser === "chromium";
-  const probing = extPresent === null;
+  const probing = !demo && !connsAnswered && !snap;
+  const platformPct = connectedCount / CONNECTABLE.length;
+
+  // Remember what we painted, so the next hard load starts here instead of blank.
+  useEffect(() => {
+    if (demo || (!profileLoaded && extPresent === null && !connsAnswered)) return;
+    const next: Snapshot = {
+      profile: doneProfile, resume: doneResume, skills: doneSkills,
+      letter: doneLetter, ext: extDone, conns: connectedCount,
+    };
+    cachedSnap = next;
+    try {
+      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(next));
+    } catch { /* private mode: we just flash once on the next hard load */ }
+  }, [demo, profileLoaded, extPresent, connsAnswered,
+      doneProfile, doneResume, doneSkills, doneLetter, extDone, connectedCount]);
+
   const rows: Row[] = [
     {
       id: "profile",
       label: "Complete your profile",
       hint: "Keywords drive the search",
-      done: profileDone,
+      done: doneProfile,
+      progress: doneProfile ? 1 : 0,
       href: "/dashboard/settings",
     },
     {
       id: "resume",
       label: "Upload your resume",
       hint: "Fills forms, feeds letters",
-      done: hasResume,
+      done: doneResume,
+      progress: doneResume ? 1 : 0,
       href: "/dashboard/settings",
     },
     {
       id: "skills",
       label: "List your skills",
       hint: "Gets you past ATS screens",
-      done: hasSkills,
+      done: doneSkills,
+      progress: doneSkills ? 1 : 0,
       href: "/dashboard/settings",
     },
     {
@@ -193,6 +290,7 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
       label: "Install the extension",
       hint: chromium ? "It sends the applications" : "Finish this in Chrome",
       done: extDone,
+      progress: extDone ? 1 : 0,
       href: chromium ? "/extension" : undefined,
     },
     {
@@ -200,6 +298,7 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
       label: "Connect job platforms",
       hint: extDone ? "Each one is more jobs" : "Needs the extension first",
       done: connectedCount === CONNECTABLE.length,
+      progress: platformPct,
       badge: probing ? undefined : `${connectedCount}/${CONNECTABLE.length}`,
       href: extDone ? "/dashboard/platforms" : undefined,
     },
@@ -207,7 +306,8 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
       id: "letter",
       label: "Teach your letter voice",
       hint: "Letters sound like you",
-      done: !!letterStyle,
+      done: doneLetter,
+      progress: doneLetter ? 1 : 0,
       onClick: () => { setLetterDraft(letterStyle); setLetterOpen(true); },
     },
   ];
@@ -216,7 +316,9 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
   // don't count them (MobileHandoff explains where applying actually runs).
   const counted = chromium ? rows : rows.filter((r) => r.id !== "extension" && r.id !== "platforms");
   const left = counted.filter((r) => !r.done).length;
-  const pct = Math.round(((counted.length - left) / counted.length) * 100);
+  const pct = Math.round(
+    (counted.reduce((sum, r) => sum + Math.min(1, r.progress), 0) / counted.length) * 100
+  );
   const freeWarning = tier === "free" && freeLeft !== null && freeLeft <= 10;
 
   return (
@@ -260,16 +362,7 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
           {rows.map((row) => {
             const inner = (
               <>
-                <span className={[
-                  "mt-[3px] shrink-0 w-3.5 h-3.5 rounded-full flex items-center justify-center",
-                  row.done ? "bg-green/15 text-green" : "border border-text2/40",
-                ].join(" ")}>
-                  {row.done && (
-                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </span>
+                <Ring p={row.progress} />
 
                 <span className="min-w-0 flex-1">
                   <span className={[
@@ -300,12 +393,23 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
             const cls = "w-full flex items-start gap-2 rounded-lg px-1 py-1.5 text-left " +
               "text-[12.5px] transition hover:bg-surface2/70";
 
-            return row.onClick ? (
-              <button key={row.id} type="button" onClick={row.onClick} className={cls}
-                data-testid={`checklist-step-${row.id}`}>{inner}</button>
-            ) : (
-              <a key={row.id} href={row.href} className={cls}
-                data-testid={`checklist-step-${row.id}`}>{inner}</a>
+            if (row.onClick) {
+              return (
+                <button key={row.id} type="button" onClick={row.onClick} className={cls}
+                  data-testid={`checklist-step-${row.id}`}>{inner}</button>
+              );
+            }
+            // Not actionable here (extension steps outside desktop Chromium) — a bare
+            // <a href={undefined}> looked clickable and did nothing.
+            if (!row.href) {
+              return (
+                <div key={row.id} className={cls.replace("hover:bg-surface2/70", "")}
+                  data-testid={`checklist-step-${row.id}`}>{inner}</div>
+              );
+            }
+            return (
+              <Link key={row.id} href={row.href} className={cls}
+                data-testid={`checklist-step-${row.id}`}>{inner}</Link>
             );
           })}
         </div>
