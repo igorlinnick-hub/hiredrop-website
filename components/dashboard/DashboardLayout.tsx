@@ -8,6 +8,7 @@ import ExtensionTokenSync from "@/components/dashboard/ExtensionTokenSync";
 import ExtensionBridgeBanner from "@/components/dashboard/ExtensionBridgeBanner";
 import FitModeMenu from "@/components/dashboard/FitModeMenu";
 import ChecklistCard from "@/components/dashboard/ChecklistCard";
+import TapProgressDock from "@/components/dashboard/TapProgressDock";
 
 const NAV_ITEMS = [
   {
@@ -220,6 +221,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </div>
+
+      {/* A swipe batch stays visible after you leave the deck — the arch carries the
+          count, what's being worked on, and the one action that state needs. Not on
+          the deck itself: there the cards ARE the surface. */}
+      {pathname !== "/dashboard/tap" && <TapProgressDock />}
     </div>
   );
 }
