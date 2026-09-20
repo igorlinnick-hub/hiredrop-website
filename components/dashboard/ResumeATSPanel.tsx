@@ -3,37 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Button from "@/components/ui/Button";
+import SkillsModal, { MIN_SKILLS, SKILLS_EXAMPLE, countSkills } from "./SkillsModal";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "https://web-production-db45.up.railway.app";
 
 const ATS_PASS_THRESHOLD = 80;
-
-// We ask for at least this many skills — the grouping is only as good as what the
-// candidate actually lists. Mirrors MIN_SKILLS in modules/skills_resume.py.
-const MIN_SKILLS = 10;
-
-// Same separators the backend's count_skill_items uses, so the counter here and the
-// count the API reports never disagree.
-function countSkills(text: string): number {
-  if (!text) return 0;
-  return text
-    .split(/[,;\n•·|]+|(?<=[a-z])\s+and\s+(?=[A-Za-z])/)
-    .map(p => p.replace(/^[\s\t\-–—.]+|[\s\t\-–—.]+$/g, ""))
-    .filter(p => p.length >= 2).length;
-}
-
-const SKILLS_EXAMPLE = `Customer support over live chat and email (3 years, Zendesk)
-Handling angry customers without escalating — de-escalation
-Writing help-center articles in plain English
-Excel: pivot tables, VLOOKUP, basic charts
-Google Sheets + importing CSV reports
-Shopify admin: refunds, order edits, tracking issues
-Slack and Notion for daily team coordination
-Training new hires — wrote our onboarding checklist
-Scheduling shifts for a team of 6
-Basic HTML for editing email templates
-Spanish (conversational) for Spanish-speaking customers`;
 
 async function apiCall(path: string, token: string, method = "GET", body?: unknown) {
   const res = await fetch(`${API_BASE}/api/v1${path}`, {
@@ -729,115 +704,21 @@ export default function ResumeATSPanel() {
       )}
 
       {/* Describe-your-skills modal — the words persist to the profile either way */}
-      {showSkillsModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div
-            className="bg-surface border border-border rounded-2xl w-full max-w-xl flex flex-col"
-            style={{ maxHeight: "90vh" }}
-            data-testid="skills-describe-modal"
-          >
-            <div className="flex items-start justify-between px-6 py-5 border-b border-border">
-              <div>
-                <h3 className="font-semibold text-text">List your skills</h3>
-                <p className="text-xs text-text2 mt-0.5">
-                  Write them yourself, in your own words — we only fix spelling and grammar,
-                  then sort them into groups. We never add skills you didn&apos;t write.
-                </p>
-              </div>
-              <button onClick={() => setShowSkillsModal(false)} className="text-text2 hover:text-text p-1 ml-4 flex-shrink-0">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="px-6 py-5 space-y-4 overflow-y-auto">
-              {skillsError && (
-                <div className="p-3 rounded-lg bg-red/10 border border-red/20 text-red text-sm">
-                  {skillsError}
-                </div>
-              )}
-
-              {/* A real example, not a hint: people write one word per line until they
-                  see what "detailed" looks like. */}
-              <details className="rounded-lg border border-border bg-surface2/50" open={!skillsDraft}>
-                <summary className="px-3 py-2 text-xs font-semibold text-text cursor-pointer select-none">
-                  Example — this is the level of detail we&apos;re after
-                </summary>
-                <pre className="px-3 pb-3 text-[11px] leading-relaxed text-text2 whitespace-pre-wrap font-sans">
-{SKILLS_EXAMPLE}
-                </pre>
-                <p className="px-3 pb-3 text-[11px] text-text2">
-                  Notice: tools are <em>named</em>, years and levels are stated, and soft skills
-                  say what actually happened. One skill per line is easiest.
-                </p>
-              </details>
-
-              <div>
-                <textarea
-                  value={skillsDraft}
-                  onChange={e => setSkillsDraft(e.target.value)}
-                  rows={10}
-                  maxLength={4000}
-                  placeholder={"One skill per line. Name the tools, say how long, say what you did with it.\n\nCustomer support over live chat (3 years, Zendesk)\nExcel: pivot tables, VLOOKUP\nTraining new hires — wrote our onboarding checklist"}
-                  className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-text placeholder-text2 focus:outline-none focus:border-accent resize-y"
-                  data-testid="skills-describe-input"
-                />
-                <div className="flex items-center justify-between gap-3 mt-2">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <div className="h-1.5 flex-1 max-w-[140px] rounded-full bg-surface2 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${skillCount >= MIN_SKILLS ? "bg-green" : "bg-accent"}`}
-                        style={{ width: `${Math.min(100, (skillCount / MIN_SKILLS) * 100)}%` }}
-                      />
-                    </div>
-                    <span
-                      className={`text-xs font-semibold tabular-nums ${skillCount >= MIN_SKILLS ? "text-green" : "text-text2"}`}
-                      data-testid="skills-count"
-                    >
-                      {skillCount} / {MIN_SKILLS}
-                    </span>
-                  </div>
-                  <span className="text-xs text-text2 text-right">
-                    {skillCount >= MIN_SKILLS
-                      ? "Enough to build a real skills section — more is still better."
-                      : `Add ${MIN_SKILLS - skillCount} more skill${MIN_SKILLS - skillCount === 1 ? "" : "s"}.`}
-                  </span>
-                </div>
-              </div>
-
-              <p className="text-xs text-text2">
-                Saved to your profile — it pre-fills here next time, so you can build the list over
-                several sittings.
-              </p>
-            </div>
-
-            <div className="px-6 py-4 border-t border-border flex flex-wrap items-center gap-3">
-              <Button
-                onClick={handleGenerateSkills}
-                disabled={skillsGenerating || savingSkills || skillCount < MIN_SKILLS || !hasResume}
-              >
-                {skillsGenerating ? "Generating…" : "Save & Generate"}
-              </Button>
-              <Button variant="secondary" onClick={handleSaveSkillsOnly} disabled={savingSkills || skillsGenerating}>
-                {savingSkills ? "Saving…" : "Save for later"}
-              </Button>
-              <Button variant="secondary" onClick={() => setShowSkillsModal(false)}>
-                Cancel
-              </Button>
-              {!hasResume ? (
-                <span className="text-xs text-text2">
-                  Upload a resume above to generate — your skills save fine without one.
-                </span>
-              ) : skillCount < MIN_SKILLS ? (
-                <span className="text-xs text-text2">
-                  Generating needs {MIN_SKILLS} skills — saving works any time.
-                </span>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      )}
+      <SkillsModal
+        open={showSkillsModal}
+        value={skillsDraft}
+        onChange={setSkillsDraft}
+        onClose={() => setShowSkillsModal(false)}
+        onSave={handleSaveSkillsOnly}
+        onGenerate={handleGenerateSkills}
+        saving={savingSkills}
+        generating={skillsGenerating}
+        error={skillsError}
+        hasResume={hasResume}
+        skillCount={skillCount}
+        minSkills={MIN_SKILLS}
+        example={SKILLS_EXAMPLE}
+      />
 
       {/* Q&A Modal */}
       {showQA && (
