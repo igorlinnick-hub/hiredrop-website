@@ -2,16 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { apiGet, type StatsResponse, type CampaignStatusResponse } from "@/lib/api";
+import { apiGet, type StatsResponse } from "@/lib/api";
 
 import { PLATFORMS } from "@/lib/constants";
 import { checkExtensionPresent, detectBrowser, type BrowserKind } from "./StartReadiness";
 import { isLiveConnected, type Conn } from "./PlatformsIndicator";
 
 const CONNECTABLE = PLATFORMS.filter((p) => p.connectable);
-// Below this, more titles is the cheapest win available: each keyword is its own
-// sweep of the boards, so one keyword is one narrow search.
-const KEYWORDS_TARGET = 3;
 const COLLAPSE_KEY = "hd_checklist_collapsed";
 
 type Row = {
@@ -23,7 +20,6 @@ type Row = {
   done: boolean;
   href?: string;
   badge?: string;
-  urgent?: boolean;
   onClick?: () => void;
 };
 
@@ -32,25 +28,21 @@ type Row = {
  * the nav rail (Igor, 09-19: in the sidebar next to Platforms/History/Extension,
  * lower, in its own frame — and one line per item, no paragraphs).
  *
- * It is NOT an install checklist. Setup steps are in it because an unfinished
- * profile costs applications, and so does everything else here: approved swipes
- * nobody sent, one keyword where three would sweep three times as much, two of
- * three platforms logged out, cover letters in nobody's voice.
+ * Each row says what it buys you, because that's the point: a missing resume, two
+ * of three platforms logged out or cover letters in nobody's voice all cost
+ * applications. Igor cut two rows on 09-19 — stranded Tap swipes and "add more job
+ * titles" — as noise in a sidebar; the swipes count now has NO surface anywhere.
  *
  * Self-fetching on purpose — it rides the layout, so every dashboard route gets
  * it without threading props through pages that don't care.
  */
 export default function ChecklistCard({ demo = false }: { demo?: boolean } = {}) {
   // `demo` is for /preview/checklist only: with no session every row would read
-  // undone, which shows neither the green ticks nor the urgent row.
-  const [ready, setReady] = useState(demo);
+  // undone, so the green ticks would never show.
   const [profileDone, setProfileDone] = useState(demo);
   const [hasResume, setHasResume] = useState(demo);
   const [hasSkills, setHasSkills] = useState(false);
-  const [keywordCount, setKeywordCount] = useState(demo ? 1 : 0);
   const [letterStyle, setLetterStyle] = useState("");
-  const [approvedWaiting, setApprovedWaiting] = useState(demo ? 4 : 0);
-  const [submitMode, setSubmitMode] = useState<string | null>(null);
   const [tier, setTier] = useState("free");
   const [freeLeft, setFreeLeft] = useState<number | null>(null);
 
@@ -82,7 +74,6 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
           .maybeSingle();
         if (cancelled || !data) return;
         const kw = (data.keywords ?? []) as string[];
-        setKeywordCount(kw.length);
         setProfileDone(!!data.onboarding_completed && kw.length > 0);
         setHasResume(!!data.resume_url);
         setHasSkills(
@@ -91,25 +82,15 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
         );
         setLetterStyle(data.writing_style || "");
         setLetterDraft(data.writing_style || "");
-        setReady(true);
 
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
         if (!token || cancelled) return;
-        const [status, stats] = await Promise.allSettled([
-          apiGet<CampaignStatusResponse>("/campaign/status", token),
-          apiGet<StatsResponse>("/stats", token),
-        ]);
+        const stats = await apiGet<StatsResponse>("/stats", token);
         if (cancelled) return;
-        if (status.status === "fulfilled") {
-          setApprovedWaiting(status.value.approved_waiting ?? 0);
-          setSubmitMode(status.value.submit_mode ?? null);
-        }
-        if (stats.status === "fulfilled") {
-          setTier(stats.value.tier);
-          if (stats.value.tier === "free" && typeof stats.value.free_limit === "number") {
-            setFreeLeft(Math.max(0, stats.value.free_limit - (stats.value.free_used ?? 0)));
-          }
+        setTier(stats.tier);
+        if (stats.tier === "free" && typeof stats.free_limit === "number") {
+          setFreeLeft(Math.max(0, stats.free_limit - (stats.free_used ?? 0)));
         }
       } catch { /* keep whatever we already know */ }
     })();
@@ -185,21 +166,7 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
   const extDone = extPresent === true;
   const chromium = browser === "chromium";
   const probing = extPresent === null;
-  // Swipes are only stranded while the run isn't Tap (#185).
-  const swipes = submitMode === "tap" ? 0 : approvedWaiting;
-
-  const rows: Row[] = [];
-  if (swipes > 0) {
-    rows.push({
-      id: "swipes",
-      label: `Send ${swipes} approved ${swipes === 1 ? "swipe" : "swipes"}`,
-      hint: "Auto never picks them up",
-      done: false,
-      urgent: true,
-      href: "/dashboard/tap",
-    });
-  }
-  rows.push(
+  const rows: Row[] = [
     {
       id: "profile",
       label: "Complete your profile",
@@ -219,14 +186,6 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
       label: "List your skills",
       hint: "Gets you past ATS screens",
       done: hasSkills,
-      href: "/dashboard/settings",
-    },
-    {
-      id: "keywords",
-      label: "Add more job titles",
-      hint: "Each title is another search",
-      done: keywordCount >= KEYWORDS_TARGET,
-      badge: ready ? `${keywordCount}` : undefined,
       href: "/dashboard/settings",
     },
     {
@@ -251,7 +210,7 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
       done: !!letterStyle,
       onClick: () => { setLetterDraft(letterStyle); setLetterOpen(true); },
     },
-  );
+  ];
 
   // Outside desktop Chromium the two extension-bound rows aren't actionable —
   // don't count them (MobileHandoff explains where applying actually runs).
@@ -303,25 +262,19 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
               <>
                 <span className={[
                   "mt-[3px] shrink-0 w-3.5 h-3.5 rounded-full flex items-center justify-center",
-                  row.done
-                    ? "bg-green/15 text-green"
-                    : row.urgent
-                      ? "bg-text text-surface"
-                      : "border border-text2/40",
+                  row.done ? "bg-green/15 text-green" : "border border-text2/40",
                 ].join(" ")}>
-                  {row.done ? (
+                  {row.done && (
                     <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
                     </svg>
-                  ) : row.urgent ? (
-                    <span className="text-[8px] font-black leading-none">!</span>
-                  ) : null}
+                  )}
                 </span>
 
                 <span className="min-w-0 flex-1">
                   <span className={[
                     "block leading-snug",
-                    row.done ? "text-text2/60" : row.urgent ? "font-semibold text-text" : "text-text",
+                    row.done ? "text-text2/60" : "text-text",
                   ].join(" ")}>
                     {row.label}
                   </span>
@@ -344,10 +297,8 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
               </>
             );
 
-            const cls = [
-              "w-full flex items-start gap-2 rounded-lg px-1 py-1.5 text-left text-[12.5px] transition",
-              row.urgent ? "bg-surface2 hover:bg-surface2/70" : "hover:bg-surface2/70",
-            ].join(" ");
+            const cls = "w-full flex items-start gap-2 rounded-lg px-1 py-1.5 text-left " +
+              "text-[12.5px] transition hover:bg-surface2/70";
 
             return row.onClick ? (
               <button key={row.id} type="button" onClick={row.onClick} className={cls}
