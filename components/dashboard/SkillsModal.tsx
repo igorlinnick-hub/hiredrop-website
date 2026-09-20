@@ -100,21 +100,23 @@ export default function SkillsModal({
         {/* ── Night pane: the worked example, made the picture ───────────────── */}
         <aside
           className="relative shrink-0 overflow-hidden px-7 py-5 lg:px-10 lg:py-6"
-          style={{
-            background:
-              "radial-gradient(120% 90% at 12% 0%, #3B1580 0%, #1B0940 42%, #07030F 100%)",
-          }}
+          style={{ background: "#07030F" }}
         >
-          {/* glow + marks: texture only, never a stand-in for a subject */}
+          {/* The storyboard background from public/bg — the fan is the same art the
+              run dock uses, so the band reads as part of the product, not a new
+              decoration. Scrim on top because the example sits over it. */}
           <div
             aria-hidden
-            className="pointer-events-none absolute -left-16 -top-24 h-72 w-72 rounded-full blur-3xl"
-            style={{ background: "radial-gradient(circle, rgba(167,139,250,.38), transparent 68%)" }}
+            className="pointer-events-none absolute inset-0"
+            style={{ background: 'url("/bg/fan-night.jpg") center 60% / cover no-repeat' }}
           />
           <div
             aria-hidden
-            className="pointer-events-none absolute -bottom-28 -right-16 h-64 w-64 rounded-full blur-3xl"
-            style={{ background: "radial-gradient(circle, rgba(124,58,237,.30), transparent 70%)" }}
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(100deg, rgba(7,3,15,.90) 0%, rgba(7,3,15,.72) 42%, rgba(7,3,15,.58) 100%)",
+            }}
           />
           {MARKS.map((m, i) => (
             <svg
