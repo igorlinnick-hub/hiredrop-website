@@ -12,6 +12,7 @@ const CONNECTABLE = PLATFORMS.filter((p) => p.connectable);
 // Below this, more titles is the cheapest win available: each keyword is its own
 // sweep of the boards, so one keyword is one narrow search.
 const KEYWORDS_TARGET = 3;
+const COLLAPSE_KEY = "hd_checklist_collapsed";
 
 type Row = {
   id: string;
@@ -57,6 +58,9 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
   const [browser, setBrowser] = useState<BrowserKind>("chromium");
   const [connections, setConnections] = useState<Record<string, Conn>>({});
 
+  // Expanded/collapsed, remembered per browser. Collapsed keeps the header line and
+  // the bar — enough to see there's work left without the list taking rail height.
+  const [open, setOpen] = useState(true);
   const [letterOpen, setLetterOpen] = useState(false);
   const [letterDraft, setLetterDraft] = useState("");
   const [letterSaving, setLetterSaving] = useState(false);
@@ -149,6 +153,18 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
       clearInterval(iv);
     };
   }, [demo]);
+
+  useEffect(() => {
+    try { setOpen(localStorage.getItem(COLLAPSE_KEY) !== "1"); } catch { /* stays open */ }
+  }, []);
+
+  function toggle() {
+    setOpen((v) => {
+      const next = !v;
+      try { localStorage.setItem(COLLAPSE_KEY, next ? "0" : "1"); } catch { /* noop */ }
+      return next;
+    });
+  }
 
   async function saveLetterStyle() {
     setLetterSaving(true);
@@ -250,22 +266,37 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
         className="rounded-xl border border-border bg-surface px-2.5 py-2.5"
         data-testid="setup-checklist"
       >
-        {/* Header: what's left, and the bar that shows how far along it is */}
-        <div className="flex items-baseline gap-1.5 px-1">
-          <span className="text-[11px] font-bold uppercase tracking-wide text-text">
-            {left === 0 ? "All done" : `${left} left`}
+        {/* Header doubles as the toggle — the bar stays visible when collapsed */}
+        <button
+          type="button"
+          onClick={toggle}
+          data-testid="checklist-toggle"
+          aria-expanded={open}
+          className="w-full text-left"
+        >
+          <span className="flex items-baseline gap-1.5 px-1">
+            <span className="text-[11px] font-bold uppercase tracking-wide text-text">
+              {left === 0 ? "All done" : `${left} left`}
+            </span>
+            <span className="text-[10px] text-text2/70">
+              {left === 0 ? "full reach" : "for more applications"}
+            </span>
+            <svg
+              className={`ml-auto w-3.5 h-3.5 shrink-0 self-center text-text2/50 transition ${open ? "" : "-rotate-90"}`}
+              fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
           </span>
-          <span className="text-[10px] text-text2/70">
-            {left === 0 ? "full reach" : "for more applications"}
+          <span className="mx-1 mt-1.5 block h-1 rounded-full bg-text/10 overflow-hidden">
+            <span
+              className="block h-full rounded-full bg-text transition-all duration-500"
+              style={{ width: `${pct}%` }}
+            />
           </span>
-        </div>
-        <div className="mx-1 mt-1.5 h-1 rounded-full bg-text/10 overflow-hidden">
-          <div
-            className="h-full rounded-full bg-text transition-all duration-500"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
+        </button>
 
+        {open && (
         <div className="mt-1.5">
           {rows.map((row) => {
             const inner = (
@@ -327,9 +358,10 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
             );
           })}
         </div>
+        )}
 
         {/* Free taste — the number a free user lives by; paid tiers get nothing here. */}
-        {freeLeft !== null && (
+        {open && freeLeft !== null && (
           <p className={[
             "mt-1 px-1 text-[10px]",
             freeWarning ? "font-semibold text-amber-600" : "text-text2/70",
