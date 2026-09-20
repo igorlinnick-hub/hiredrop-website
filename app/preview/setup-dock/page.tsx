@@ -1,23 +1,74 @@
 import SetupDock from "@/components/dashboard/SetupDock";
+import StatsCards from "@/components/dashboard/StatsCards";
 
 export const metadata = { title: "Setup dock — preview" };
 
-// Logged-out preview of the left-edge setup dock (the checklist that replaced the
-// stack of full-width cards at the top of the dashboard). No session here, so the
-// live probes resolve to "not installed / not connected" and every server step
-// comes from the props below.
+// Logged-out look at the left-edge setup dock, staged over a stand-in for the
+// dashboard it floats on (the real one needs a session). The dock itself is the
+// real component: no session here, so the live probes resolve to "extension not
+// installed / nothing connected" and the server steps come from the props below.
 export default function SetupDockPreview() {
   return (
-    <div className="min-h-screen bg-background p-8 hd-dash-root">
-      <div className="max-w-3xl space-y-4">
-        <h1 className="text-2xl font-bold text-text">Setup dock</h1>
-        <p className="text-sm text-text2">
-          The checklist now lives bottom-left as a collapsible popup. It also holds
-          Job platforms and Letter voice, which used to sit loose in the dashboard flow,
-          and the plan/usage line from the old full-width usage card.
-        </p>
-        <div className="hd-glass rounded-2xl p-6 text-sm text-text2">
-          Page content sits here, undisturbed — the dock floats over it.
+    <div className="min-h-screen bg-background hd-dash-root">
+      <div className="flex min-h-screen">
+        {/* Stand-in for the nav rail — the dock clears it on lg (left-[252px]) */}
+        <aside className="hd-sidenav hidden lg:flex flex-col w-[236px] shrink-0 sticky top-0 h-screen
+          border-r border-border bg-surface/75 backdrop-blur-xl px-3 py-5">
+          <span className="px-3.5 mb-7 text-lg font-bold text-text">
+            <span className="text-accent">Hire</span>Drop
+          </span>
+          {["Dashboard", "History", "Platforms"].map((l, i) => (
+            <span key={l} className={[
+              "flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-[15px] font-medium",
+              i === 0 ? "nav-active bg-accent/10 text-accent" : "text-text2",
+            ].join(" ")}>{l}</span>
+          ))}
+          <div className="mt-auto flex flex-col gap-1">
+            {["Extension", "Settings"].map((l) => (
+              <span key={l} className="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-[15px] font-medium text-text2">{l}</span>
+            ))}
+          </div>
+        </aside>
+
+        <div className="flex-1 min-w-0">
+          <header className="border-b border-border bg-surface">
+            <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center justify-end h-14 gap-3">
+              <span className="text-sm text-text2">Balanced fit</span>
+              <span className="w-8 h-8 rounded-full bg-surface2 border border-border" />
+            </div>
+          </header>
+
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+            <p className="text-xs text-text2/70">
+              Preview — the dock is the real component; everything behind it is a stand-in
+              for the dashboard.
+            </p>
+
+            {/* Where the search filters + Start live on the real page */}
+            <div className="hd-glass rounded-2xl p-5 space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {["product manager", "program manager", "remote"].map((k) => (
+                  <span key={k} className="px-3 py-1.5 rounded-full bg-surface2 border border-border text-sm text-text2">{k}</span>
+                ))}
+              </div>
+              <div className="h-11 rounded-xl bg-surface2 border border-border" />
+              <div className="flex gap-3">
+                <span className="px-5 py-2.5 rounded-xl bg-accent text-white text-sm font-semibold">Start applying</span>
+                <span className="px-5 py-2.5 rounded-xl border border-border text-sm font-semibold text-text2">Find jobs</span>
+              </div>
+            </div>
+
+            <StatsCards totalJobs={719} totalApplications={128} applicationsToday={0} />
+
+            <div className="hd-glass rounded-2xl p-5">
+              <p className="text-sm font-semibold text-text mb-3">Your jobs</p>
+              <div className="space-y-2">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="h-14 rounded-xl bg-surface2/60 border border-border" />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
