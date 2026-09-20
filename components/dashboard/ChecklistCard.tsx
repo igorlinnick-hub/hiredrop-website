@@ -283,7 +283,9 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
       hint: "Gets you past ATS screens",
       done: doneSkills,
       progress: doneSkills ? 1 : 0,
-      href: "/dashboard/settings",
+      // The panel sits at the bottom of a long Settings page — without the anchor
+      // this drops the user at "Personal Information" and the step looks broken.
+      href: "/dashboard/settings#skills",
     },
     {
       id: "extension",
