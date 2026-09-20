@@ -16,6 +16,9 @@ const KEYWORDS_TARGET = 3;
 type Row = {
   id: string;
   label: string;
+  // One short line saying what the item BUYS you. Kept to a few words: the rail is
+  // 212px wide, and the first pass at full sentences just truncated into "…".
+  hint: string;
   done: boolean;
   href?: string;
   badge?: string;
@@ -170,33 +173,61 @@ export default function ChecklistCard() {
     rows.push({
       id: "swipes",
       label: `Send ${swipes} approved ${swipes === 1 ? "swipe" : "swipes"}`,
+      hint: "Auto never picks them up",
       done: false,
       urgent: true,
       href: "/dashboard/tap",
     });
   }
   rows.push(
-    { id: "profile", label: "Profile", done: profileDone, href: "/dashboard/settings" },
-    { id: "resume", label: "Resume", done: hasResume, href: "/dashboard/settings" },
-    { id: "skills", label: "Skills", done: hasSkills, href: "/dashboard/settings" },
+    {
+      id: "profile",
+      label: "Complete your profile",
+      hint: "Keywords drive the search",
+      done: profileDone,
+      href: "/dashboard/settings",
+    },
+    {
+      id: "resume",
+      label: "Upload your resume",
+      hint: "Fills forms, feeds letters",
+      done: hasResume,
+      href: "/dashboard/settings",
+    },
+    {
+      id: "skills",
+      label: "List your skills",
+      hint: "Gets you past ATS screens",
+      done: hasSkills,
+      href: "/dashboard/settings",
+    },
     {
       id: "keywords",
-      label: "Job titles",
+      label: "Add more job titles",
+      hint: "Each title is another search",
       done: keywordCount >= KEYWORDS_TARGET,
       badge: ready ? `${keywordCount}` : undefined,
       href: "/dashboard/settings",
     },
-    { id: "extension", label: "Extension", done: extDone, href: "/extension" },
+    {
+      id: "extension",
+      label: "Install the extension",
+      hint: chromium ? "It sends the applications" : "Finish this in Chrome",
+      done: extDone,
+      href: chromium ? "/extension" : undefined,
+    },
     {
       id: "platforms",
-      label: "Platforms",
+      label: "Connect job platforms",
+      hint: extDone ? "Each one is more jobs" : "Needs the extension first",
       done: connectedCount === CONNECTABLE.length,
       badge: probing ? undefined : `${connectedCount}/${CONNECTABLE.length}`,
-      href: "/dashboard/platforms",
+      href: extDone ? "/dashboard/platforms" : undefined,
     },
     {
       id: "letter",
-      label: "Letter voice",
+      label: "Teach your letter voice",
+      hint: "Letters sound like you",
       done: !!letterStyle,
       onClick: () => { setLetterDraft(letterStyle); setLetterOpen(true); },
     },
@@ -236,7 +267,7 @@ export default function ChecklistCard() {
             const inner = (
               <>
                 <span className={[
-                  "shrink-0 w-3.5 h-3.5 rounded-full flex items-center justify-center",
+                  "mt-[3px] shrink-0 w-3.5 h-3.5 rounded-full flex items-center justify-center",
                   row.done
                     ? "bg-green/15 text-green"
                     : row.urgent
@@ -252,16 +283,24 @@ export default function ChecklistCard() {
                   ) : null}
                 </span>
 
-                <span className={[
-                  "flex-1 truncate",
-                  row.done ? "text-text2/60" : row.urgent ? "font-semibold text-text" : "text-text",
-                ].join(" ")}>
-                  {row.label}
+                <span className="min-w-0 flex-1">
+                  <span className={[
+                    "block leading-snug",
+                    row.done ? "text-text2/60" : row.urgent ? "font-semibold text-text" : "text-text",
+                  ].join(" ")}>
+                    {row.label}
+                  </span>
+                  {/* Done rows drop the hint — it only sells work you already did. */}
+                  {!row.done && (
+                    <span className="block text-[10.5px] leading-snug text-text2/70">
+                      {row.hint}
+                    </span>
+                  )}
                 </span>
 
                 {row.badge && (
                   <span className={[
-                    "shrink-0 text-[10px] font-semibold tabular-nums",
+                    "mt-[3px] shrink-0 text-[10px] font-semibold tabular-nums",
                     row.done ? "text-green" : "text-text2/70",
                   ].join(" ")}>
                     {row.badge}
@@ -271,7 +310,7 @@ export default function ChecklistCard() {
             );
 
             const cls = [
-              "w-full flex items-center gap-2 rounded-lg px-1 py-1.5 text-left text-[12.5px] transition",
+              "w-full flex items-start gap-2 rounded-lg px-1 py-1.5 text-left text-[12.5px] transition",
               row.urgent ? "bg-accent/10 hover:bg-accent/15" : "hover:bg-surface2/70",
             ].join(" ");
 
