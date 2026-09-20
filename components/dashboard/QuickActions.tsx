@@ -127,31 +127,6 @@ export default function QuickActions({
     return () => clearInterval(poll);
   }, []);
 
-  // Letter voice (profile.writing_style). It belongs on this screen — it decides how every
-  // cover letter this run sends will read — but not as a section of its own: it's a row in
-  // the same shape as the Job platforms card below, opening in place (Igor, 09-07:
-  // "реально не хочется нагромождать", then "вот эта маленькая сопля?" about the first,
-  // too-timid version).
-  const [letterStyle, setLetterStyle] = useState("");
-  const [letterOpen, setLetterOpen] = useState(false);
-  const [letterDraft, setLetterDraft] = useState("");
-  const [letterSaving, setLetterSaving] = useState(false);
-
-  async function saveLetterStyle() {
-    setLetterSaving(true);
-    const next = letterDraft.trim();
-    try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from("profiles").update({ writing_style: next }).eq("user_id", user.id);
-        setLetterStyle(next);
-        setLetterOpen(false);
-      }
-    } catch { /* keep the editor open so the text isn't lost */ }
-    setLetterSaving(false);
-  }
-
   // Load the saved submit mode so the toggle reflects the profile.
   useEffect(() => {
     (async () => {
@@ -159,9 +134,8 @@ export default function QuickActions({
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-        const { data } = await supabase.from("profiles").select("submit_mode, writing_style").eq("user_id", user.id).single();
+        const { data } = await supabase.from("profiles").select("submit_mode").eq("user_id", user.id).single();
         if (data?.submit_mode === "tap") setMode("tap");
-        if (data?.writing_style) { setLetterStyle(data.writing_style); setLetterDraft(data.writing_style); }
         setModeLoaded(true);
       } catch { /* ignore — the button stays gated rather than guessing "auto" */ }
     })();
@@ -748,84 +722,6 @@ export default function QuickActions({
             areaLabel={LOCATIONS.find((l) => l.value === location)?.label ?? location}
             initialQuery={LOCATIONS.some((l) => l.value === location) ? undefined : location}
           />
-        </div>
-      )}
-
-      {/* Letter voice — the same row shape as the Job platforms card right below it, so
-          it reads as a setting and not as a stray link. First pass hung it under the map
-          as a bare 12px line; Igor called it what it looked like ("маленькая сопля").
-          Closed it's a row; open it's the editor, in place, in the same box. */}
-      {!letterOpen ? (
-        <button
-          type="button"
-          onClick={() => { setLetterDraft(letterStyle); setLetterOpen(true); }}
-          className="hd-glass w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left
-            hover:border-accent/40 transition group"
-        >
-          <span className="flex items-center justify-center w-9 h-9 rounded-lg shrink-0 bg-accent/10 text-accent">
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth={2}
-              strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-              <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-          </span>
-
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-text">Letter voice</p>
-            <p className="text-xs text-text2/70 truncate">
-              {letterStyle
-                ? `“${letterStyle.slice(0, 90)}${letterStyle.length > 90 ? "…" : ""}”`
-                : "Cover letters use a plain professional tone — teach them how you write"}
-            </p>
-          </div>
-
-          <span className={[
-            "shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border",
-            letterStyle ? "bg-green/10 text-green border-green/20" : "bg-surface2 text-text2 border-border",
-          ].join(" ")}>
-            <span className={`w-1.5 h-1.5 rounded-full ${letterStyle ? "bg-green" : "bg-accent"}`} />
-            {letterStyle ? "In your voice" : "Not set"}
-          </span>
-
-          <svg className="w-4 h-4 text-text2/40 group-hover:text-accent group-hover:translate-x-0.5 transition shrink-0"
-            fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      ) : (
-        <div className="hd-glass rounded-2xl px-4 py-3.5">
-          <p className="text-sm font-semibold text-text">Letter voice</p>
-          <p className="text-xs text-text2/70 mt-0.5">
-            A line or two in your own words. Every cover letter is written to match it.
-          </p>
-          <textarea
-            value={letterDraft}
-            onChange={(e) => setLetterDraft(e.target.value)}
-            rows={4}
-            maxLength={1500}
-            autoFocus
-            placeholder="Direct and warm. No buzzwords, no “I am writing to express my interest”. Lead with what I actually built."
-            className="mt-2.5 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm
-              text-text placeholder:text-text2/40 focus:outline-none focus:border-accent/50"
-          />
-          <div className="flex items-center gap-2 mt-2.5">
-            <button
-              type="button"
-              onClick={saveLetterStyle}
-              disabled={letterSaving}
-              className="px-4 py-2 rounded-xl text-sm font-semibold bg-accent text-white
-                hover:bg-accent2 disabled:opacity-50 transition"
-            >
-              {letterSaving ? "Saving…" : "Save"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setLetterOpen(false)}
-              className="px-3 py-2 rounded-xl text-sm font-medium text-text2 hover:text-text transition"
-            >
-              Cancel
-            </button>
-            <span className="ml-auto text-[11px] text-text2/50">{letterDraft.length}/1500</span>
-          </div>
         </div>
       )}
 
