@@ -12,11 +12,9 @@ import StatsCards from "@/components/dashboard/StatsCards";
 import JobsTable from "@/components/dashboard/JobsTable";
 import DevPanel from "@/components/dashboard/DevPanel";
 import QuickActions from "@/components/dashboard/QuickActions";
-import PlatformsIndicator from "@/components/dashboard/PlatformsIndicator";
-import SetupChecklist from "@/components/dashboard/SetupChecklist";
+import SetupDock from "@/components/dashboard/SetupDock";
 import MobileHandoff from "@/components/dashboard/MobileHandoff";
 import FreeTastePaywall from "@/components/dashboard/FreeTastePaywall";
-import UsageBanner from "@/components/dashboard/UsageBanner";
 import CheckoutSuccessBanner from "@/components/dashboard/CheckoutSuccessBanner";
 import ApprovedWaitingBanner from "@/components/dashboard/ApprovedWaitingBanner";
 
@@ -97,28 +95,21 @@ export default async function DashboardPage() {
         />
       )}
 
-      {/* Usage + free-taste countdown, previously only mounted on /preview/free-taste —
-          a free user got no warning before the paywall (jay hit 31/40 with zero signal).
-          Hidden while the paywall itself leads the page: one message per moment. */}
-      {statsData && !freeTasteExhausted && (
-        <UsageBanner
-          tier={statsData.tier}
-          tierLabel={statsData.tier.charAt(0).toUpperCase() + statsData.tier.slice(1)}
-          usedToday={statsData.applications_today}
-          dailyLimit={statsData.daily_limit}
-          remainingToday={statsData.remaining_today}
-          platformCounts={statsData.platform_counts ?? {}}
-          maxPerPlatform={statsData.max_per_platform}
-          freeUsed={statsData.free_used}
-          freeLimit={statsData.free_limit}
-        />
-      )}
-
-      <SetupChecklist
+      {/* Activation checklist — a small dock at the left edge instead of a stack of
+          full-width cards on top of the dashboard (Igor, 09-19). It also absorbed the
+          loose Job platforms row (PlatformsIndicator) and the Letter voice row from
+          QuickActions, plus the usage line from the old UsageBanner card. */}
+      <SetupDock
         onboardingComplete={!onboardingIncomplete}
         hasResume={!resumeMissing}
         hasKeywords={hasKeywords}
         hasSkills={hasSkillsListed}
+        tier={statsData?.tier ?? "free"}
+        tierLabel={(statsData?.tier ?? "free").charAt(0).toUpperCase() + (statsData?.tier ?? "free").slice(1)}
+        usedToday={statsData?.applications_today ?? 0}
+        dailyLimit={statsData?.daily_limit ?? 0}
+        freeUsed={statsData?.free_used}
+        freeLimit={statsData?.free_limit}
       />
 
       {/* Phone visitors: honest hand-off — setup works here, applying runs on the computer */}
@@ -140,10 +131,6 @@ export default async function DashboardPage() {
         salaryMax={profile?.salary_max ?? null}
         searchRadiusMiles={profile?.search_radius_miles ?? null}
       />
-
-      {/* Connections moved to their own /dashboard/platforms tab — here just a
-          compact status pill so the dashboard leads with the filters + campaign. */}
-      <PlatformsIndicator />
 
       <div className="space-y-6">
         <StatsCards
