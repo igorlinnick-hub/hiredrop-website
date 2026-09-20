@@ -46,32 +46,40 @@ export default function SkillsCard({
     <div
       id="skills"
       className="relative overflow-hidden rounded-2xl scroll-mt-24"
-      style={{ background: "linear-gradient(135deg, #100622 0%, #16072F 45%, #05020B 100%)" }}
+      style={{ background: "#05020B" }}
       data-testid="skills-resume-block"
     >
-      {/* Aurora: a wide violet sweep drifting across the card. Slow on purpose —
-          a panel you look at while reading must not pulse at you. */}
+      {/* The real storyboard background (public/bg) — the same generated art the
+          mode cards and the run dock already use, not a hand-rolled gradient.
+          It drifts very slowly so the card feels lit rather than printed. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-y-0 -left-1/3 w-[180%] opacity-50"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: 'url("/bg/ground-night.jpg") center / cover no-repeat',
+          animation: "hdSkillsDrift 26s ease-in-out infinite alternate",
+        }}
+      />
+      {/* Scrim: the art is bright in places and every row of text sits on top of it. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "linear-gradient(100deg, transparent 12%, rgba(124,58,237,.38) 32%, rgba(196,181,253,.30) 47%, rgba(109,40,217,.34) 62%, transparent 86%)",
-          filter: "blur(28px)",
-          animation: "hdSkillsAurora 14s ease-in-out infinite alternate",
+            "linear-gradient(105deg, rgba(5,2,11,.88) 0%, rgba(5,2,11,.72) 45%, rgba(5,2,11,.55) 100%)",
         }}
       />
       <style>{`
-        @keyframes hdSkillsAurora {
-          from { transform: translateX(-8%) }
-          to   { transform: translateX(8%) }
+        @keyframes hdSkillsDrift {
+          from { transform: scale(1.04) translateX(-1.5%) }
+          to   { transform: scale(1.12) translateX(1.5%) }
         }
         @keyframes hdSkillsRow {
           from { opacity: 0; transform: translateY(8px) }
           to   { opacity: 1; transform: none }
         }
         @media (prefers-reduced-motion: reduce) {
-          .hd-skills-aurora, .hd-skills-row { animation: none !important }
+          .hd-skills-row, [style*=hdSkillsDrift] { animation: none !important }
         }
       `}</style>
 
