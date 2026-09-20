@@ -12,21 +12,30 @@ const statusColor: Record<string, "blue" | "yellow" | "green" | "red"> = {
   rejected: "red",
 };
 
+// "Total Applied" on the stats card counts application EVENTS (the applications table,
+// all-time — incl. re-submits and rows whose job later changed status). These pills count
+// JOBS in the listing below, per status. The two numbers answer different questions and
+// are not supposed to match — see /dashboard/history for the event-level record.
+
 // Clean status marks — replace the old emoji labels ("Interview 🎉").
 const ICONS: Record<string, React.ReactNode> = {
   all: <path d="M4 6h16M4 12h16M4 18h16" />,
   new: <path d="M12 3l1.7 5.1L19 9.8l-4.3 1.4L12 16l-1.7-4.8L6 9.8l5.3-1.7z" />,
   applied: <path d="M22 2 11 13M22 2l-7 20-4-9-9-4z" />,
+  applied_unconfirmed: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></>,
   interview: <><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M8 2.5v4M16 2.5v4M3 9.5h18M9.5 14.5l2 2 3.5-3.5" /></>,
   rejected: <><circle cx="12" cy="12" r="9" /><path d="M15 9l-6 6M9 9l6 6" /></>,
 };
 
 // Curated, relevant tabs only. "interview" merges the two interview statuses;
 // "received" is dropped (its rows still appear under All). Zero-count status tabs
-// are hidden so the bar shows only what actually exists.
+// are hidden so the bar shows only what actually exists. "Unconfirmed" gets its own
+// tab (09-19): those rows were findable only by scrolling All, so Applied's count
+// looked lower than the submissions the user knew happened.
 const STATUS_TABS: { value: string; label: string; match?: string[] }[] = [
   { value: "new", label: "New" },
   { value: "applied", label: "Applied" },
+  { value: "applied_unconfirmed", label: "Unconfirmed" },
   { value: "interview", label: "Interview", match: ["interview", "interview_invite"] },
   { value: "rejected", label: "Rejected" },
 ];
