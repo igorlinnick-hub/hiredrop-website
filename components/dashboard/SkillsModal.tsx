@@ -108,7 +108,7 @@ export default function SkillsModal({
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
-            style={{ background: 'url("/bg/fan-night.jpg") center 60% / cover no-repeat' }}
+            style={{ background: 'url("/bg/skills-night.jpg") center / cover no-repeat' }}
           />
           <div
             aria-hidden
@@ -140,11 +140,11 @@ export default function SkillsModal({
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-200/80">
                 Ten skills, like this
               </p>
-              <ul className="mt-3 grid gap-x-8 gap-y-1.5 sm:grid-cols-2">
+              <ul className="mt-3 grid gap-x-8 gap-y-1.5 lg:grid-cols-2">
                 {example.split("\n").map((line, i) => (
                   <li key={i} className="flex gap-2.5 text-[14px] leading-snug text-white/90">
                     <span aria-hidden className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-violet-300/70" />
-                    <span className="truncate">{line}</span>
+                    <span>{line}</span>
                   </li>
                 ))}
               </ul>
