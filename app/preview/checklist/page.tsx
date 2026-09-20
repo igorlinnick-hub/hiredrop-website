@@ -7,9 +7,13 @@ export const metadata = { title: "Checklist — preview" };
 // shell (the real one needs a session). The block is the real component in `demo`
 // mode — seeded state, so both marks (green tick, empty ring) and the urgent row
 // are visible without logging in.
-export default function ChecklistPreview() {
+// `?dark=1` flips the shell — both themes have to be reviewable here.
+export default async function ChecklistPreview(
+  { searchParams }: { searchParams: Promise<{ dark?: string }> }
+) {
+  const { dark } = await searchParams;
   return (
-    <div className="min-h-screen bg-background hd-dash-root">
+    <div className={["min-h-screen bg-background hd-dash-root", dark ? "dark" : ""].join(" ")}>
       <div className="flex min-h-screen">
         {/* Stand-in for the nav rail — the checklist block sits inside it */}
         <aside className="hd-sidenav hidden lg:flex flex-col w-[236px] shrink-0 sticky top-0 h-screen
