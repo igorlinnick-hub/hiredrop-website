@@ -5,11 +5,13 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { apiGet, type StatsResponse } from "@/lib/api";
 
-import { PLATFORMS } from "@/lib/constants";
+import { LIVE_CONNECTABLE_PLATFORMS } from "@/lib/constants";
 import { checkExtensionPresent, detectBrowser, type BrowserKind } from "./StartReadiness";
 import { isLiveConnected, type Conn } from "./PlatformsIndicator";
 
-const CONNECTABLE = PLATFORMS.filter((p) => p.connectable);
+// Only platforms that apply to jobs today count here — see the constant's note.
+// A step you cannot finish is worse than no step.
+const CONNECTABLE = LIVE_CONNECTABLE_PLATFORMS;
 const COLLAPSE_KEY = "hd_checklist_collapsed";
 // Last painted state. Without it every hard load paints "nothing is done" for as
 // long as the profile round-trip takes, then snaps — the flash Igor caught on 09-19.

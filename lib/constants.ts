@@ -58,6 +58,20 @@ export const PLATFORMS: Platform[] = [
   { id: "remoteok", name: "RemoteOK", status: "active", requiresLogin: false, discovery: true, description: "Remote-only listings." },
 ];
 
+// Every platform with an account to connect — the roster the Platforms page lists,
+// "coming soon" ones included.
+export const CONNECTABLE_PLATFORMS = PLATFORMS.filter((p) => p.connectable);
+
+// The ones a connected login actually buys applications on TODAY (stage "auto").
+// Anything that counts connections — the setup checklist, the "N/M connected"
+// pills — must use this, not the roster above: LinkedIn is connectable but still
+// stage "connect", so counting it made the checklist demand 3/3 while only 2 could
+// ever be reached, and the step could never go green. When a platform flips to
+// "auto" in the list above, every counter picks it up on its own.
+export const LIVE_CONNECTABLE_PLATFORMS = PLATFORMS.filter(
+  (p) => p.connectable && p.stage === "auto",
+);
+
 export const LOCATIONS: Location[] = [
   { value: "remote", label: "Remote" },
   { value: "usa", label: "United States" },
