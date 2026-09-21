@@ -56,7 +56,7 @@ export default function SkillsCard({
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
-          background: 'url("/bg/skills-photo.jpg") center / cover no-repeat',
+          background: 'url("/bg/poster-card.jpg") center / cover no-repeat',
           animation: "hdSkillsDrift 26s ease-in-out infinite alternate",
         }}
       />

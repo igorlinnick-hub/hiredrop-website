@@ -39,7 +39,7 @@ export default async function SettingsRhythmPreview(
         <PosterPanel
           title={<>Your search lives on the <em className="italic">dashboard</em>.</>}
           body="Keywords, location, job type, where to apply, whether we send or you tap, and how your letters sound — all of it sits next to the Start button, so a run always uses what you can see."
-          image="/bg/skills-night.jpg"
+          image="/bg/poster-search.jpg"
         >
           <div className="mt-5 flex flex-wrap gap-2.5">
             <span className="rounded-xl bg-[#F2EFE9] px-5 py-2.5 text-[14px] font-semibold text-[#14101C]">
