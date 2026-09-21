@@ -92,13 +92,14 @@ export default function SkillsModal({
       {/* The border earns its keep in dark mode: the writing pane and the page
           behind it are both near-black, so without it the frame disappears. */}
       <div
-        className="relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden
-          rounded-2xl border border-border bg-surface shadow-2xl"
+        className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden
+          rounded-2xl border border-border bg-surface shadow-2xl lg:aspect-[16/9]"
         data-testid="skills-describe-modal"
       >
         {/* ── Night pane: the worked example, made the picture ───────────────── */}
         <aside
-          className="relative max-h-[38vh] shrink-0 overflow-y-auto px-7 py-5 lg:px-10 lg:py-6"
+          className="relative max-h-[38vh] shrink-0 overflow-y-auto px-7 py-5
+            lg:max-h-none lg:h-[36%] lg:px-10 lg:py-6"
           style={{ background: "#07030F" }}
         >
           {/* The storyboard background from public/bg — the fan is the same art the
