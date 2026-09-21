@@ -9,7 +9,7 @@ import ExtensionBridgeBanner from "@/components/dashboard/ExtensionBridgeBanner"
 import FitModeMenu from "@/components/dashboard/FitModeMenu";
 import ChecklistCard from "@/components/dashboard/ChecklistCard";
 import TapProgressDock from "@/components/dashboard/TapProgressDock";
-import HandbackRailItem from "@/components/dashboard/HandbackRailItem";
+import { useHandbacks } from "@/components/dashboard/useHandbacks";
 
 const NAV_ITEMS = [
   {
@@ -84,6 +84,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [dark, setDark] = useState(false);
   // RLS returns this user's own affiliate row or nothing — no extra API surface.
   const [isAffiliate, setIsAffiliate] = useState(false);
+  // Only the count is used here — the list itself belongs to History.
+  const { items: handbacks } = useHandbacks();
 
   useEffect(() => {
     async function loadUser() {
@@ -159,14 +161,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link key={item.href} href={item.href} className={navLinkCls(pathname === item.href, "row")}>
                 {item.icon}
                 {item.label}
+                {/* Unfinished applications announce themselves with a dot on the tab
+                    that holds them — nothing else. No banner, no count, no sentence:
+                    the user should feel a nudge, not read a notice (Igor, 09-21). */}
+                {item.href === "/dashboard/history" && handbacks.length > 0 && (
+                  <span
+                    className="ml-auto h-2 w-2 shrink-0 rounded-full bg-red"
+                    aria-label={`${handbacks.length} unfinished`}
+                  />
+                )}
               </Link>
             ))}
           </nav>
-
-          {/* Waiting on the human — directly under the nav, above the checklist: it is
-              the only item here with a job half-finished behind it. Renders nothing at
-              zero, so the rail is unchanged until there is something to do. */}
-          <HandbackRailItem />
 
           {/* What's left to get the most applications — its own framed block under the
               nav, not a card stacked on top of the dashboard (Igor, 09-19). */}
