@@ -172,6 +172,7 @@ export default function SkillsModal({
             <button
               onClick={onGenerate}
               disabled={generating || saving || !met || !hasResume}
+              data-testid="skills-generate"
               className="rounded-xl bg-[#F2EFE9] px-6 py-3 text-[15px] font-semibold text-[#14101C]
                 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-35"
             >
@@ -180,6 +181,7 @@ export default function SkillsModal({
             <button
               onClick={onSave}
               disabled={saving || generating}
+              data-testid="skills-save"
               className="rounded-xl border border-white/25 px-5 py-3 text-[15px] font-medium text-white
                 transition hover:border-white/50 disabled:opacity-40"
             >

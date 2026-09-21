@@ -48,6 +48,9 @@ export default function SkillsCard({
       className="relative overflow-hidden rounded-2xl scroll-mt-24"
       style={{ background: "#05020B" }}
       data-testid="skills-resume-block"
+      data-has-skills={hasSkills ? "1" : "0"}
+      data-groups={String(groups.length)}
+      data-generating={generating ? "1" : "0"}
     >
       {/* The real storyboard background (public/bg) — the same generated art the
           mode cards and the run dock already use, not a hand-rolled gradient.
@@ -149,6 +152,7 @@ export default function SkillsCard({
           <button
             onClick={onEdit}
             disabled={busy}
+            data-testid="skills-edit"
             className="rounded-xl bg-[#F2EFE9] px-5 py-2.5 text-[14px] font-semibold text-[#14101C]
               transition hover:bg-white disabled:opacity-40"
           >
