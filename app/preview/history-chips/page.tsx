@@ -3,6 +3,7 @@
 import { useState } from "react";
 import HistoryView from "@/components/dashboard/HistoryView";
 import type { Application } from "@/lib/types";
+import type { Handback } from "@/components/dashboard/useHandbacks";
 
 /**
  * Design-review page for the History doc chips: the expanded application
@@ -13,6 +14,47 @@ import type { Application } from "@/lib/types";
  * renders mock rows, nothing is re-styled locally, so what you see is what
  * ships. The extension bridge simply never answers here (no receipts).
  */
+
+// Hand-backs the filler could not finish. The first two carry the QUESTIONS that
+// blocked them (09-21) — that is what the "Answer N" button opens. The third is the
+// other shape: a wall that was never a question, so it must NOT offer an Answer button.
+const HANDBACKS: Handback[] = [
+  {
+    id: "hb-1",
+    job_title: "Field Marketing Manager",
+    company: "Postman",
+    url: "https://boards.greenhouse.io/postman/jobs/1",
+    reason: "this form asks something we can't answer for you",
+    steps_done: 4,
+    job_id: "job-1",
+    questions: [
+      { label: "Will you now or in the future require visa sponsorship?", options: ["Yes", "No"] },
+      { label: "What is your notice period?", options: [] },
+    ],
+  },
+  {
+    id: "hb-2",
+    job_title: "Associate, Health System Contracting",
+    company: "Oscar",
+    url: "https://boards.greenhouse.io/oscar/jobs/2",
+    reason: "required field we could not fill",
+    steps_done: 2,
+    job_id: "job-2",
+    questions: [
+      { label: "Are you currently located in the US?", options: ["Yes", "No"] },
+    ],
+  },
+  {
+    id: "hb-3",
+    job_title: "Pipe Welder",
+    company: "Kenaidan Contracting",
+    url: "https://boards.greenhouse.io/kenaidan/jobs/3",
+    reason: "we couldn't find the submit button",
+    steps_done: 5,
+    job_id: null,
+    questions: [],
+  },
+];
 
 const LETTER = `Dear SchooLinks team,
 
@@ -79,7 +121,7 @@ export default function PreviewHistoryChips() {
         </header>
         {/* No session on a public preview — swallow the write so the picker is
             still clickable and the chip still moves. */}
-        <HistoryView applications={APPS} onSetStatus={async () => {}} />
+        <HistoryView applications={APPS} onSetStatus={async () => {}} handbacksOverride={HANDBACKS} />
       </div>
     </div>
   );

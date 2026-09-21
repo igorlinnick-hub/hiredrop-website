@@ -26,7 +26,8 @@ import type { Application } from "@/lib/types";
 import { PLATFORMS, JOB_STATUSES } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import { apiPatch, apiPost } from "@/lib/api";
-import { useHandbacks, handbackProgress } from "@/components/dashboard/useHandbacks";
+import { useHandbacks, handbackProgress, type Handback } from "@/components/dashboard/useHandbacks";
+import HandbackAnswers from "@/components/dashboard/HandbackAnswers";
 
 type Receipt = {
   at: string; job_title: string; company: string; platform: string;
@@ -48,6 +49,12 @@ const REASON_MAP: [RegExp, string][] = [
   [/wouldn't accept our answers/i, "the form kept rejecting our answers — it wants something only you can give"],
   [/timeout|timed out/i, "the site stopped responding partway through"],
 ];
+/** The questions we can actually ask the human. A hand-back whose wall was "no submit
+ *  button" or "the resume upload failed" carries none, and must not sprout an Answer
+ *  button that opens an empty form. */
+const questionsFor = (h: { questions?: { label: string; options: string[] }[] }) =>
+  (h.questions || []).filter((q) => (q.label || "").trim());
+
 const userReason = (raw: string) => REASON_MAP.find(([re]) => re.test(raw))?.[1] ?? "we couldn't finish this one automatically";
 
 const RESPONSE_STATUSES = new Set(["interview", "interview_invite", "rejected", "received", "hired"]);
@@ -90,19 +97,28 @@ const prettyDay = (key: string) => {
 export default function HistoryView({
   applications,
   onSetStatus,
+  handbacksOverride,
 }: {
   applications: Application[];
   /** Injected by /preview/history-chips so the picker works without a session.
    *  Real dashboard leaves it undefined and the live PATCH is used. */
   onSetStatus?: (id: string, status: string) => Promise<void>;
+  /** Same trick for the hand-back rows: the live ones come from /handbacks, which
+   *  needs a session, so a design review would otherwise never see them. */
+  handbacksOverride?: Handback[];
 }) {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   // Optimistic status edits, keyed by application id. The server is the record;
   // this is only so the chip changes under the finger instead of after a round trip.
   const [statusEdits, setStatusEdits] = useState<Record<string, string>>({});
   const [statusError, setStatusError] = useState<string | null>(null);
-  const { items: handbacks, reload: loadHandbacks, setItems: setHandbacks } = useHandbacks();
+  const { items: liveHandbacks, reload: loadHandbacks, setItems: setHandbacks } = useHandbacks();
+  const handbacks = handbacksOverride ?? liveHandbacks;
   const [openShot, setOpenShot] = useState<string | null>(null);
+  // Which hand-back has its questions open, and which ones we just re-queued (so the
+  // row can say so without waiting for the next 30s poll).
+  const [answering, setAnswering] = useState<string | null>(null);
+  const [requeued, setRequeued] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const toggleExpand = (id: string) =>
@@ -282,6 +298,28 @@ export default function HistoryView({
                       {pct}%
                     </span>
                   )}
+                  {/* Re-queued rows say so: the job is back at the head of the next
+                      run, and without this the row looks exactly as untouched as
+                      before the user answered it. */}
+                  {(requeued.has(h.id) || h.requeued_at) && (
+                    <span className="shrink-0 rounded-md bg-accent/12 px-2 py-0.5 text-[11px]
+                      font-medium text-accent">
+                      queued
+                    </span>
+                  )}
+                  {/* The questions that blocked it — answer them here instead of
+                      redoing the whole form on the employer's site. Only when we
+                      actually captured them AND they aren't answered yet. */}
+                  {!!questionsFor(h).length && !requeued.has(h.id) && !h.requeued_at && (
+                    <button
+                      onClick={() => setAnswering((cur) => (cur === h.id ? null : h.id))}
+                      data-testid="handback-answer-open"
+                      className="shrink-0 rounded-md border border-accent/40 bg-accent/8 px-2 py-0.5
+                        text-[11px] font-medium text-accent transition hover:bg-accent/15"
+                    >
+                      {answering === h.id ? "Close" : `Answer ${questionsFor(h).length}`}
+                    </button>
+                  )}
                   {/* Appears on hover: a list that never drains stops being read. */}
                   <button
                     onClick={() => markHandbackDone(h.id)}
@@ -291,6 +329,25 @@ export default function HistoryView({
                     Done
                   </button>
                 </div>
+
+                {answering === h.id && (
+                  <HandbackAnswers
+                    handbackId={h.id}
+                    questions={questionsFor(h)}
+                    onDone={(wasRequeued) => {
+                      setAnswering(null);
+                      if (wasRequeued) {
+                        setRequeued((prev) => new Set(prev).add(h.id));
+                      } else {
+                        // No pool row behind it (a native walk) — the answers are saved
+                        // but nothing will pick the job up, so say nothing about a queue
+                        // and leave the row as the to-do it still is.
+                        markHandbackDone(h.id);
+                      }
+                      loadHandbacks();
+                    }}
+                  />
+                )}
               </div>
             );
           })}
