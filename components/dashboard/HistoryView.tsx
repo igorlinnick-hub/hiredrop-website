@@ -20,20 +20,19 @@
  * Theme-safe: semantic tokens only.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import type { Application } from "@/lib/types";
 import { PLATFORMS, JOB_STATUSES } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
-import { apiPatch } from "@/lib/api";
+import { apiGet, apiPatch, apiPost } from "@/lib/api";
 
 type Receipt = {
   at: string; job_title: string; company: string; platform: string;
   job_url: string; verified: boolean; signal: string; shot?: string | null;
 };
-type HandBack = { job: string; reason: string; url: string };
+type HandBack = { id: string; job_title: string; company: string; url: string; reason: string };
 
-const HANDBACK_RE = /Needs your hands:\s*(.+?)\s+—\s+(.+?)(?:\.\s*Finish it yourself:\s*(\S+))?$/;
 // Friendly text for a hand-back reason. Matched against the raw string the extension
 // wrote via handBackJob() — the full text stays on the row's title attribute.
 //
@@ -132,25 +131,40 @@ export default function HistoryView({
     }
   };
 
-  // Pull receipts + hand-backs from the extension (bridge). Non-fatal if absent.
+  // Hand-backs come from the server, the same row the popup and the rail badge read.
+  // One owner on purpose: this list is a TO-DO, and a to-do that three surfaces count
+  // differently is worse than no to-do at all.
+  const loadHandbacks = useCallback(async () => {
+    try {
+      const { data: { session } } = await createClient().auth.getSession();
+      if (!session?.access_token) return;
+      const res = await apiGet<{ handbacks: HandBack[] }>("/handbacks?limit=20", session.access_token);
+      setHandbacks(res.handbacks || []);
+    } catch { /* an unreachable list is not an empty one — keep what we had */ }
+  }, []);
+
+  useEffect(() => { loadHandbacks(); }, [loadHandbacks]);
+
+  // The user's own tick. We never see the employer's side, so this claims nothing
+  // beyond "they say it's done" — and the wording in the UI says exactly that.
+  const markHandbackDone = async (id: string) => {
+    setHandbacks((prev) => prev.filter((h) => h.id !== id)); // optimistic: it's their click
+    try {
+      const { data: { session } } = await createClient().auth.getSession();
+      if (!session?.access_token) return;
+      await apiPost(`/handbacks/${id}/resolve`, session.access_token, {});
+    } catch { loadHandbacks(); } // put it back if the server disagreed
+  };
+
+  // Pull receipts from the extension (bridge). Non-fatal if absent.
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
       if (e.source !== window || !e.data || e.data.type !== "HIREDROP_STORAGE_DATA") return;
       const d = e.data.data || {};
       setReceipts(Array.isArray(d.receipts) ? (d.receipts as Receipt[]) : []);
-      const log: unknown[] = Array.isArray(d.activity_log) ? d.activity_log : [];
-      const seen = new Set<string>(); const hbs: HandBack[] = [];
-      for (const entry of log) {
-        const text = typeof entry === "string" ? entry
-          : ((entry as { text?: string; message?: string })?.text ?? (entry as { message?: string })?.message ?? "");
-        const m = HANDBACK_RE.exec(text);
-        if (!m) continue;
-        const key = m[1] + (m[3] || "");
-        if (seen.has(key)) continue;
-        seen.add(key);
-        hbs.push({ job: m[1], reason: m[2], url: m[3] || "" });
-      }
-      setHandbacks(hbs.slice(0, 20));
+      // Hand-backs no longer come from this local log — see the /handbacks fetch below.
+      // Parsing them out of log TEXT meant they could never be ticked off, and meant
+      // this list and the popup's could disagree about what was still waiting.
     };
     window.addEventListener("message", onMsg);
     const ask = () => window.postMessage({ type: "HIREDROP_READ_STORAGE", keys: ["activity_log", "receipts"] }, "*");
@@ -225,15 +239,27 @@ export default function HistoryView({
 
       {/* Couldn't submit these (hand-backs) */}
       {handbacks.length > 0 && (
-        <div className="rounded-xl border border-amber-400/40 bg-amber-400/5 p-4">
+        <div id="handbacks" className="rounded-xl border border-amber-400/40 bg-amber-400/5 p-4 scroll-mt-24">
           <p className="text-sm font-semibold text-text">Couldn&apos;t submit these — a click from you finishes them</p>
-          <ul className="mt-2 space-y-1.5">
-            {handbacks.map((h, i) => (
-              <li key={i} className="text-[13px] leading-snug">
-                {h.url
-                  ? <a href={h.url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:underline">{h.job} ↗</a>
-                  : <span className="font-medium text-text">{h.job}</span>}
-                <span className="text-text2" title={h.reason}> — {userReason(h.reason)}</span>
+          <ul className="mt-2 space-y-2">
+            {handbacks.map((h) => (
+              <li key={h.id} className="flex items-start gap-3 text-[13px] leading-snug">
+                <div className="min-w-0 flex-1">
+                  {h.url
+                    ? <a href={h.url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:underline">{h.job_title || "Application"} ↗</a>
+                    : <span className="font-medium text-text">{h.job_title || "Application"}</span>}
+                  {h.company ? <span className="text-text2"> · {h.company}</span> : null}
+                  <span className="text-text2" title={h.reason}> — {userReason(h.reason)}</span>
+                </div>
+                {/* Without this the list only ever grows, and a list that never drains
+                    stops being read. */}
+                <button
+                  onClick={() => markHandbackDone(h.id)}
+                  className="shrink-0 rounded-md border border-border px-2 py-0.5 text-[11px]
+                    font-medium text-text2 hover:text-text transition"
+                >
+                  Done
+                </button>
               </li>
             ))}
           </ul>
