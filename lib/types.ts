@@ -6,6 +6,8 @@ export interface UserProfile {
   keywords: string[];
   location: string;
   job_type: string;
+  // Remote / hybrid / onsite — a separate axis from job_type. "" or absent = Any.
+  work_setting?: string;
   platforms: string[];
   writing_style: string;
   linkedin_url: string;
