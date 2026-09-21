@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Button from "@/components/ui/Button";
+import ResumeEditor, { EMPTY_STRUCTURE, type ResumeStructure } from "./ResumeEditor";
 import ResumeFileRow from "./ResumeFileRow";
 import SkillsCard from "./SkillsCard";
 import SkillsModal, { MIN_SKILLS, SKILLS_EXAMPLE, countSkills } from "./SkillsModal";
@@ -115,6 +116,13 @@ export default function ResumeATSPanel() {
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  // The structure behind the generated resume. null = generated before we started
+  // keeping it, so the editor is offered only after the next regenerate.
+  const [structure, setStructure] = useState<ResumeStructure | null>(null);
+  const [showEditor, setShowEditor] = useState(false);
+  const [openingEditor, setOpeningEditor] = useState(false);
+  const [savingStructure, setSavingStructure] = useState(false);
+  const [editorError, setEditorError] = useState<string | null>(null);
 
   const getToken = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -188,6 +196,54 @@ export default function ResumeATSPanel() {
     setPreviewUrl(null);
     setUploading(false);
     flash("Resume uploaded. Run ATS check to analyze it.");
+  }
+
+  async function handleOpenEditor() {
+    setOpeningEditor(true);
+    setError(null);
+    setEditorError(null);
+    try {
+      const token = await getToken();
+      const res = await apiCall("/profile/ats/structure", token);
+      if (!res.structure) {
+        // Honest dead end with the fix attached, rather than a disabled button.
+        setError(
+          "This resume was built before in-app editing existed. Re-run Generate once and it becomes editable."
+        );
+        return;
+      }
+      setStructure({ ...EMPTY_STRUCTURE, ...res.structure });
+      setShowEditor(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not open the editor");
+    } finally {
+      setOpeningEditor(false);
+    }
+  }
+
+  async function handleSaveStructure(next: ResumeStructure) {
+    setSavingStructure(true);
+    setEditorError(null);
+    try {
+      const token = await getToken();
+      const res = await apiCall("/profile/ats/structure", token, "PUT", { structure: next });
+      setStructure(res.structure);
+      // The edit re-rendered the PDF, so the score measured on the old one is gone.
+      setData(prev => ({
+        ...prev,
+        atsScore: null,
+        atsIssues: [],
+        atsIssueLabels: [],
+        atsCheckedAt: null,
+      }));
+      setPreviewUrl(null);
+      setShowEditor(false);
+      flash("Resume rebuilt from your edits. Run the ATS check to re-score it.");
+    } catch (e) {
+      setEditorError(e instanceof Error ? e.message : "Could not save your edits");
+    } finally {
+      setSavingStructure(false);
+    }
   }
 
   async function handleCheck() {
@@ -481,20 +537,28 @@ export default function ResumeATSPanel() {
               </p>
               <p className="text-xs text-text2 mt-0.5">Tailored to strong-match roles when you apply.</p>
             </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={
-                effectiveDefault === "ats"
-                  ? handleViewATS
-                  : effectiveDefault === "skills"
-                    ? handleViewSkills
-                    : handleViewOriginal
-              }
-              disabled={loadingView}
-            >
-              {loadingView ? "Loading…" : "View"}
-            </Button>
+            <div className="flex flex-shrink-0 items-center gap-2">
+              {/* Editing applies to the generated resume — the original is the user's own file. */}
+              {effectiveDefault === "ats" && data.atsResumeUrl && (
+                <Button variant="secondary" size="sm" onClick={handleOpenEditor} disabled={openingEditor}>
+                  {openingEditor ? "Opening…" : "Edit"}
+                </Button>
+              )}
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={
+                  effectiveDefault === "ats"
+                    ? handleViewATS
+                    : effectiveDefault === "skills"
+                      ? handleViewSkills
+                      : handleViewOriginal
+                }
+                disabled={loadingView}
+              >
+                {loadingView ? "Loading…" : "View"}
+              </Button>
+            </div>
           </div>
 
           {/* Direct downloads */}
@@ -667,6 +731,17 @@ export default function ResumeATSPanel() {
         minSkills={MIN_SKILLS}
         example={SKILLS_EXAMPLE}
       />
+
+      {/* Fix-it-in-place editor — edits the structure, re-renders without a model */}
+      {showEditor && structure && (
+        <ResumeEditor
+          initial={structure}
+          saving={savingStructure}
+          error={editorError}
+          onSave={handleSaveStructure}
+          onClose={() => setShowEditor(false)}
+        />
+      )}
 
       {/* Q&A Modal */}
       {showQA && (

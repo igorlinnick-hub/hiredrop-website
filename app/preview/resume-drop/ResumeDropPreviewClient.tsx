@@ -1,8 +1,32 @@
 "use client";
 
 import { useState } from "react";
+import ResumeEditor, { type ResumeStructure } from "@/components/dashboard/ResumeEditor";
 import ResumeFileRow from "@/components/dashboard/ResumeFileRow";
 import StepResume from "@/components/onboarding/StepResume";
+
+// A structure with the kind of mistake the editor exists for: the generator read the
+// middle initial into the surname and mangled one employer.
+const SAMPLE: ResumeStructure = {
+  name: "Jane R. Roesmith",
+  title: "Registered Nurse",
+  contact: { phone: "+1 808 555 0100", email: "jane@example.com", location: "Honolulu, HI", linkedin: "" },
+  summary: "Critical care nurse with eight years in a level-one trauma center.",
+  competencies: ["Triage", "Charting", "Patient education"],
+  experience: [
+    {
+      title: "Charge Nurse",
+      company: "Queen s Medical Ctr",
+      location: "Honolulu, HI",
+      dates: "2020 - Present",
+      bullets: ["Ran a 24-bed unit across night shifts", "Cut handoff errors by a third"],
+    },
+  ],
+  education: [{ degree: "BSN", school: "University of Hawaii", year: "2016" }],
+  certifications: ["BLS", "ACLS"],
+  languages: ["English (native)"],
+  tech_skills: ["Epic", "Cerner"],
+};
 
 /**
  * Both resume drop targets side by side, with the upload stubbed out — the Settings
@@ -15,6 +39,9 @@ export default function ResumeDropPreviewClient({ dark }: { dark: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [accepted, setAccepted] = useState<string | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [structure, setStructure] = useState<ResumeStructure>(SAMPLE);
+  const [editing, setEditing] = useState(false);
+  const [savingStructure, setSavingStructure] = useState(false);
 
   function fakeUpload(file: File) {
     setError(null);
@@ -59,6 +86,44 @@ export default function ResumeDropPreviewClient({ dark }: { dark: boolean }) {
               clear messages
             </button>
           </div>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-text2">Fix-it editor</h3>
+          <p className="text-sm text-text2">
+            The sample carries the kind of mistake this exists for: the generator glued the middle
+            initial onto the surname and mangled the employer. Nothing is saved here.
+          </p>
+          <div className="rounded-xl border border-border bg-surface2 p-4">
+            <p className="text-sm font-medium text-text">{structure.name}</p>
+            <p className="text-xs text-text2">
+              {structure.experience[0]?.company} · {structure.experience[0]?.dates}
+            </p>
+            <button
+              data-testid="open-editor"
+              onClick={() => setEditing(true)}
+              className="mt-3 text-sm font-medium text-text underline underline-offset-2 hover:opacity-70"
+            >
+              Edit resume
+            </button>
+          </div>
+          {editing && (
+            <ResumeEditor
+              initial={structure}
+              saving={savingStructure}
+              error={null}
+              onSave={next => {
+                setSavingStructure(true);
+                // Stand-in for the re-render round-trip.
+                setTimeout(() => {
+                  setStructure(next);
+                  setSavingStructure(false);
+                  setEditing(false);
+                }, 600);
+              }}
+              onClose={() => setEditing(false)}
+            />
+          )}
         </section>
 
         <section className="space-y-3">
