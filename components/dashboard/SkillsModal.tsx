@@ -1,27 +1,26 @@
 "use client";
 
-import { IllustrationTailored } from "@/components/illustrations";
-
 /**
- * "List your skills" — the one screen where the user writes the raw material for
- * their skills-first resume.
+ * "List your skills" — where the user writes the raw material for their
+ * skills-first resume.
  *
- * Design brief (Igor, 2026-09-20): wide 16:9 frame, bigger type, mostly black and
- * white, and ONE image block in a night-violet palette not used anywhere else.
+ * Style (Igor, 2026-09-20, holding up Flow's panels as the reference): the whole
+ * dialog IS the picture. A dark, heavily blurred ground; one large serif line with
+ * the emphasis carried by an italic word; a single sans sub-line; content as light
+ * chips on the image; a cream primary button. No white half, no second column of
+ * instructions — the example shrank to a handful of chips because the band was
+ * turning into a wall of text.
  *
- * How that resolves:
- *  - Two panes. The night pane carries the worked example, because the example is
- *    the part that teaches — making it the "picture" means the decoration is doing
- *    work instead of sitting next to the work.
- *  - The writing pane is pure black-on-white (inverted in dark), so nothing
- *    competes with the text the user is producing.
- *  - Night violet (#07030F → #2A1055, orb glow #A78BFA) is new to the product: the
- *    app runs light-lavender #6C5CE7, the day theme runs amber. It stays identical
- *    in both themes — it's an image, not a surface.
- *  - Marks (+ × ✳ · ◦) and the orb come from ILLUSTRATION_IDENTITY.md so this reads
- *    as the same family. No human figures, per the same doc.
- *  - Headings stay Inter: globals.css reserves Space Grotesk for marketing.
+ * The ground is ours: public/bg/skills-photo.jpg is one of our own onboarding
+ * renders blurred and darkened (brand-visuals/skills-photo.py), so nothing in it
+ * competes with type and no outside art was introduced.
+ *
+ * Instrument Serif is loaded in app/layout.tsx. It is used HERE only — globals.css
+ * reserves Space Grotesk for marketing and keeps app headings on Inter, and this
+ * dialog is the one surface that deliberately reads like a poster.
  */
+
+const SERIF = "'Instrument Serif', 'Playfair Display', Georgia, serif";
 
 // We ask for at least this many skills — the grouping is only as good as what the
 // candidate actually lists. Mirrors MIN_SKILLS in modules/skills_resume.py.
@@ -37,29 +36,13 @@ export function countSkills(text: string): number {
     .filter(p => p.length >= 2).length;
 }
 
-// A support-role list on purpose: the skills people undersell (de-escalation,
-// training, scheduling) sit next to the named tools, which is the whole lesson.
-// Exactly MIN_SKILLS lines, each short enough not to wrap: the example has to
-// model the ask ("ten of these") and stay scannable. Longer entries turned the
-// pane into a wall of text that ran past the frame.
+// Four chips, not ten lines. Each one models a different thing worth writing:
+// a tool with years, a soft skill phrased as what happened, a named tool stack,
+// a language. The full list was doing the same teaching at ten times the weight.
 export const SKILLS_EXAMPLE = `Live-chat support, 3 years (Zendesk)
-De-escalating angry customers
-Help-center articles in plain English
-Excel: pivot tables, VLOOKUP
-Google Sheets + CSV imports
-Shopify admin: refunds, order edits
-Slack and Notion, daily coordination
 Training new hires — onboarding checklist
-Scheduling shifts for a team of 6
+Excel: pivot tables, VLOOKUP
 Spanish (conversational)`;
-
-// Scattered marks from ILLUSTRATION_IDENTITY.md — texture, kept in the margins so
-// they never sit next to a line of the example and read as a bullet.
-const MARKS = [
-  { d: "M18 28h10M23 23v10", top: "5%", left: "88%", o: 0.45 },
-  { d: "M18 23l10 10M28 23l-10 10", top: "90%", left: "8%", o: 0.3 },
-  { d: "M23 20v16M16 24l14 8M30 24l-14 8", top: "78%", left: "90%", o: 0.38 },
-];
 
 export interface SkillsModalProps {
   open: boolean;
@@ -86,173 +69,135 @@ export default function SkillsModal({
   const met = skillCount >= minSkills;
   const remaining = Math.max(0, minSkills - skillCount);
   const pct = Math.min(100, (skillCount / minSkills) * 100);
+  const chips = example.split("\n").filter(Boolean);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-[2px] flex items-center justify-center p-4 sm:p-6">
-      {/* The border earns its keep in dark mode: the writing pane and the page
-          behind it are both near-black, so without it the frame disappears. */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-[2px] sm:p-6">
       <div
-        className="relative flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden
-          rounded-2xl border border-border bg-surface shadow-2xl lg:aspect-[16/9]"
+        className="relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl
+          shadow-2xl lg:aspect-[16/9]"
+        style={{ background: "#0A0710" }}
         data-testid="skills-describe-modal"
       >
-        {/* ── Night pane: the worked example, made the picture ───────────────── */}
-        <aside
-          className="relative max-h-[38vh] shrink-0 overflow-y-auto px-7 py-5
-            lg:max-h-none lg:h-[36%] lg:px-10 lg:py-6"
-          style={{ background: "#07030F" }}
+        {/* The ground — one image, full bleed */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{ background: 'url("/bg/skills-photo.jpg") center / cover no-repeat' }}
+        />
+        {/* Reading scrim: type lives on the left, so the dark stays heaviest there */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(100deg, rgba(8,5,14,.92) 0%, rgba(8,5,14,.74) 44%, rgba(8,5,14,.30) 100%)",
+          }}
+        />
+
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-full
+            bg-white/12 text-white/80 backdrop-blur transition hover:bg-white/20 hover:text-white"
         >
-          {/* The storyboard background from public/bg — the fan is the same art the
-              run dock uses, so the band reads as part of the product, not a new
-              decoration. Scrim on top because the example sits over it. */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0"
-            style={{ background: 'url("/bg/skills-night.jpg") center / cover no-repeat' }}
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(100deg, rgba(7,3,15,.90) 0%, rgba(7,3,15,.72) 42%, rgba(7,3,15,.58) 100%)",
-            }}
-          />
-          {MARKS.map((m, i) => (
-            <svg
-              key={i} aria-hidden viewBox="0 0 46 56"
-              className="pointer-events-none absolute hidden h-7 w-6 lg:block"
-              style={{ top: m.top, left: m.left, opacity: m.o }}
-            >
-              <path d={m.d} stroke="#C4B5FD" strokeWidth="2.4" strokeLinecap="round" fill="none" />
-            </svg>
-          ))}
+          <svg className="h-4.5 w-4.5" width="18" height="18" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
 
-          {/* Wide, not tall: the band runs the full width and the example sits in
-              two columns beside the illustration, so it costs the dialog ~200px of
-              height instead of a whole column. */}
-          <div className="relative flex items-center gap-7 lg:gap-9">
-            {/* The existing spot illustration from components/illustrations — the
-                set the rest of the product already uses. Nothing new drawn here. */}
-            <IllustrationTailored size={86} className="hidden shrink-0 sm:block" />
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto px-7 py-8 sm:px-10 lg:px-12 lg:py-10">
+          <h3
+            className="max-w-2xl text-[32px] leading-[1.08] tracking-[-0.01em] text-white sm:text-[40px] lg:text-[46px]"
+            style={{ fontFamily: SERIF }}
+          >
+            Ten skills, in <em className="italic">your</em> own words.
+          </h3>
+          <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-white/75">
+            You write them — we fix spelling and grammar and sort them into groups. We never add
+            skills you didn&apos;t write.
+          </p>
 
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-200/80">
-                Ten skills, like this
-              </p>
-              <ul className="mt-3 grid gap-x-8 gap-y-1.5 lg:grid-cols-2">
-                {example.split("\n").map((line, i) => (
-                  <li key={i} className="flex gap-2.5 text-[14px] leading-snug text-white/90">
-                    <span aria-hidden className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-violet-300/70" />
-                    <span>{line}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-3 text-[12.5px] leading-relaxed text-violet-200/75">
-                Tools are <em className="not-italic font-medium text-white/90">named</em>. Years and
-                levels are stated. Soft skills say what actually happened. One per line.
-              </p>
-            </div>
-          </div>
-        </aside>
-
-        {/* ── Writing pane: black and white, nothing competing with the text ──── */}
-        <section className="flex min-h-0 flex-1 flex-col overflow-y-auto px-7 py-6 lg:px-10 lg:py-7">
-          <div className="flex items-start justify-between gap-6">
-            <div>
-              <h3 className="text-[26px] font-bold leading-tight tracking-[-0.02em] text-text">
-                List your skills
-              </h3>
-              {/* Full-contrast, not muted: this is the promise the user is acting on,
-                  not a caption (Igor, 09-20). */}
-              <p className="mt-1.5 max-w-xl text-[15px] leading-relaxed text-text">
-                You write them. We fix spelling and grammar and sort them into groups —
-                we never add skills you didn&apos;t write.
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              aria-label="Close"
-              className="-mr-2 -mt-1 shrink-0 rounded-lg p-2 text-text2/60 transition hover:bg-surface2 hover:text-text"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+          {/* Chips: the example, at a glance */}
+          <div className="mt-5 flex flex-wrap gap-2">
+            {chips.map((c, i) => (
+              <span
+                key={i}
+                className="rounded-lg bg-white/12 px-3 py-1.5 text-[13.5px] text-white/90 backdrop-blur-sm"
+              >
+                {c}
+              </span>
+            ))}
           </div>
 
           {error && (
-            <div className="mt-5 rounded-xl border border-red/25 bg-red/10 px-4 py-3 text-sm text-red">
+            <div className="mt-5 rounded-xl border border-red/30 bg-red/15 px-4 py-3 text-sm text-white">
               {error}
             </div>
           )}
 
-          {/* Placeholder is short and faint on purpose: a multi-line sample here read
-              as real text the user had to clear before typing (Igor, 09-20). The
-              worked example lives in the night pane, so this only names the format. */}
           <textarea
             value={value}
             onChange={e => onChange(e.target.value)}
             maxLength={4000}
             placeholder="One skill per line…"
-            className="mt-4 min-h-[96px] w-full flex-1 resize-none rounded-xl border border-border bg-background
-              px-4 py-3.5 text-[16px] leading-relaxed text-text placeholder:text-[15px] placeholder:text-text2/40
-              focus:border-text focus:outline-none"
+            className="mt-5 min-h-[96px] w-full flex-1 resize-none rounded-2xl border border-white/15
+              bg-white/[0.07] px-4 py-3.5 text-[16px] leading-relaxed text-white backdrop-blur-sm
+              placeholder:text-[15px] placeholder:text-white/40 focus:border-white/40 focus:outline-none"
             data-testid="skills-describe-input"
           />
 
           <div className="mt-3 flex items-center gap-4">
-            <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-surface2">
+            <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/15">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${met ? "bg-green" : "bg-text"}`}
+                className={`h-full rounded-full transition-all duration-500 ${met ? "bg-green" : "bg-white"}`}
                 style={{ width: `${pct}%` }}
               />
             </div>
             <span
-              className={`text-[15px] font-bold tabular-nums ${met ? "text-green" : "text-text"}`}
+              className={`text-[15px] font-bold tabular-nums ${met ? "text-green" : "text-white"}`}
               data-testid="skills-count"
             >
-              {skillCount}<span className="text-text2/50">/{minSkills}</span>
+              {skillCount}<span className="text-white/45">/{minSkills}</span>
             </span>
           </div>
 
-          <p className="mt-2.5 text-[14px] text-text">
+          <p className="mt-2.5 text-[13.5px] text-white/70">
             {met
               ? "Enough for a real skills section — more is still better."
-              : `Add ${remaining} more skill${remaining === 1 ? "" : "s"}. Saved to your profile either way.`}
+              : `Add ${remaining} more. Saved to your profile either way.`}
           </p>
 
-          <div className="mt-4 flex flex-wrap items-center gap-2.5">
+          <div className="mt-5 flex flex-wrap items-center gap-2.5">
             <button
               onClick={onGenerate}
               disabled={generating || saving || !met || !hasResume}
-              className="rounded-xl bg-text px-6 py-3 text-[15px] font-semibold text-background
-                transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
+              className="rounded-xl bg-[#F2EFE9] px-6 py-3 text-[15px] font-semibold text-[#14101C]
+                transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-35"
             >
               {generating ? "Generating…" : "Save & Generate"}
             </button>
             <button
               onClick={onSave}
               disabled={saving || generating}
-              className="rounded-xl border border-border px-5 py-3 text-[15px] font-medium text-text
-                transition hover:border-text disabled:opacity-40"
+              className="rounded-xl border border-white/25 px-5 py-3 text-[15px] font-medium text-white
+                transition hover:border-white/50 disabled:opacity-40"
             >
               {saving ? "Saving…" : "Save for later"}
             </button>
             <button
               onClick={onClose}
-              className="rounded-xl px-4 py-3 text-[15px] font-medium text-text2 transition hover:text-text"
+              className="rounded-xl px-4 py-3 text-[15px] font-medium text-white/70 transition hover:text-white"
             >
               Cancel
             </button>
+            {!hasResume && (
+              <span className="text-[13px] text-white/60">
+                Upload a resume to generate — skills save without one.
+              </span>
+            )}
           </div>
-
-          {!hasResume && (
-            <p className="mt-3 text-[13.5px] text-text2">
-              Upload a resume to generate — your skills save fine without one.
-            </p>
-          )}
-        </section>
+        </div>
       </div>
     </div>
   );
