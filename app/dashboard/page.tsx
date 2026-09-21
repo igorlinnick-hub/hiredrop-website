@@ -31,7 +31,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("onboarding_completed, name, resume_url, keywords, location, job_type, platforms, salary_min, salary_max, salary_listed_only, search_radius_miles, skill_groups, skills_description")
+    .select("onboarding_completed, name, resume_url, keywords, location, job_type, work_setting, platforms, salary_min, salary_max, salary_listed_only, search_radius_miles, skill_groups, skills_description")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -99,6 +99,7 @@ export default async function DashboardPage() {
         keywords={profile?.keywords ?? []}
         location={profile?.location ?? ""}
         jobType={profile?.job_type ?? ""}
+        workSetting={profile?.work_setting ?? ""}
         platforms={profile?.platforms ?? []}
         onboardingComplete={!onboardingIncomplete}
         hasResume={!resumeMissing}

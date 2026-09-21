@@ -22,6 +22,7 @@ interface Props {
   keywords: string[];
   location: string;
   jobType: string;
+  workSetting: string;
   platforms: string[];
   onboardingComplete: boolean;
   hasResume: boolean;
@@ -41,6 +42,7 @@ export default function QuickActions({
   keywords: initialKeywords,
   location: initialLocation,
   jobType: initialJobType,
+  workSetting: initialWorkSetting,
   platforms: initialPlatforms,
   onboardingComplete,
   hasResume,
@@ -57,8 +59,7 @@ export default function QuickActions({
   // re-apply a filter the user turned off (see JOB_TYPES in lib/constants).
   const [jobType, setJobType] = useState(initialJobType ?? "");
   // Work setting (remote/hybrid/onsite) — a separate axis from job type. "" = Any.
-  // Not persisted to profile (no column yet) — sent with the START payload for this run.
-  const [workSetting, setWorkSetting] = useState("");
+  const [workSetting, setWorkSetting] = useState(initialWorkSetting ?? "");
   // "Did you mean" typo suggestions for keywords — the ONE place a typo costs search
   // results (keywords go raw into board queries; the AI layers read the real posting so
   // they're already typo-tolerant). Shown as accept-with-one-click chips, never silent.
@@ -285,6 +286,35 @@ export default function QuickActions({
       } catch { /* optional filter — ignore */ }
     })();
   }
+  // Both chips write on change, not at Start. Stop calls router.refresh(), which
+  // re-reads the profile — so anything only held in React state came back blank and the
+  // user re-picked it every run (Igor, 2026-09-21). Fire-and-forget like the filters
+  // above: a failed save must never block Start, and Start re-sends these anyway.
+  function persistChips(next: { jobType?: string; workSetting?: string }) {
+    const jt = next.jobType ?? jobType;
+    const ws = next.workSetting ?? workSetting;
+    (async () => {
+      try {
+        const t = await getFreshToken();
+        await apiPost("/profile/prefs", t, {
+          keywords,
+          location,
+          job_type: jt,
+          work_setting: ws,
+          platforms,
+        });
+      } catch { /* optional filter — ignore */ }
+    })();
+  }
+  function pickJobType(value: string) {
+    setJobType(value);
+    persistChips({ jobType: value });
+  }
+  function pickWorkSetting(value: string) {
+    setWorkSetting(value);
+    persistChips({ workSetting: value });
+  }
+
   // A city picked on the map becomes the campaign location (a precise city string,
   // not the coarse remote/usa/europe enum) — it flows to Indeed l= via the extension.
   // Save the label directly (not from state, which updates async) so the write is fresh.
@@ -293,7 +323,7 @@ export default function QuickActions({
     (async () => {
       try {
         const t = await getFreshToken();
-        await apiPost("/profile/prefs", t, { keywords, location: label, job_type: jobType, platforms });
+        await apiPost("/profile/prefs", t, { keywords, location: label, job_type: jobType, work_setting: workSetting, platforms });
       } catch { /* optional filter — ignore */ }
     })();
   }
@@ -317,7 +347,7 @@ export default function QuickActions({
 
   async function savePrefsWith(plats: string[]) {
     const t = await getFreshToken();
-    await apiPost("/profile/prefs", t, { keywords, location, job_type: jobType, platforms: plats });
+    await apiPost("/profile/prefs", t, { keywords, location, job_type: jobType, work_setting: workSetting, platforms: plats });
   }
 
   async function savePrefs() {
@@ -648,7 +678,7 @@ export default function QuickActions({
         <div className="relative">
           <select
             value={jobType}
-            onChange={(e) => setJobType(e.target.value)}
+            onChange={(e) => pickJobType(e.target.value)}
             className="appearance-none pl-3 pr-6 py-1 text-xs font-medium rounded-full border
               border-border bg-surface text-text2 cursor-pointer
               hover:border-accent/40 hover:text-text focus:outline-none focus:border-accent/50 transition"
@@ -665,7 +695,7 @@ export default function QuickActions({
         <div className="relative">
           <select
             value={workSetting}
-            onChange={(e) => setWorkSetting(e.target.value)}
+            onChange={(e) => pickWorkSetting(e.target.value)}
             className="appearance-none pl-3 pr-6 py-1 text-xs font-medium rounded-full border
               border-border bg-surface text-text2 cursor-pointer
               hover:border-accent/40 hover:text-text focus:outline-none focus:border-accent/50 transition"
