@@ -20,18 +20,18 @@
  * Theme-safe: semantic tokens only.
  */
 
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { Application } from "@/lib/types";
 import { PLATFORMS, JOB_STATUSES } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
-import { apiGet, apiPatch, apiPost } from "@/lib/api";
+import { apiPatch, apiPost } from "@/lib/api";
+import { useHandbacks, handbackProgress } from "@/components/dashboard/useHandbacks";
 
 type Receipt = {
   at: string; job_title: string; company: string; platform: string;
   job_url: string; verified: boolean; signal: string; shot?: string | null;
 };
-type HandBack = { id: string; job_title: string; company: string; url: string; reason: string };
 
 // Friendly text for a hand-back reason. Matched against the raw string the extension
 // wrote via handBackJob() — the full text stays on the row's title attribute.
@@ -101,7 +101,7 @@ export default function HistoryView({
   // this is only so the chip changes under the finger instead of after a round trip.
   const [statusEdits, setStatusEdits] = useState<Record<string, string>>({});
   const [statusError, setStatusError] = useState<string | null>(null);
-  const [handbacks, setHandbacks] = useState<HandBack[]>([]);
+  const { items: handbacks, reload: loadHandbacks, setItems: setHandbacks } = useHandbacks();
   const [openShot, setOpenShot] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -130,20 +130,6 @@ export default function HistoryView({
       setStatusError("Couldn't save that — check your connection and try again.");
     }
   };
-
-  // Hand-backs come from the server, the same row the popup and the rail badge read.
-  // One owner on purpose: this list is a TO-DO, and a to-do that three surfaces count
-  // differently is worse than no to-do at all.
-  const loadHandbacks = useCallback(async () => {
-    try {
-      const { data: { session } } = await createClient().auth.getSession();
-      if (!session?.access_token) return;
-      const res = await apiGet<{ handbacks: HandBack[] }>("/handbacks?limit=20", session.access_token);
-      setHandbacks(res.handbacks || []);
-    } catch { /* an unreachable list is not an empty one — keep what we had */ }
-  }, []);
-
-  useEffect(() => { loadHandbacks(); }, [loadHandbacks]);
 
   // The user's own tick. We never see the employer's side, so this claims nothing
   // beyond "they say it's done" — and the wording in the UI says exactly that.
@@ -239,30 +225,75 @@ export default function HistoryView({
 
       {/* Couldn't submit these (hand-backs) */}
       {handbacks.length > 0 && (
-        <div id="handbacks" className="rounded-xl border border-amber-400/40 bg-amber-400/5 p-4 scroll-mt-24">
-          <p className="text-sm font-semibold text-text">Couldn&apos;t submit these — a click from you finishes them</p>
-          <ul className="mt-2 space-y-2">
-            {handbacks.map((h) => (
-              <li key={h.id} className="flex items-start gap-3 text-[13px] leading-snug">
-                <div className="min-w-0 flex-1">
-                  {h.url
-                    ? <a href={h.url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:underline">{h.job_title || "Application"} ↗</a>
-                    : <span className="font-medium text-text">{h.job_title || "Application"}</span>}
-                  {h.company ? <span className="text-text2"> · {h.company}</span> : null}
-                  <span className="text-text2" title={h.reason}> — {userReason(h.reason)}</span>
-                </div>
-                {/* Without this the list only ever grows, and a list that never drains
-                    stops being read. */}
-                <button
-                  onClick={() => markHandbackDone(h.id)}
-                  className="shrink-0 rounded-md border border-border px-2 py-0.5 text-[11px]
-                    font-medium text-text2 hover:text-text transition"
+        <div id="handbacks" className="scroll-mt-24 space-y-1.5">
+          {handbacks.map((h) => {
+            const pct = handbackProgress(h.steps_done);
+            return (
+              // The whole row is the affordance. No banner above it, no explanation
+              // beside it — a red dot, and the rest appears only if you look (Igor,
+              // 09-21: "чтоб он не видел кучу текста и каких то разных уведомлений").
+              <div key={h.id} className="group relative">
+                {/* Hover card, above the row so it never covers what you're pointing at. */}
+                <div
+                  className="pointer-events-none absolute -top-2 left-0 z-20 w-72 -translate-y-full
+                    rounded-lg border border-border bg-surface p-3 shadow-lg opacity-0
+                    transition-opacity group-hover:opacity-100"
+                  role="tooltip"
                 >
-                  Done
-                </button>
-              </li>
-            ))}
-          </ul>
+                  <p className="text-[13px] font-medium text-text">Finish this one by hand</p>
+                  <p className="mt-0.5 text-[11.5px] leading-snug text-text2" title={h.reason}>
+                    {userReason(h.reason)}
+                  </p>
+                  {pct !== null && (
+                    <>
+                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface2">
+                        <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
+                      </div>
+                      {/* Screens, not a guess: we counted the ones we completed and we
+                          know one is left. Never claim to know what's behind it. */}
+                      <p className="mt-1 text-[11px] text-text2 tabular-nums">
+                        {pct}% done — {h.steps_done} {h.steps_done === 1 ? "screen" : "screens"} filled, one left
+                      </p>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3
+                  transition group-hover:border-accent/50">
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-red" aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    {h.url ? (
+                      <a
+                        href={h.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-medium text-text hover:text-accent transition"
+                      >
+                        {h.job_title || "Application"}
+                      </a>
+                    ) : (
+                      <span className="text-sm font-medium text-text">{h.job_title || "Application"}</span>
+                    )}
+                    {h.company ? <span className="text-[13px] text-text2"> · {h.company}</span> : null}
+                  </div>
+                  {pct !== null && (
+                    <span className="shrink-0 text-[11px] text-text2 tabular-nums opacity-0
+                      transition-opacity group-hover:opacity-100">
+                      {pct}%
+                    </span>
+                  )}
+                  {/* Appears on hover: a list that never drains stops being read. */}
+                  <button
+                    onClick={() => markHandbackDone(h.id)}
+                    className="shrink-0 rounded-md border border-border px-2 py-0.5 text-[11px]
+                      font-medium text-text2 opacity-0 transition hover:text-text group-hover:opacity-100"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
