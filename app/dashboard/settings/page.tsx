@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
+import PosterPanel from "@/components/dashboard/PosterPanel";
 import ResumeATSPanel from "@/components/dashboard/ResumeATSPanel";
 import BillingSection from "@/components/dashboard/BillingSection";
 import type { UserProfile } from "@/lib/types";
@@ -294,33 +295,31 @@ export default function SettingsPage() {
             snapshot it loaded, so a Save here for an unrelated field silently reverted
             the filters a live campaign was started with. What's left in Settings is who
             you are — the things a form asks about you. */}
-        <section className="hd-panel p-6">
-          <h3 className="font-semibold text-text">Your search</h3>
-          <p className="text-sm text-text2 mt-1.5 leading-relaxed">
-            Keywords, location, job type, where to apply, whether we send or you tap, and
-            how your letters sound — all of it sits on the dashboard, next to the Start
-            button, so a run always uses what you can see.
-          </p>
-          <div className="flex flex-wrap gap-2.5 mt-3.5">
+        <PosterPanel
+          title={<>Your search lives on the <em className="italic">dashboard</em>.</>}
+          body="Keywords, location, job type, where to apply, whether we send or you tap, and how your letters sound — all of it sits next to the Start button, so a run always uses what you can see."
+          image="/bg/skills-night.jpg"
+        >
+          <div className="mt-5 flex flex-wrap gap-2.5">
             <a
               href="/dashboard"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs
-                font-medium bg-text text-background hover:opacity-90 transition"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#F2EFE9] px-5 py-2.5
+                text-[14px] font-semibold text-[#14101C] transition hover:bg-white"
             >
               Search &amp; apply settings
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </a>
             <a
               href="/dashboard/platforms"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs
-                font-medium border border-border text-text2 hover:text-text transition"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/25 px-4 py-2.5
+                text-[14px] font-medium text-white transition hover:border-white/50"
             >
               Connect platforms
             </a>
           </div>
-        </section>
+        </PosterPanel>
 
         {/* Resume & ATS */}
         <ResumeATSPanel />

@@ -1,7 +1,5 @@
 "use client";
 
-import { IllustrationTailored } from "@/components/illustrations";
-
 /**
  * "Skills-First Version" — the Settings block for the second resume.
  *
@@ -14,6 +12,8 @@ import { IllustrationTailored } from "@/components/illustrations";
  * The rows are real when the resume has been generated (the user's own grouping)
  * and a sample otherwise, so an empty state still shows what the output looks like.
  */
+
+const SERIF = "'Instrument Serif', 'Playfair Display', Georgia, serif";
 
 const SAMPLE_GROUPS = [
   { group: "Customer Support", skills: ["Zendesk", "De-escalation", "Help-center writing"] },
@@ -56,7 +56,7 @@ export default function SkillsCard({
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
-          background: 'url("/bg/skills-night.jpg") center / cover no-repeat',
+          background: 'url("/bg/skills-photo.jpg") center / cover no-repeat',
           animation: "hdSkillsDrift 26s ease-in-out infinite alternate",
         }}
       />
@@ -66,7 +66,7 @@ export default function SkillsCard({
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "linear-gradient(105deg, rgba(5,2,11,.88) 0%, rgba(5,2,11,.72) 45%, rgba(5,2,11,.55) 100%)",
+            "linear-gradient(100deg, rgba(8,5,14,.92) 0%, rgba(8,5,14,.74) 44%, rgba(8,5,14,.30) 100%)",
         }}
       />
       <style>{`
@@ -85,20 +85,25 @@ export default function SkillsCard({
 
       <div className="relative p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <IllustrationTailored size={44} className="hidden shrink-0 sm:block" />
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-200/80">
-                Skills-First Version
-              </p>
-              <p className="mt-1 max-w-lg text-[14px] leading-relaxed text-white/85">
-                {hasSkills
-                  ? isDefault
-                    ? "Your grouped skills lead the page; each role is one compact line."
-                    : "Generated. Make it your default if you prefer leading with skills."
-                  : "You list your skills, we group them and put them up front — work history compressed to 1-2 lines per role."}
-              </p>
-            </div>
+          <div>
+            {/* Same poster language as the dialog: serif line, italic emphasis. */}
+            <h3
+              className="text-[24px] leading-tight tracking-[-0.01em] text-white sm:text-[28px]"
+              style={{ fontFamily: SERIF }}
+            >
+              {hasSkills ? (
+                <>A resume that leads with <em className="italic">skills</em>.</>
+              ) : (
+                <>Let your <em className="italic">skills</em> lead.</>
+              )}
+            </h3>
+            <p className="mt-2 max-w-lg text-[14px] leading-relaxed text-white/75">
+              {hasSkills
+                ? isDefault
+                  ? "Your grouped skills lead the page; each role is one compact line."
+                  : "Generated. Make it your default if you prefer leading with skills."
+                : "You list them, we group them and put them up front — work history compressed to 1-2 lines per role."}
+            </p>
           </div>
           {hasSkills && (
             <span
@@ -106,7 +111,7 @@ export default function SkillsCard({
                 "shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold",
                 isDefault
                   ? "border-green/40 bg-green/15 text-green"
-                  : "border-white/15 bg-white/5 text-violet-200/80",
+                  : "border-white/20 bg-white/10 text-white/80",
               ].join(" ")}
             >
               {isDefault ? "Active" : "Not active"}
@@ -120,7 +125,7 @@ export default function SkillsCard({
             <li
               key={`${g.group}-${i}`}
               className="hd-skills-row flex flex-wrap items-baseline gap-x-2 gap-y-1 rounded-xl
-                border border-white/10 bg-white/[0.04] px-3.5 py-2.5"
+                border border-white/12 bg-white/[0.08] px-3.5 py-2.5 backdrop-blur-sm"
               style={{
                 animation: `hdSkillsRow .5s cubic-bezier(.22,.61,.36,1) both`,
                 animationDelay: `${120 + i * 110}ms`,
@@ -144,8 +149,8 @@ export default function SkillsCard({
           <button
             onClick={onEdit}
             disabled={busy}
-            className="rounded-xl bg-white px-4 py-2.5 text-[14px] font-semibold text-[#14082E]
-              transition hover:bg-violet-50 disabled:opacity-40"
+            className="rounded-xl bg-[#F2EFE9] px-5 py-2.5 text-[14px] font-semibold text-[#14101C]
+              transition hover:bg-white disabled:opacity-40"
           >
             {generating ? "Generating…" : hasSkills ? "Edit skills & regenerate" : "List your skills"}
           </button>
@@ -153,7 +158,7 @@ export default function SkillsCard({
             <button
               onClick={onView}
               disabled={viewing || generating}
-              className="rounded-xl border border-white/20 px-4 py-2.5 text-[14px] font-medium text-white
+              className="rounded-xl border border-white/25 px-4 py-2.5 text-[14px] font-medium text-white
                 transition hover:border-white/40 disabled:opacity-40"
             >
               {viewing ? "Loading…" : "View"}
@@ -163,7 +168,7 @@ export default function SkillsCard({
             <button
               onClick={onMakeDefault}
               disabled={saving}
-              className="rounded-xl border border-white/20 px-4 py-2.5 text-[14px] font-medium text-white
+              className="rounded-xl border border-white/25 px-4 py-2.5 text-[14px] font-medium text-white
                 transition hover:border-white/40 disabled:opacity-40"
             >
               {saving ? "Saving…" : "Use Skills Version"}
@@ -173,7 +178,7 @@ export default function SkillsCard({
             <button
               onClick={onUseOriginal}
               disabled={saving}
-              className="rounded-xl border border-white/20 px-4 py-2.5 text-[14px] font-medium text-white
+              className="rounded-xl border border-white/25 px-4 py-2.5 text-[14px] font-medium text-white
                 transition hover:border-white/40 disabled:opacity-40"
             >
               {saving ? "Saving…" : "Use Original"}
