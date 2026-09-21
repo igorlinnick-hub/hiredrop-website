@@ -17,7 +17,7 @@ const emptyProfile: UserProfile = {
   phone: "",
   keywords: [],
   location: "remote",
-  job_type: "full-time",
+  job_type: "",
   platforms: ["indeed"],
   writing_style: "",
   linkedin_url: "",
@@ -77,7 +77,12 @@ export default function SettingsPage() {
           phone: data.phone || "",
           keywords: data.keywords || [],
           location: data.location || "remote",
-          job_type: data.job_type || "full-time",
+          // `?? ""` and NOT `|| "full-time"`: an empty/NULL job_type means "any type"
+          // and must survive a page load. The old fallback made the picker claim
+          // Full-time over a profile that had no type set at all — and a Save from that
+          // screen then wrote the narrowing to the database, silently shrinking the
+          // user's search to a filter they never chose.
+          job_type: data.job_type ?? "",
           platforms: data.platforms || ["indeed"],
           writing_style: data.writing_style || "",
           linkedin_url: data.linkedin_url || "",

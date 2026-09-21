@@ -53,7 +53,9 @@ export default function QuickActions({
 
   const [keywords, setKeywords] = useState<string[]>(initialKeywords);
   const [location, setLocation] = useState(initialLocation || "remote");
-  const [jobType, setJobType] = useState(initialJobType || "full-time");
+  // No `|| "full-time"` fallback — "" is the Any option, and defaulting it away would
+  // re-apply a filter the user turned off (see JOB_TYPES in lib/constants).
+  const [jobType, setJobType] = useState(initialJobType ?? "");
   // Work setting (remote/hybrid/onsite) — a separate axis from job type. "" = Any.
   // Not persisted to profile (no column yet) — sent with the START payload for this run.
   const [workSetting, setWorkSetting] = useState("");

@@ -78,7 +78,14 @@ export const LOCATIONS: Location[] = [
   { value: "europe", label: "Europe" },
 ];
 
+// "" = Any (no employment-type filter), same convention WORK_SETTINGS already uses.
+// It is a real answer, not a blank: the whole chain already treats an empty job_type as
+// "don't filter" — modules/job_type.matches_job_type() returns True for it, and the
+// extension's URL builders skip the `jt` / `employment_type[]` param — so the only thing
+// missing was a way for the user to SAY it. Without the option the pickers forced a
+// narrowing nobody asked for (Igor 09-21).
 export const JOB_TYPES: JobType[] = [
+  { value: "", label: "Any type" },
   { value: "full-time", label: "Full-time" },
   { value: "part-time", label: "Part-time" },
   { value: "contract", label: "Contract" },
