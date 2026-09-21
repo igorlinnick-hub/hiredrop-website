@@ -440,6 +440,7 @@ export default function ResumeATSPanel() {
   const passes = wasChecked && !hasStructural && (data.atsScore ?? 0) >= ATS_PASS_THRESHOLD;
 
   return (
+    <>
     <section className="hd-panel p-6 space-y-5">
 
       {/* Header + active badge */}
@@ -643,8 +644,11 @@ export default function ResumeATSPanel() {
         </div>
       )}
 
-      {/* Skills-First Version — dark "inserted picture" card with the grouping
-          animating in; see SkillsCard for why it looks unlike the panels above. */}
+      </section>
+
+      {/* Skills-First Version sits OUTSIDE the monochrome panel on purpose: the page
+          alternates black-and-white panel, picture, panel, picture (Igor, 09-20), and
+          a poster framed inside a white card breaks that rhythm. */}
       {hasResume && (
         <SkillsCard
           hasSkills={hasSkills}
@@ -807,6 +811,6 @@ export default function ResumeATSPanel() {
           </div>
         </div>
       )}
-    </section>
+    </>
   );
 }
