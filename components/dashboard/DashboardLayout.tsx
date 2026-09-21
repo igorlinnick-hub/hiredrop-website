@@ -9,6 +9,7 @@ import ExtensionBridgeBanner from "@/components/dashboard/ExtensionBridgeBanner"
 import FitModeMenu from "@/components/dashboard/FitModeMenu";
 import ChecklistCard from "@/components/dashboard/ChecklistCard";
 import TapProgressDock from "@/components/dashboard/TapProgressDock";
+import HandbackRailItem from "@/components/dashboard/HandbackRailItem";
 
 const NAV_ITEMS = [
   {
@@ -161,6 +162,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Link>
             ))}
           </nav>
+
+          {/* Waiting on the human — directly under the nav, above the checklist: it is
+              the only item here with a job half-finished behind it. Renders nothing at
+              zero, so the rail is unchanged until there is something to do. */}
+          <HandbackRailItem />
 
           {/* What's left to get the most applications — its own framed block under the
               nav, not a card stacked on top of the dashboard (Igor, 09-19). */}
