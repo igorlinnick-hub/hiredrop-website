@@ -4,6 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { apiGet } from "@/lib/api";
 
+/** A required field the filler could not answer, as the form showed it. */
+export type HandbackQuestion = { label: string; options: string[] };
+
 export type Handback = {
   id: string;
   job_title: string;
@@ -11,6 +14,16 @@ export type Handback = {
   url: string;
   reason: string;
   steps_done: number;
+  /** What the form asked and we left blank. Empty for rows written before 09-21, and
+   *  for walls that weren't about a question (no submit button, resume upload failed). */
+  questions?: HandbackQuestion[];
+  /** Answers the user already gave, question-keyed. */
+  answers?: Record<string, string>;
+  /** The pool row, when there is one. Without it the answers are stored but the job
+   *  can't be re-queued — a native Indeed/ZR hand-back was never a pool row. */
+  job_id?: string | null;
+  /** Set once the answers went in and the job went back to `approved`. */
+  requeued_at?: string | null;
 };
 
 /**
