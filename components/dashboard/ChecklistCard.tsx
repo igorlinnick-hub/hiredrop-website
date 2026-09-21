@@ -97,6 +97,11 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
   const [profileDone, setProfileDone] = useState(demo);
   const [hasResume, setHasResume] = useState(demo);
   const [hasSkills, setHasSkills] = useState(false);
+  // Work authorization + sponsorship. Unset is not neutral: the apply engine refuses
+  // to guess a knockout (HireDrop #228), so an unanswered one stops mid-application
+  // and waits for a human. Onboarding asks for both now; this row is for the profiles
+  // that predate it — 34 of 37 on 09-21.
+  const [eligibilityDone, setEligibilityDone] = useState(demo);
   const [letterStyle, setLetterStyle] = useState("");
   const [tier, setTier] = useState("free");
   // Which sources have answered. Until one has, we paint its last known value
@@ -129,7 +134,7 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
         if (!user || cancelled) return;
         const { data } = await supabase
           .from("profiles")
-          .select("onboarding_completed, resume_url, keywords, skill_groups, skills_description, writing_style")
+          .select("onboarding_completed, resume_url, keywords, skill_groups, skills_description, writing_style, work_authorized_us, needs_sponsorship")
           .eq("user_id", user.id)
           .maybeSingle();
         if (cancelled) return;
@@ -143,6 +148,9 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
           );
           setLetterStyle(data.writing_style || "");
           setLetterDraft(data.writing_style || "");
+          setEligibilityDone(
+            data.work_authorized_us !== null && data.needs_sponsorship !== null
+          );
         }
         setProfileLoaded(true);
 
@@ -288,6 +296,14 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
       // The panel sits at the bottom of a long Settings page — without the anchor
       // this drops the user at "Personal Information" and the step looks broken.
       href: "/dashboard/settings#skills",
+    },
+    {
+      id: "eligibility",
+      label: "Answer work eligibility",
+      hint: "Two questions every form asks",
+      done: eligibilityDone,
+      progress: eligibilityDone ? 1 : 0,
+      href: "/dashboard/settings#eligibility",
     },
     {
       id: "extension",
