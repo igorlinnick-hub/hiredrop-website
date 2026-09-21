@@ -890,6 +890,11 @@ export default function CampaignView({ token: initialToken }: Props) {
         <button
           onClick={stopCampaign}
           disabled={stopping}
+          // The driver (scripts/e2e/drive.py) clicks real buttons by testid — it has
+          // always looked for btn-stop, and btn-stop did not exist. So it could start a
+          // campaign and never end one: a run could only be stopped by hand, which is
+          // half of why no run has ever been left to finish on its own (09-21).
+          data-testid="btn-stop"
           className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition
             bg-red/8 text-red border-red/20 hover:bg-red/15 disabled:opacity-50"
         >
