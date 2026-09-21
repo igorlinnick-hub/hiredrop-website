@@ -254,7 +254,9 @@ export default function SettingsPage() {
 
           {/* Work eligibility — the most frequent required questions on application
               forms. Filled honestly from here; never guessed on a knockout question. */}
-          <p className="text-sm font-medium text-text pt-2">Work eligibility</p>
+          <p id="eligibility" className="text-sm font-medium text-text pt-2 scroll-mt-24">
+            Work eligibility
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label="Authorized to work in the US?"

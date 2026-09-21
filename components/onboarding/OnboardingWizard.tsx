@@ -189,6 +189,10 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
         job_type: profile.job_type,
         platforms: profile.platforms,
         writing_style: profile.writing_style,
+        // Knockout answers from step 2. Without these two lines the step would collect
+        // them and the save would drop them on the floor.
+        work_authorized_us: profile.work_authorized_us,
+        needs_sponsorship: profile.needs_sponsorship,
         onboarding_completed: true,
       })
       .eq("user_id", user.id);

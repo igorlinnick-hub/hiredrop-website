@@ -44,6 +44,9 @@ export default function StepJobPreferences({ profile, updateProfile, onNext, onB
       setKeywordInput("");
     }
     if (keywords.length === 0) return;
+    // Both eligibility answers are required. Unset is not a neutral default here: it
+    // means every form carrying these questions gets handed back mid-run.
+    if (profile.work_authorized_us === null || profile.needs_sponsorship === null) return;
     onNext();
   }
 
@@ -130,10 +133,84 @@ export default function StepJobPreferences({ profile, updateProfile, onNext, onB
         </div>
       </div>
 
+      {/* Work eligibility — asked HERE, in onboarding, because the answer is a
+          knockout on nearly every application form and nothing may guess it.
+
+          The two fields have existed in the database and in Settings for months and
+          were set on 3 of 37 profiles (measured 09-21): nobody scrolls to the middle
+          of Settings to fill in something no screen ever asked for. Meanwhile the
+          screener answerer was reaching them as unset and the model answered anyway
+          — "No, sponsorship not required" off a US address — filing a guess about
+          someone's legal status under their name. The backend now refuses to guess
+          (HireDrop #228), which turns an unset field into a form handed back to the
+          human. That is honest but it stalls the run, so the real fix is asking once,
+          here, while the person is already answering questions about themselves. */}
+      <div className="space-y-1.5">
+        <label className="block text-sm font-medium text-text">
+          Work eligibility <span className="text-red">*</span>
+        </label>
+        <p className="text-xs text-text2">
+          Almost every application asks these two. We never guess them — an unanswered
+          one stops the application and waits for you.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <YesNo
+            question="Authorized to work in the country you're applying in?"
+            value={profile.work_authorized_us}
+            onChange={(v) => updateProfile({ work_authorized_us: v })}
+          />
+          <YesNo
+            question="Will you need visa sponsorship?"
+            value={profile.needs_sponsorship}
+            onChange={(v) => updateProfile({ needs_sponsorship: v })}
+          />
+        </div>
+      </div>
+
       <div className="flex justify-between pt-2">
         <Button type="button" variant="ghost" onClick={onBack}>Back</Button>
         <Button type="submit">Continue</Button>
       </div>
     </form>
+  );
+}
+
+/** A two-button yes/no. A <select> with a "Select…" placeholder is how these two
+ *  ended up unanswered on 34 of 37 profiles — an untouched dropdown looks the same
+ *  as a considered one. Two buttons make the unanswered state visible. */
+function YesNo({
+  question,
+  value,
+  onChange,
+}: {
+  question: string;
+  value: boolean | null;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-surface p-3">
+      <p className="text-[13px] text-text leading-snug mb-2.5">{question}</p>
+      <div className="flex gap-2">
+        {[
+          { label: "Yes", v: true },
+          { label: "No", v: false },
+        ].map((o) => (
+          <button
+            key={o.label}
+            type="button"
+            onClick={() => onChange(o.v)}
+            aria-pressed={value === o.v}
+            className={[
+              "flex-1 px-3 py-2 rounded-lg border text-sm font-medium transition active:scale-[.98]",
+              value === o.v
+                ? "border-accent bg-accent-light text-accent"
+                : "border-border bg-surface text-text2 hover:border-accent hover:text-text",
+            ].join(" ")}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
