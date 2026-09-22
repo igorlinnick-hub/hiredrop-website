@@ -10,17 +10,30 @@ export const metadata = pageMetadata({
   path: "/signup",
 });
 
-export default function SignupPage() {
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ affiliate?: string; email?: string }>;
+}) {
+  // An issued affiliate link lands here. Read server-side and passed down, so
+  // the form stays free of useSearchParams and its Suspense boundary.
+  const { affiliate = "", email = "" } = await searchParams;
+  const affiliateCode = affiliate.slice(0, 39);
+
   return (
     <AuthLayout
-      title="Create your account"
-      subtitle="Your first 40 applications are free — no card required"
+      title={affiliateCode ? "Create your affiliate account" : "Create your account"}
+      subtitle={
+        affiliateCode
+          ? `hiredrop.io/?ref=${affiliateCode} goes live the moment this account exists`
+          : "Your first 40 applications are free — no card required"
+      }
       footerText="Already have an account?"
       footerLinkText="Sign in"
       footerLinkHref="/login"
       showcase
     >
-      <SignupForm />
+      <SignupForm affiliateCode={affiliateCode} prefillEmail={email.slice(0, 254)} />
     </AuthLayout>
   );
 }

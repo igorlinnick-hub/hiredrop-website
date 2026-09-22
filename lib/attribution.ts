@@ -11,6 +11,8 @@
 //      session is immediate (email confirmation off).
 //   2. /auth/callback — covers email-confirm and Google OAuth paths.
 
+import { API_BASE } from "./api";
+
 export const ATTRIBUTION_COOKIE = "hd_attribution";
 const STORAGE_KEY = "hd_attribution";
 const COOKIE_MAX_AGE_SEC = 60 * 24 * 60 * 60; // 60 days — job search is a months-long cycle
@@ -89,5 +91,43 @@ export function parseAttributionCookie(raw: string | undefined): Attribution | n
     return typeof parsed === "object" && parsed !== null ? (parsed as Attribution) : null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Tell the backend a ?ref= link was opened.
+ *
+ * Separate from capture on purpose. Capture is FIRST TOUCH — it deliberately
+ * ignores every visit after the first, which is right for attribution and wrong
+ * for counting: until this existed the affiliate funnel started at `signups`,
+ * so a printed card that got scanned fifty times and converted nobody was
+ * indistinguishable from one nobody ever picked up.
+ *
+ * De-duplication is the server's job (one row per visitor per code per day) —
+ * the browser cannot be trusted with it, and a visitor with storage blocked
+ * would otherwise never be counted at all.
+ *
+ * Fire-and-forget: the page has already rendered and there is nothing useful to
+ * do with a failure. keepalive lets it survive the visitor navigating away.
+ */
+export function reportReferralOpen(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (!ref) return;
+
+    void fetch(`${API_BASE}/api/v1/affiliate/click`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: ref.slice(0, 39),
+        landing_page: window.location.pathname.slice(0, 200),
+        source: (params.get("src") || "").slice(0, 60),
+      }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // never let a counter break a landing page
   }
 }

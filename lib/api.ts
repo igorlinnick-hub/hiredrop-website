@@ -3,7 +3,7 @@
  * All requests include the Supabase JWT as a Bearer token.
  */
 
-const API_BASE =
+export const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "https://web-production-db45.up.railway.app";
 
 export class ApiError extends Error {

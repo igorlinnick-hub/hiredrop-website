@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 
+import AffiliateHero from "@/components/affiliate/AffiliateHero";
+
 export interface AffiliateStats {
   code: string;
   status: string;
   commission_pct: number;
   paypal_email: string | null;
+  clicks: number;
   signups: number;
   paying: number;
   earned_cents: number;
@@ -84,13 +87,19 @@ export default function AffiliateView({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-text">Affiliate</h1>
-        <p className="text-text2 mt-1">
-          You earn {pct}% of every payment your referrals make, for as long as they stay
-          subscribed.
-        </p>
-      </div>
+      {/* Same panel as /affiliate, by Igor's instruction (2026-09-21): the page
+          that sold the program and the page that runs it should be recognisably
+          the same place. */}
+      <AffiliateHero
+        compact
+        eyebrow="Your affiliate account"
+        title={
+          <>
+            You earn <em className="italic">{pct}%</em> of every payment they make.
+          </>
+        }
+        body="For as long as they stay subscribed — not just the first month. Paid monthly by PayPal."
+      />
 
       {stats.status !== "active" && (
         <div className="rounded-2xl border border-amber-400/40 bg-amber-400/10 p-4 text-sm text-text">
@@ -101,9 +110,11 @@ export default function AffiliateView({
 
       <LinkCard code={stats.code} />
 
-      {/* Clicks are deliberately absent: nothing counts them yet, and an empty
-          "0 clicks" tile reads as "nobody clicked" rather than "not measured". */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Opens arrived with affiliate_clicks (2026-09-21). Before that this tile
+          was deliberately absent: a "0 clicks" with nothing counting them reads
+          as "nobody clicked", which is a different and much worse message. */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <Stat label="Link opens" value={String(stats.clicks)} hint="same person once a day" />
         <Stat label="Signed up" value={String(stats.signups)} hint="used your link" />
         <Stat label="Paying now" value={String(stats.paying)} hint="subscribed at least once" />
         <Stat label="Earned" value={money(stats.earned_cents)} hint="all time, refunds removed" />
