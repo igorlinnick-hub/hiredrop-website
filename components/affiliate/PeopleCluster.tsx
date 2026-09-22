@@ -29,11 +29,15 @@ interface Circle {
 }
 
 const CIRCLES: Circle[] = [
-  { n: 2, size: 35, left: 30, top: 3 },
-  { n: 1, size: 27, left: 0, top: 24 },
-  { n: 5, size: 23, left: 71, top: 14 },
-  { n: 3, size: 22, left: 61, top: 52 },
-  { n: 4, size: 19, left: 28, top: 57, wide: true },
+  { n: 2, size: 32, left: 33, top: 2 },
+  { n: 1, size: 25, left: 3, top: 22 },
+  { n: 5, size: 21, left: 72, top: 12 },
+  { n: 3, size: 19, left: 55, top: 50 },
+  { n: 4, size: 17, left: 30, top: 55 },
+  { n: 6, size: 14, left: 8, top: 62, wide: true },
+  { n: 7, size: 12, left: 86, top: 48, wide: true },
+  { n: 8, size: 11, left: 19, top: 4, wide: true },
+  { n: 9, size: 10, left: 66, top: 82, wide: true },
 ];
 
 export default function PeopleCluster({ className = "" }: { className?: string }) {
