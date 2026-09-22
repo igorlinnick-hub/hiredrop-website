@@ -334,6 +334,50 @@ export default function QuickActions({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
 
+  // ── background warm-up ─────────────────────────────────────────────────────
+  // Until now the pool only grew when something ASKED for jobs: a campaign start, the
+  // extension's live board search, an empty Tap deck. So the first run after changing your
+  // search walked inventory collected for the search you just abandoned — the boards had
+  // never been swept for the new one. Discovery is already a background job (POST
+  // /jobs/find-ats returns immediately and sweeps ~213 boards in a backend thread); the
+  // only thing missing was the moment to start it.
+  //
+  // Here it is: twenty seconds after the last edit to the search. Quiet on purpose — no
+  // button, no spinner. Setting up a search is a SERIES of picks (keyword, keyword,
+  // Full-time, Remote, a city), and firing on each one would sweep for half-built searches
+  // and burn the server-side floor between sweeps; waiting for quiet means the sweep is
+  // spent on the search the user actually settled on.
+  const WARM_UP_QUIET_MS = 20_000;
+  const warmedSearchRef = useRef<string | null>(null);
+  useEffect(() => {
+    const signature = JSON.stringify([
+      [...keywords].map((k) => k.trim().toLowerCase()).sort(),
+      location,
+      jobType,
+    ]);
+    // First render is whatever the server already has — sweeping it would mean a board
+    // sweep on every dashboard load. Only an actual EDIT warms up.
+    if (warmedSearchRef.current === null) { warmedSearchRef.current = signature; return; }
+    if (warmedSearchRef.current === signature || keywords.length === 0) return;
+
+    const timer = setTimeout(async () => {
+      warmedSearchRef.current = signature;
+      try {
+        const t = await getFreshToken();
+        // ORDER IS LOAD-BEARING: discovery reads the search from the STORED profile, not
+        // from its request body. Called before the write lands it sweeps the old search
+        // and takes the server's cooldown with it, so the new search gets nothing and the
+        // log still says "discovery started".
+        await apiPost("/profile/prefs", t, {
+          keywords, location, job_type: jobType, work_setting: workSetting, platforms,
+        });
+        await apiPost("/jobs/find-ats", t, {});
+      } catch { /* offline, or the server threw — the next edit tries again */ }
+    }, WARM_UP_QUIET_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keywords, location, jobType, workSetting]);
+
   // ── save + execute ─────────────────────────────────────────────────────────
 
   async function getFreshToken(): Promise<string> {
