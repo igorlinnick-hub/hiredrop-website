@@ -73,6 +73,26 @@ const AFFILIATE_NAV_ITEM = {
   ),
 };
 
+/** Offered, never forced: an ambassador is here for the link, and the quiz is a
+ *  second product they may simply not want. */
+function JobSearchInvite() {
+  return (
+    <div className="hd-glass rounded-2xl p-4">
+      <p className="text-[13px] font-semibold text-text">Job hunting yourself?</p>
+      <p className="mt-1.5 text-[12.5px] leading-relaxed text-text2">
+        Your affiliate link works either way. Answer a few questions and HireDrop starts applying
+        for you too — first 40 free.
+      </p>
+      <Link
+        href="/onboarding"
+        className="mt-3 inline-block rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-accent/90"
+      >
+        Set up my job search
+      </Link>
+    </div>
+  );
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -84,6 +104,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [dark, setDark] = useState(false);
   // RLS returns this user's own affiliate row or nothing — no extra API surface.
   const [isAffiliate, setIsAffiliate] = useState(false);
+  // An affiliate who never did the job-seeker quiz. Every other dashboard route
+  // would bounce them to /onboarding, so the rail must not offer those routes —
+  // a nav full of links that throw you out is worse than a short nav.
+  const [affiliateOnly, setAffiliateOnly] = useState(false);
   // Only the count is used here — the list itself belongs to History.
   const { items: handbacks } = useHandbacks();
 
@@ -96,6 +120,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .select("code")
         .maybeSingle();
       setIsAffiliate(!!affiliate);
+      if (affiliate && user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_completed")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        setAffiliateOnly(!profile?.onboarding_completed);
+      }
     }
     loadUser();
     try { setDark(localStorage.getItem("hd_theme") === "dark"); } catch { /* noop */ }
@@ -136,7 +168,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Flow-style split: the daily surfaces live at the top of the rail, the
   // service items (Extension, Settings) sit in their own cluster at the bottom.
-  const navItems = isAffiliate ? [...NAV_ITEMS, AFFILIATE_NAV_ITEM] : NAV_ITEMS;
+  const navItems = affiliateOnly
+    ? [AFFILIATE_NAV_ITEM]
+    : isAffiliate
+      ? [...NAV_ITEMS, AFFILIATE_NAV_ITEM]
+      : NAV_ITEMS;
   const railMain = navItems.filter((i) => !["Settings", "Extension"].includes(i.label));
   const railFoot = navItems.filter((i) => ["Extension", "Settings"].includes(i.label));
 
@@ -176,9 +212,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* What's left to get the most applications — its own framed block under the
               nav, not a card stacked on top of the dashboard (Igor, 09-19). */}
-          <div className="mt-6">
-            <ChecklistCard />
-          </div>
+          <div className="mt-6">{affiliateOnly ? <JobSearchInvite /> : <ChecklistCard />}</div>
 
           <nav className="mt-auto flex flex-col gap-1">
             {railFoot.map((item) => (
@@ -226,7 +260,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* No rail below lg — the same block rides under the pills. */}
             <div className="mb-8 lg:hidden max-w-sm">
-              <ChecklistCard />
+              {affiliateOnly ? <JobSearchInvite /> : <ChecklistCard />}
             </div>
 
             {children}

@@ -8,7 +8,21 @@ import { getStoredAttribution } from "@/lib/attribution";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 
-export default function SignupForm() {
+/**
+ * `affiliateCode` means this signup came from an issued affiliate link
+ * (/signup?affiliate=<code>&email=<them>). Two things change: the email is
+ * prefilled, because the reservation is redeemed by EMAIL and a different
+ * address silently produces an account with no link; and they land on their
+ * affiliate screen instead of the job-seeker quiz, which an ambassador who
+ * isn't job hunting has no reason to answer.
+ */
+export default function SignupForm({
+  affiliateCode = "",
+  prefillEmail = "",
+}: {
+  affiliateCode?: string;
+  prefillEmail?: string;
+}) {
   const router = useRouter();
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
@@ -94,7 +108,7 @@ export default function SignupForm() {
           .is("attribution", null);
       }
       setLoading(false);
-      router.push("/onboarding");
+      router.push(affiliateCode ? "/dashboard/affiliate" : "/onboarding");
       router.refresh();
       return;
     }
@@ -180,7 +194,14 @@ export default function SignupForm() {
         placeholder="you@example.com"
         required
         autoComplete="email"
+        defaultValue={prefillEmail}
       />
+      {affiliateCode && (
+        <p className="-mt-2 text-[12.5px] text-text2">
+          Your affiliate link <span className="font-medium text-text">?ref={affiliateCode}</span> is
+          reserved for this address — sign up with a different one and it stays reserved.
+        </p>
+      )}
 
       <Input
         label="Password"
