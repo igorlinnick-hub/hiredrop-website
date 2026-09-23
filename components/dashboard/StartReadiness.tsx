@@ -73,6 +73,49 @@ const BROWSER_LABEL: Record<BrowserKind, string> = {
   other: "an unsupported browser",
 };
 
+// The PING proves only that THIS tab has the content script. The backend knows something
+// the tab cannot: the extension itself is alive, because it POSTs /extension/ping every
+// 60s. When the two disagree — extension heartbeating, tab silent — the honest diagnosis
+// is "this tab never got ping.js", not "you haven't installed it". Sending an installed
+// user to the install page is a dead end: there is nothing there for them to do.
+// Live 2026-09-22: one dashboard tab answered no PING while the campaign tab beside it
+// answered instantly; the gate told Igor to install an extension that was running.
+async function extensionSeenByServer(token: string): Promise<boolean> {
+  try {
+    const s = await apiGet<{ online?: boolean; last_seen_secs_ago?: number }>(
+      "/extension/ping",
+      token,
+    );
+    // `online` is age < 60s while the heartbeat itself is every 60s, so a slightly older
+    // stamp still counts. This only ever softens a wrong "install it" into a right
+    // "reload", so erring generous costs nothing.
+    return !!s?.online || (s?.last_seen_secs_ago != null && s.last_seen_secs_ago < 300);
+  } catch {
+    return false; // unknown — fall back to the install copy, the safe default
+  }
+}
+
+// One reload advice per tab. The server's view is per-USER, not per-browser: someone whose
+// extension runs on another computer would otherwise be told to reload this tab forever.
+// After the advice has been spent once and the bridge is still silent, we say "install".
+const RELOAD_ADVISED_KEY = "hd_bridge_reload_advised";
+
+function reloadAlreadyAdvised(): boolean {
+  try {
+    return sessionStorage.getItem(RELOAD_ADVISED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function rememberReloadAdvised() {
+  try {
+    sessionStorage.setItem(RELOAD_ADVISED_KEY, "1");
+  } catch {
+    /* storage blocked — worst case we advise a reload twice */
+  }
+}
+
 // Full gate: server checks + the local extension check, merged into one list.
 // Fail-open on a server hiccup (empty ready result) — the extension's own start
 // guards are the backstop; a flaky network must not brick the Start button.
@@ -85,25 +128,44 @@ export async function gateStart(token: string): Promise<Readiness> {
   }
   const extPresent = await checkExtensionPresent();
   const browser = detectBrowser();
-  // Two different failures used to wear one label. "Not installed yet" (Chromium — fixable
-  // right here) is not the same as "this browser can never run it": sending a Safari user
-  // to the install page is a dead end, because there is nothing there for them to install.
+  // Three different failures used to wear one label. "Not installed yet" (Chromium —
+  // fixable right here) is not the same as "this browser can never run it" (Safari: the
+  // install page has nothing for them), and neither is "installed and running, but this
+  // tab has no bridge to it" — that one is fixed by a reload, not by an install.
   const wrongBrowser = !extPresent && browser !== "chromium";
+  const bridgeDead =
+    !extPresent &&
+    browser === "chromium" &&
+    !reloadAlreadyAdvised() &&
+    (await extensionSeenByServer(token));
+  if (bridgeDead) rememberReloadAdvised();
   const checks: ReadinessCheck[] = [
     ...server.checks,
     {
-      id: "extension",
+      // A driver reading data-blockers must be able to tell the two apart: "bridge" means
+      // the extension is there and this tab isn't talking to it.
+      id: bridgeDead ? "bridge" : "extension",
       ok: extPresent,
       reason: extPresent
         ? null
-        : browser === "mobile"
-          ? "HireDrop applies from Chrome on your computer — a phone can't run the extension."
-          : wrongBrowser
-            ? `HireDrop applies from Chrome — you're in ${BROWSER_LABEL[browser]}. Copy this page's link and open it there.`
-            : "Install the HireDrop extension — it does the actual applying",
+        : bridgeDead
+          ? "This tab didn't pick up the HireDrop extension — one reload reconnects it."
+          : browser === "mobile"
+            ? "HireDrop applies from Chrome on your computer — a phone can't run the extension."
+            : wrongBrowser
+              ? `HireDrop applies from Chrome — you're in ${BROWSER_LABEL[browser]}. Copy this page's link and open it there.`
+              : "Install the HireDrop extension — it does the actual applying",
       // No button on a phone: there is no useful action to offer, and a link to copy is
       // not one. Better a plain honest row than a button that leads nowhere.
-      fix: extPresent || browser === "mobile" ? null : wrongBrowser ? "chrome" : "extension",
+      fix: extPresent
+        ? null
+        : bridgeDead
+          ? "reload"
+          : browser === "mobile"
+            ? null
+            : wrongBrowser
+              ? "chrome"
+              : "extension",
     },
   ];
   return { ready: server.ready && extPresent, checks };
@@ -118,6 +180,7 @@ const FIX_LABELS: Record<string, string> = {
   campaign: "View campaign",
   extension: "Get the extension",
   chrome: "Copy link",
+  reload: "Reload this tab",
 };
 
 // "Almost there" checklist — shown INSTEAD of starting when something is missing.
@@ -186,6 +249,10 @@ export default function StartReadinessModal({
               {c.fix && (
                 <button
                   onClick={() => {
+                    // Both self-contained UI actions live here rather than in each
+                    // parent's fixReadiness: neither is a route change, and both would
+                    // otherwise have to be duplicated in QuickActions and TapView.
+                    if (c.fix === "reload") return window.location.reload();
                     if (c.fix !== "chrome") return onFix(c.fix!);
                     navigator.clipboard.writeText(window.location.href).then(
                       () => {
