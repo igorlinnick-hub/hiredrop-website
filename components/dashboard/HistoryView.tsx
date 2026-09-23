@@ -214,23 +214,36 @@ export default function HistoryView({
   }, [rows]);
 
   return (
-    <div className="space-y-6">
+    /* .hd-history carries the day wallpaper + the paper/ink vocabulary — see
+       "HISTORY — PAPER & INK" in globals.css. Nothing here is styled locally,
+       so /preview/history-chips shows exactly what the dashboard ships. */
+    <div className="hd-history space-y-7">
       <div>
-        <h1 className="text-2xl font-bold text-text">History</h1>
-        <p className="text-sm text-text2 mt-1">Everything HireDrop applied to — with links, status, and proof of submission.</p>
+        <p className="hd-eyebrow">The record</p>
+        <h1 className="hd-hist-display mt-2">
+          Every application, <em className="italic">kept</em>.
+        </h1>
+        <p className="hd-hist-sub mt-2.5 max-w-xl leading-relaxed">
+          Links, status and proof of submission — what we sent, and when we sent it.
+        </p>
       </div>
 
-      {/* Metrics strip */}
+      {/* Metrics strip. One tile inverts (the popup's rule: black digits on
+          white, white digits on black) so the row reads as a composition
+          instead of four equal boxes. */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Total applied", value: metrics.total },
           { label: "This week", value: metrics.week },
           { label: "Responses", value: metrics.responses },
           { label: "Response rate", value: `${metrics.rate}%` },
-        ].map((m) => (
-          <div key={m.label} className="rounded-xl border border-border bg-surface p-4">
-            <div className="text-2xl font-bold text-text tabular-nums">{m.value}</div>
-            <div className="text-xs text-text2 mt-1">{m.label}</div>
+        ].map((m, i) => (
+          <div
+            key={m.label}
+            className={["p-4 sm:p-5", i === 0 ? "hd-tile-ink rounded-2xl" : "hd-sheet"].join(" ")}
+          >
+            <div className="hd-hist-num">{m.value}</div>
+            <div className="hd-eyebrow mt-2.5">{m.label}</div>
           </div>
         ))}
       </div>
@@ -251,13 +264,12 @@ export default function HistoryView({
               <div key={h.id} className="group relative">
                 {/* Hover card, above the row so it never covers what you're pointing at. */}
                 <div
-                  className="pointer-events-none absolute -top-2 left-0 z-20 w-72 -translate-y-full
-                    rounded-lg border border-border bg-surface p-3 shadow-lg opacity-0
-                    transition-opacity group-hover:opacity-100"
+                  className="hd-sheet pointer-events-none absolute -top-2 left-0 z-20 w-72
+                    -translate-y-full p-3.5 opacity-0 transition-opacity group-hover:opacity-100"
                   role="tooltip"
                 >
-                  <p className="text-[13px] font-medium text-text">Finish this one by hand</p>
-                  <p className="mt-0.5 text-[11.5px] leading-snug text-text2" title={h.reason}>
+                  <p className="hd-eyebrow hd-eyebrow-ink">Finish this one by hand</p>
+                  <p className="hd-hist-sub mt-1.5 text-[12px] leading-snug" title={h.reason}>
                     {userReason(h.reason)}
                   </p>
                   {pct !== null && (
@@ -274,8 +286,7 @@ export default function HistoryView({
                   )}
                 </div>
 
-                <div className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3
-                  transition group-hover:border-accent/50">
+                <div className="hd-sheet hd-sheet-lift flex items-center gap-3 px-4 py-3.5">
                   <span className="h-2 w-2 shrink-0 rounded-full bg-red" aria-hidden />
                   <div className="min-w-0 flex-1">
                     {h.url ? (
@@ -283,14 +294,14 @@ export default function HistoryView({
                         href={h.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-text hover:text-accent transition"
+                        className="hd-hist-title hover:text-accent transition"
                       >
                         {h.job_title || "Application"}
                       </a>
                     ) : (
-                      <span className="text-sm font-medium text-text">{h.job_title || "Application"}</span>
+                      <span className="hd-hist-title">{h.job_title || "Application"}</span>
                     )}
-                    {h.company ? <span className="text-[13px] text-text2"> · {h.company}</span> : null}
+                    {h.company ? <span className="hd-hist-sub"> · {h.company}</span> : null}
                   </div>
                   {pct !== null && (
                     <span className="shrink-0 text-[11px] text-text2 tabular-nums opacity-0
@@ -356,17 +367,22 @@ export default function HistoryView({
 
       {/* Applications by day */}
       {byDay.length === 0 ? (
-        <div className="rounded-xl border border-border bg-surface p-8 text-center text-text2 text-sm">
-          No applications yet. Start a campaign and they&apos;ll appear here, grouped by day.
+        <div className="hd-sheet p-10 text-center">
+          <p className="hd-eyebrow hd-eyebrow-ink">Nothing here yet</p>
+          <p className="hd-hist-sub mt-2">
+            Start a campaign and every application lands here, grouped by day.
+          </p>
         </div>
       ) : (
         byDay.map(([day, apps]) => (
           <div key={day}>
-            <div className="flex items-baseline justify-between mb-2">
-              <h2 className="text-sm font-semibold text-text">{prettyDay(day)}</h2>
-              <span className="text-xs text-text2 tabular-nums">{apps.length} application{apps.length === 1 ? "" : "s"}</span>
+            <div className="hd-hist-day">
+              <h2 className="hd-eyebrow hd-eyebrow-ink">{prettyDay(day)}</h2>
+              <span className="hd-eyebrow tabular-nums order-last">
+                {apps.length} application{apps.length === 1 ? "" : "s"}
+              </span>
             </div>
-            <div className="rounded-xl border border-border bg-surface divide-y divide-border">
+            <div className="hd-sheet divide-y divide-border overflow-hidden">
               {apps.map((a) => {
                 const r = receiptFor(a);
                 const isOpen = expanded.has(a.id);
@@ -379,7 +395,7 @@ export default function HistoryView({
                       tabIndex={0}
                       onClick={() => toggleExpand(a.id)}
                       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleExpand(a.id); } }}
-                      className="p-3.5 flex items-center gap-3 flex-wrap cursor-pointer hover:bg-surface2/50 transition"
+                      className="px-4 py-3.5 flex items-center gap-3 flex-wrap cursor-pointer hover:bg-surface2/45 transition"
                       data-testid="history-row"
                     >
                       <span
@@ -388,8 +404,10 @@ export default function HistoryView({
                         title={r ? (r.verified ? `confirmed (${r.signal})` : "submitted — confirmation page not detected") : "no receipt captured"}
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-text truncate">{a.title} <span className="text-text2 font-normal">@ {a.company}</span></div>
-                        <div className="text-xs text-text2">
+                        <div className="hd-hist-title truncate">
+                          {a.title} <span className="hd-hist-sub">@ {a.company}</span>
+                        </div>
+                        <div className="hd-eyebrow mt-1 tabular-nums">
                           {platformName(a.platform)}
                           {" · "}
                           {new Date(a.date_applied).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -535,7 +553,7 @@ function StatusPicker({ status, onPick }: { status: string; onPick: (next: strin
 function ApplicationDetail({ a }: { a: Application }) {
   const hasDocs = !!(a.cover_letter || a.tailored_resume || a.resume_pdf_url);
   return (
-    <div className="px-3.5 pb-4 pt-2 bg-surface2/30 hd-detail-in" data-testid="history-detail">
+    <div className="px-4 pb-5 pt-3 bg-surface2/35 hd-detail-in" data-testid="history-detail">
       <div className="flex items-center gap-2 flex-wrap mb-3">
         {a.link ? (
           <a href={a.link} target="_blank" rel="noopener noreferrer"
@@ -544,7 +562,7 @@ function ApplicationDetail({ a }: { a: Application }) {
             Job posting
           </a>
         ) : (
-          <span className="text-[12px] text-text2">No job link saved for this one.</span>
+          <span className="hd-hist-sub text-[12px]">No job link saved for this one.</span>
         )}
         {a.resume_pdf_url && (
           <a href={a.resume_pdf_url} target="_blank" rel="noopener noreferrer"
@@ -555,13 +573,13 @@ function ApplicationDetail({ a }: { a: Application }) {
         )}
       </div>
       {a.cover_letter && (
-        <DocBlock label="Cover letter we sent" text={a.cover_letter} delay={140} />
+        <DocBlock label="Cover letter we sent" text={a.cover_letter} delay={140} kind="letter" />
       )}
       {a.tailored_resume && (
-        <DocBlock label="Tailored resume" text={a.tailored_resume} delay={190} />
+        <DocBlock label="Tailored resume" text={a.tailored_resume} delay={190} kind="resume" />
       )}
       {!hasDocs && (
-        <p className="text-[12px] text-text2 hd-rise" style={{ animationDelay: "90ms" }}>
+        <p className="hd-hist-sub text-[12px] leading-relaxed hd-rise" style={{ animationDelay: "90ms" }}>
           No documents stored for this application — it went through with your standard resume,
           before per-job documents were kept. Newer applications include the cover letter and the
           exact résumé PDF submitted.
@@ -571,7 +589,12 @@ function ApplicationDetail({ a }: { a: Application }) {
   );
 }
 
-function DocBlock({ label, text, delay = 0 }: { label: string; text: string; delay?: number }) {
+function DocBlock({ label, text, delay = 0, kind = "resume" }: {
+  label: string; text: string; delay?: number;
+  /** A letter is prose and gets the serif; a résumé keeps a fixed pitch because
+   *  its columns are aligned with spaces. */
+  kind?: "letter" | "resume";
+}) {
   // Copy → "Copied" for a beat: the feedback lives on the button itself, no toast.
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -584,17 +607,20 @@ function DocBlock({ label, text, delay = 0 }: { label: string; text: string; del
   };
   return (
     <div className="mb-3 last:mb-0 hd-rise" style={{ animationDelay: `${delay}ms` }}>
-      <div className="flex items-center gap-2 mb-1.5">
-        <span className="text-[11px] font-semibold text-accent uppercase tracking-wide">{label}</span>
+      <div className="hd-doc-label">
+        <span className="hd-eyebrow hd-eyebrow-ink order-first">{label}</span>
         <button onClick={copy} aria-live="polite"
-          className={["ml-auto hd-chip", copied ? "hd-chip-done" : ""].join(" ")}>
+          className={["order-last hd-chip", copied ? "hd-chip-done" : ""].join(" ")}>
           {copied
             ? <span className="hd-copied-pop inline-flex"><IconCheck /></span>
             : <IconCopy />}
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <pre className="text-xs text-text2 whitespace-pre-wrap font-mono bg-surface border border-border rounded-lg p-3 max-h-72 overflow-y-auto">
+      <pre className={[
+        "hd-doc hd-scroll max-h-80 overflow-y-auto p-4 sm:p-5",
+        kind === "letter" ? "hd-doc-letter" : "hd-doc-mono",
+      ].join(" ")}>
         {text}
       </pre>
     </div>

@@ -1214,3 +1214,188 @@ h1, h2, h3 {
     radial-gradient(120% 85% at 0% 0%, rgba(255,255,255,.055), transparent 62%),
     repeating-linear-gradient(135deg, rgba(255,255,255,.022) 0 1px, transparent 1px 8px);
 }
+
+/* ============================================================
+   HISTORY — PAPER & INK (Igor 09-23: «в history хочу бело-чёрные
+   блоки в дневном стиле, с бэкграундом-картинкой как в ночной —
+   только картинка дневная; текст явно выраженный и где-то
+   прописной, как в Settings»).
+
+   Three moves, and they are the whole skin:
+     1. GROUND — the page finally carries a photograph by day too.
+        It is the SAME wallpaper as the night one, regraded into
+        daylight (brand-visuals/wallpaper-daytwin.py → ground-day.jpg),
+        so the theme switch still reads as time of day rather than
+        as a different room. A cream veil over it keeps paper legible.
+     2. PAPER — every block is a white sheet with ink type on it:
+        hairline edge, soft cast shadow, no glass, no tint. Night
+        flips the same sheet to smoked ink; geometry never moves.
+     3. VOICE — small type goes UPPERCASE with wide tracking (the
+        Settings vocabulary: section eyebrows, day headers, document
+        labels), body type gets weight and near-black ink instead of
+        washed greys. The letter we sent is set in the serif — it is
+        a letter, not a log line.
+   ============================================================ */
+
+/* ── 1. Ground ─────────────────────────────────────────────── */
+.hd-history { position: relative; }
+.hd-dash-root:not(.dark) .hd-history::before {
+  content: ""; position: fixed; inset: -40px; z-index: -2;
+  background: url("/bg/ground-day.jpg") 62% 28% / cover no-repeat;
+  filter: blur(13px) saturate(1.1);
+}
+.hd-dash-root:not(.dark) .hd-history::after {
+  content: ""; position: fixed; inset: 0; z-index: -2;
+  background: linear-gradient(180deg, rgba(255, 253, 247, .44) 0%, rgba(255, 252, 245, .70) 100%);
+}
+/* Night already has its own fixed wallpaper on .hd-dash-root — the History
+   sheet only deepens the veil under it so white type keeps its contrast. */
+.dark .hd-history::after {
+  content: ""; position: fixed; inset: 0; z-index: -2;
+  background: linear-gradient(180deg, rgba(10, 8, 18, .34), rgba(10, 8, 18, .52));
+}
+
+/* ── 2. Paper ──────────────────────────────────────────────── */
+/* NB: no `position` here on purpose — the hand-back hover card is a .hd-sheet
+   that Tailwind places `absolute`, and a relative here would win the cascade
+   and drop it back into the flow (it did, and blew 180px holes in the list). */
+.hd-sheet {
+  border-radius: 16px;
+  background: #FFFFFF;
+  border: 1px solid rgba(26, 22, 14, .13);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .9),
+    0 1px 2px rgba(40, 32, 10, .06),
+    0 14px 34px -22px rgba(40, 32, 10, .55);
+}
+.dark .hd-sheet {
+  background: rgba(19, 17, 31, .72);
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  border-color: rgba(255, 255, 255, .10);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .06),
+    0 20px 48px -26px rgba(0, 0, 0, .85);
+}
+/* A sheet you can press: rows and hand-backs lift a hair on hover. */
+.hd-sheet-lift { transition: box-shadow .2s, border-color .2s, transform .2s; }
+.hd-sheet-lift:hover {
+  transform: translateY(-1px);
+  border-color: rgba(26, 22, 14, .22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .9),
+    0 2px 4px rgba(40, 32, 10, .07),
+    0 18px 40px -20px rgba(40, 32, 10, .6);
+}
+.dark .hd-sheet-lift:hover {
+  border-color: rgba(255, 255, 255, .18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .08),
+    0 26px 56px -24px rgba(0, 0, 0, .9);
+}
+
+/* ── 3. Voice ──────────────────────────────────────────────── */
+/* The display line: serif, with one word in italic (the house line —
+   same recipe as the poster panels and the people-circles hero). */
+.hd-hist-display {
+  font-family: 'Instrument Serif', 'Playfair Display', Georgia, serif;
+  font-size: 40px;
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  color: #101014;
+}
+.dark .hd-hist-display { color: #F4F2FF; }
+@media (max-width: 640px) { .hd-hist-display { font-size: 31px; } }
+
+/* The Settings eyebrow, promoted to the whole screen: 11px, caps,
+   wide tracking, PLAIN ink — not an alpha of it (washed greys were
+   the thing that read as unfinished). */
+.hd-eyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .17em;
+  color: #46464F;
+}
+.dark .hd-eyebrow { color: rgba(226, 224, 242, .66); }
+.hd-eyebrow-ink { color: #101014; }
+.dark .hd-eyebrow-ink { color: #FFFFFF; }
+/* The inverted tile flips the eyebrow with it — caps on the wrong ground were
+   invisible, which is the one thing a label may never be. */
+.hd-dash-root:not(.dark) .hd-tile-ink .hd-eyebrow { color: rgba(255, 255, 255, .74); }
+.dark .hd-tile-ink .hd-eyebrow { color: #4A4A5A; }
+
+/* Day header: caps on the left, count on the right, a hairline
+   running between them so the day reads as a ruled ledger page. */
+.hd-hist-day {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 10px;
+}
+.hd-hist-day::after {
+  content: ""; flex: 1 1 auto; height: 1px;
+  background: linear-gradient(90deg, rgba(26, 22, 14, .22), rgba(26, 22, 14, 0));
+}
+.dark .hd-hist-day::after {
+  background: linear-gradient(90deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, 0));
+}
+
+/* Numbers want presence, so they get size and ink — the metric tiles
+   are the one place a digit is the content. */
+.hd-hist-num {
+  font-size: 30px; font-weight: 700; line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: #101014;
+}
+.dark .hd-hist-num { color: #FFFFFF; }
+.hd-tile-ink .hd-hist-num { color: inherit; }
+
+/* Row type: title in near-black, the company one step under but still
+   PLAIN dark slate. No alpha-dimmed secondary text in this view. */
+.hd-hist-title { font-size: 14px; font-weight: 600; color: #14141A; letter-spacing: -0.005em; }
+.dark .hd-hist-title { color: #F1EFFA; }
+.hd-hist-sub { font-size: 13px; font-weight: 500; color: #4A4A56; }
+.dark .hd-hist-sub { color: rgba(226, 224, 242, .72); }
+
+/* ── The stored documents: a sheet inside a sheet ──────────── */
+.hd-doc {
+  border-radius: 12px;
+  background: #FFFDF8;
+  border: 1px solid rgba(26, 22, 14, .12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8);
+}
+.dark .hd-doc {
+  background: rgba(12, 11, 22, .55);
+  border-color: rgba(255, 255, 255, .09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+/* A letter is prose — it gets the serif, generous leading and full ink.
+   The monospace log look was the thing that made a cover letter read as
+   a debug dump. */
+.hd-doc-letter {
+  font-family: 'Instrument Serif', 'Playfair Display', Georgia, serif;
+  font-size: 17px;
+  line-height: 1.62;
+  color: #16161C;
+  white-space: pre-wrap;
+}
+.dark .hd-doc-letter { color: #EDEBF8; }
+/* The tailored résumé keeps a fixed pitch — its columns are aligned by
+   spaces — but in ink, not in grey. */
+.hd-doc-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  line-height: 1.62;
+  color: #24242C;
+  white-space: pre-wrap;
+}
+.dark .hd-doc-mono { color: rgba(233, 231, 245, .88); }
+
+/* The label above a document: caps + a rule to the right, so the block
+   announces itself the way a section does in Settings. */
+.hd-doc-label { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.hd-doc-label::after {
+  content: ""; flex: 1 1 auto; height: 1px;
+  background: rgba(26, 22, 14, .14);
+}
+.dark .hd-doc-label::after { background: rgba(255, 255, 255, .14); }
