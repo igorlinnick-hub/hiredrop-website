@@ -159,7 +159,19 @@ export default function PreviewHistoryChips() {
         </header>
         {/* No session on a public preview — swallow the write so the picker is
             still clickable and the chip still moves. */}
-        <HistoryView applications={[...APPS, ...BACKLOG]} onSetStatus={async () => {}} handbacksOverride={HANDBACKS} />
+        <HistoryView
+          applications={[...APPS, ...BACKLOG]}
+          onSetStatus={async () => {}}
+          handbacksOverride={HANDBACKS}
+          statsOverride={{
+            // What /stats returns on a live account — the preview has no session,
+            // and the Today card must be judged with numbers in it.
+            total_jobs: 1284, total_applications: 331, applications_today: 18, new_today: 96,
+            tier: "pro", daily_limit: 30, remaining_today: 12,
+            platform_counts: { indeed: 9, greenhouse: 4, lever: 3, ashby: 2 },
+            max_per_platform: 12,
+          }}
+        />
       </div>
     </div>
   );

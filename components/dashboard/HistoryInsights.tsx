@@ -12,11 +12,17 @@
  *
  *   HOW MUCH  → the KPI row (stat tiles; a number is its own best chart)
  *   WHEN      → "Rhythm": a calendar heatmap of applications per day + streaks
- *   WHAT CAME BACK → "Replies": one meter (share answered) and, underneath, what
- *                    those answers were — the meter's own breakdown, not a
- *                    second unrelated chart
+ *   TODAY     → the daily cap as a meter, with the pool numbers beside it
  *   WHERE     → "Where they went": platforms as bars, one hue (the categories are
  *               nominal — colouring them by size would double-encode length)
+ *
+ * 09-23, Igor: the first cut led with replies and a reply rate. That is not data
+ * we have — a status only changes when the USER marks it by hand, so on a real
+ * account every application reads "no reply yet" and the meter reads 0%. What we
+ * genuinely know is the run: the daily cap, how much of it is left, how many jobs
+ * are in the pool, how many arrived today. Those replaced it. Outcome counts now
+ * appear only if the user has actually marked at least one — a block that can
+ * only ever say zero is worse than no block.
  *
  * Form choices follow the dataviz rules: a single ratio is a METER, not a
  * two-slice pie; part-to-whole is a stacked bar with a 2px surface gap and a
@@ -33,6 +39,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Application } from "@/lib/types";
 import { PLATFORMS } from "@/lib/constants";
+import { apiGet, type StatsResponse } from "@/lib/api";
+import { createClient } from "@/lib/supabase/client";
 
 const DAY = 86400000;
 const WEEKS = 18;           // ≈ 4 months, in whole weeks — wider than the card can hold at a legible cell size
@@ -87,7 +95,35 @@ function useCountUp(value: number) {
   return shown;
 }
 
-export default function HistoryInsights({ rows }: { rows: Application[] }) {
+export default function HistoryInsights({
+  rows,
+  statsOverride,
+}: {
+  rows: Application[];
+  /** Injected by /preview/history-chips — the live numbers need a session. */
+  statsOverride?: StatsResponse;
+}) {
+  // The run's own numbers (daily cap, pool, new today). `undefined` = still
+  // loading, `null` = we asked and could not get them; the card says which
+  // rather than drawing a confident zero.
+  const [stats, setStats] = useState<StatsResponse | null | undefined>(statsOverride);
+
+  useEffect(() => {
+    if (statsOverride) return;
+    let alive = true;
+    (async () => {
+      try {
+        const { data: { session } } = await createClient().auth.getSession();
+        if (!session?.access_token) { if (alive) setStats(null); return; }
+        const s = await apiGet<StatsResponse>("/stats", session.access_token);
+        if (alive) setStats(s);
+      } catch {
+        if (alive) setStats(null);
+      }
+    })();
+    return () => { alive = false; };
+  }, [statsOverride]);
+
   // One "now" per mount: every bucket below is relative to it, and a timestamp
   // that moved mid-render would put a row in two buckets.
   const [now] = useState(() => Date.now());
@@ -163,8 +199,14 @@ export default function HistoryInsights({ rows }: { rows: Application[] }) {
 
   const kTotal = useCountUp(data.total);
   const kWeek = useCountUp(data.week);
-  const kAnswered = useCountUp(data.answered);
-  const kRate = useCountUp(data.rate);
+  const kToday = useCountUp(stats?.applications_today ?? 0);
+  const kPool = useCountUp(stats?.total_jobs ?? 0);
+  const kLeft = useCountUp(stats?.remaining_today ?? 0);
+  const kNew = useCountUp(stats?.new_today ?? 0);
+  const capUsed = stats && stats.daily_limit
+    ? Math.min(100, Math.round((stats.applications_today / stats.daily_limit) * 100))
+    : 0;
+  const kCap = useCountUp(capUsed);
 
   // Meter geometry: a 200° arc, open at the bottom — a dial, not a donut.
   const R = 54, CX = 68, CY = 70;
@@ -176,11 +218,15 @@ export default function HistoryInsights({ rows }: { rows: Application[] }) {
   };
   const trackPath = `M ${pt(A0)} A ${R} ${R} 0 1 1 ${pt(A1)}`;
 
+  // Every tile is a number we actually hold: two from the stored applications,
+  // two from the run itself. An em-dash where the backend didn't answer — never
+  // a zero we can't stand behind.
+  const dash = (v: number | string) => (stats === undefined ? "…" : stats === null ? "—" : v);
   const kpis = [
     { label: "Total applied", value: kTotal },
     { label: "This week", value: kWeek },
-    { label: "Replies", value: kAnswered },
-    { label: "Reply rate", value: `${kRate}%` },
+    { label: "Applied today", value: dash(kToday) },
+    { label: "Jobs found", value: dash(kPool) },
   ];
 
   return (
@@ -262,47 +308,85 @@ export default function HistoryInsights({ rows }: { rows: Application[] }) {
         </div>
       </div>
 
-        {/* WHAT CAME BACK — one ratio (meter), then what it is made of. */}
-        <div className="hd-sheet p-5 sm:p-6 lg:col-span-5">
-          <h3 className="hd-hist-sub-head">Replies</h3>
-          <p className="hd-eyebrow mt-1.5">Share of applications that got an answer</p>
+        {/* TODAY — the daily cap as a meter, because it IS a ratio against a
+            limit, with the numbers that move it beside the dial. This is the
+            block a person acts on: cap reached → nothing more goes out today;
+            pool empty → the sweep, not the cap, is what to fix. */}
+        <div className="hd-sheet p-5 sm:p-6 lg:col-span-5" data-testid="insights-today">
+          <h3 className="hd-hist-sub-head">Today</h3>
+          <p className="hd-eyebrow mt-1.5">Your daily cap, and what feeds it</p>
 
-          <div className="mt-4 flex items-center gap-5">
-            <svg viewBox="0 0 136 118" className="hd-meter" role="img"
-              aria-label={`${data.rate}% of applications got a reply`}>
-              <path d={trackPath} className="hd-meter-track" fill="none" strokeLinecap="round" strokeWidth="14" />
-              <path
-                d={trackPath}
-                className="hd-meter-fill"
-                fill="none"
-                strokeLinecap="round"
-                strokeWidth="14"
-                style={{
-                  strokeDasharray: arcLen,
-                  ["--len" as string]: arcLen,
-                  ["--off" as string]: arcLen * (1 - data.rate / 100),
-                }}
-              />
-              <text x={CX} y={CY + 2} textAnchor="middle" className="hd-meter-num">{kRate}%</text>
-              <text x={CX} y={CY + 22} textAnchor="middle" className="hd-meter-cap">answered</text>
-            </svg>
+          {stats === null ? (
+            <p className="hd-hist-sub mt-4">
+              Couldn’t read today’s numbers — they come from the backend, and it didn’t answer.
+            </p>
+          ) : (
+            <>
+              <div className="mt-4 flex items-center gap-5">
+                <svg viewBox="0 0 136 118" className="hd-meter" role="img"
+                  aria-label={`${capUsed}% of today's cap used`}>
+                  <path d={trackPath} className="hd-meter-track" fill="none" strokeLinecap="round" strokeWidth="14" />
+                  <path
+                    d={trackPath}
+                    className="hd-meter-fill"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeWidth="14"
+                    style={{
+                      strokeDasharray: arcLen,
+                      ["--len" as string]: arcLen,
+                      ["--off" as string]: arcLen * (1 - capUsed / 100),
+                    }}
+                  />
+                  <text x={CX} y={CY + 2} textAnchor="middle" className="hd-meter-num">{kCap}%</text>
+                  <text x={CX} y={CY + 22} textAnchor="middle" className="hd-meter-cap">of cap</text>
+                </svg>
 
-            {/* The legend IS the breakdown: colour, name and count on one line,
-                so identity never rides on colour alone. */}
-            <ul className="min-w-0 flex-1 space-y-2.5">
-              {OUTCOMES.map((o) => (
-                <li key={o.key} className="flex items-center gap-2.5">
-                  <i className="hd-dot" style={{ background: o.tone }} />
-                  <span className="hd-hist-sub flex-1 whitespace-nowrap">{o.label}</span>
-                  <b className="hd-stat-inline tabular-nums">{data.counts[o.key]}</b>
-                </li>
-              ))}
-            </ul>
+                <ul className="min-w-0 flex-1 space-y-2.5">
+                  {[
+                    ["Applied today", kToday, `of ${stats?.daily_limit ?? "—"} allowed`],
+                    ["Left today", kLeft, "before the cap stops the run"],
+                    ["New jobs today", kNew, "found by the sweep"],
+                    ["Jobs found", kPool, "in the pool, waiting"],
+                  ].map(([label, value, hint]) => (
+                    <li key={label as string} className="flex items-baseline gap-2.5">
+                      <span className="hd-hist-sub flex-1 whitespace-nowrap">{label}</span>
+                      <b className="hd-stat-inline tabular-nums">{dash(value as number)}</b>
+                      <span className="hd-eyebrow hidden xl:inline">{hint}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* The cap as a bar too: the dial says "how full", the bar says
+                  "how much room is left" at a glance. */}
+              <div className="hd-stack mt-5" role="img"
+                aria-label={`${stats?.applications_today ?? 0} applied of ${stats?.daily_limit ?? 0}`}>
+                <span className="hd-stack-seg" style={{ background: "var(--hd-draw)", ["--w" as string]: `${capUsed}%` }} />
+                <span className="hd-stack-seg" style={{ background: "var(--hd-track)", ["--w" as string]: `${100 - capUsed}%` }} />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* WHAT CAME BACK — shown ONLY if the user has marked at least one reply.
+          Statuses are set by hand, so on most accounts this block would be a
+          confident-looking "0 replies" that means "nobody clicked the chip".
+          When there IS something to show, it is part-to-whole with a named
+          legend — never colour alone. */}
+      {data.answered > 0 && (
+        <div className="hd-sheet p-5 sm:p-6" data-testid="insights-outcomes">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <div>
+              <h3 className="hd-hist-sub-head">What came back</h3>
+              <p className="hd-eyebrow mt-1.5">From the replies you marked</p>
+            </div>
+            <span className="hd-eyebrow">
+              <b className="hd-stat-inline hd-untrack">{data.answered}</b> of {data.total} marked
+            </span>
           </div>
-
-          {/* Part-to-whole, full width so the three small outcomes stay visible:
-              4 segments, 2px surface gaps, each named in the legend above. */}
-          <div className="hd-stack mt-5" role="img" aria-label="Outcome breakdown">
+          <div className="hd-stack mt-4" role="img" aria-label="Outcome breakdown">
             {OUTCOMES.map((o) => {
               const n = data.counts[o.key];
               if (!n) return null;
@@ -316,9 +400,17 @@ export default function HistoryInsights({ rows }: { rows: Application[] }) {
               );
             })}
           </div>
+          <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
+            {OUTCOMES.map((o) => (
+              <li key={o.key} className="flex items-center gap-2.5">
+                <i className="hd-dot" style={{ background: o.tone }} />
+                <span className="hd-hist-sub flex-1 whitespace-nowrap">{o.label}</span>
+                <b className="hd-stat-inline tabular-nums">{data.counts[o.key]}</b>
+              </li>
+            ))}
+          </ul>
         </div>
-
-      </div>
+      )}
 
       {/* WHERE — nominal categories, so one hue for every bar; the length is
           the whole story and the name sits on the bar. */}

@@ -25,7 +25,7 @@ import Link from "next/link";
 import type { Application } from "@/lib/types";
 import { PLATFORMS, JOB_STATUSES } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
-import { apiPatch, apiPost } from "@/lib/api";
+import { apiPatch, apiPost, type StatsResponse } from "@/lib/api";
 import { useHandbacks, handbackProgress, type Handback } from "@/components/dashboard/useHandbacks";
 import HandbackAnswers from "@/components/dashboard/HandbackAnswers";
 import HistoryInsights from "@/components/dashboard/HistoryInsights";
@@ -99,6 +99,7 @@ export default function HistoryView({
   applications,
   onSetStatus,
   handbacksOverride,
+  statsOverride,
 }: {
   applications: Application[];
   /** Injected by /preview/history-chips so the picker works without a session.
@@ -107,6 +108,8 @@ export default function HistoryView({
   /** Same trick for the hand-back rows: the live ones come from /handbacks, which
    *  needs a session, so a design review would otherwise never see them. */
   handbacksOverride?: Handback[];
+  /** Same trick for the run numbers the Insights panel shows. */
+  statsOverride?: StatsResponse;
 }) {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   // Optimistic status edits, keyed by application id. The server is the record;
@@ -246,7 +249,7 @@ export default function HistoryView({
 
       {/* How much · when · what came back · where they went. Four blocks, four
           questions, every number computed from the record we already store. */}
-      <HistoryInsights rows={rows} />
+      <HistoryInsights rows={rows} statsOverride={statsOverride} />
 
       {statusError && (
         <p className="text-[12px] text-red" role="alert">{statusError}</p>
@@ -287,7 +290,12 @@ export default function HistoryView({
                 </div>
 
                 <div className="hd-sheet hd-sheet-lift flex items-center gap-3 px-4 py-3.5">
-                  <span className="h-2 w-2 shrink-0 rounded-full bg-red" aria-hidden />
+                  {/* The red dot BLINKS (Igor 09-23: «красные кнопочки должны
+                      мигать») — a hand-back is the one row on this screen that
+                      needs a human, and a still dot in a long list never gets
+                      noticed. Pulse + a ring that expands out of it; both stop
+                      under prefers-reduced-motion. */}
+                  <span className="hd-alert-dot shrink-0" aria-hidden />
                   <div className="min-w-0 flex-1">
                     {h.url ? (
                       <a
@@ -325,7 +333,7 @@ export default function HistoryView({
                     <button
                       onClick={() => setAnswering((cur) => (cur === h.id ? null : h.id))}
                       data-testid="handback-answer-open"
-                      className="shrink-0 rounded-md border border-accent/40 bg-accent/8 px-2 py-0.5
+                      className="hd-answer-cta shrink-0 rounded-md border border-accent/40 bg-accent/8 px-2 py-0.5
                         text-[11px] font-medium text-accent transition hover:bg-accent/15"
                     >
                       {answering === h.id ? "Close" : `Answer ${questionsFor(h).length}`}

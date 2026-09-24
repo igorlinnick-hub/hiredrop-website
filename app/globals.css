@@ -1677,3 +1677,42 @@ h1, h2, h3 {
 .dark .hd-plan-price { color: #FFFFFF; }
 .hd-plan-per { font-size: 12px; font-weight: 600; color: #5A5A66; }
 .dark .hd-plan-per { color: rgba(226, 224, 242, .62); }
+
+/* ── The hand-back alert dot: it blinks, because it is the one row on History
+   that is waiting on a person (Igor 09-23). A soft pulse on the dot itself plus
+   a ring expanding out of it — loud enough to catch the eye in a list, quiet
+   enough to sit next to body text. ── */
+.hd-alert-dot {
+  position: relative;
+  display: inline-block;
+  width: 9px; height: 9px;
+  border-radius: 999px;
+  background: var(--red);
+  animation: hdAlertPulse 1.8s ease-in-out infinite;
+}
+.hd-alert-dot::after {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: 999px;
+  border: 1.5px solid var(--red);
+  animation: hdAlertRing 1.8s cubic-bezier(.22, 1, .36, 1) infinite;
+}
+@keyframes hdAlertPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  55%      { opacity: .55; transform: scale(.84); }
+}
+@keyframes hdAlertRing {
+  0%   { opacity: .55; transform: scale(1); }
+  70%  { opacity: 0;   transform: scale(2.6); }
+  100% { opacity: 0;   transform: scale(2.6); }
+}
+/* The "Answer N" button carries the same urgency one step quieter: the border
+   breathes instead of the whole control flashing. */
+.hd-answer-cta { animation: hdAnswerBreathe 2.4s ease-in-out infinite; }
+@keyframes hdAnswerBreathe {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--red) 34%, transparent); }
+  55%      { box-shadow: 0 0 0 5px color-mix(in srgb, var(--red) 0%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hd-alert-dot, .hd-alert-dot::after, .hd-answer-cta { animation: none; }
+}
