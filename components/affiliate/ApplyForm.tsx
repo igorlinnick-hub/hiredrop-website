@@ -4,7 +4,9 @@
 // to decide whether to trust someone with a link — this is not a survey to be
 // aggregated, and every extra field is a person who closes the tab.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { createClient } from "@/lib/supabase/client";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "https://web-production-db45.up.railway.app";
@@ -32,6 +34,29 @@ export default function ApplyForm({ source }: Props) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // Set when they are signed in. The approved code attaches to an account BY
+  // EMAIL, so an applicant who types a different address than the one they log
+  // in with ends up with an account and no link — and no way to work out why.
+  // For them the field is their account's address and nothing else.
+  const [accountEmail, setAccountEmail] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    createClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        const mail = data.user?.email ?? "";
+        if (!alive || !mail) return;
+        setAccountEmail(mail);
+        setForm((f) => ({ ...f, email: mail }));
+      })
+      .catch(() => {
+        // Signed out, or auth unreachable — the free-text field is the fallback.
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const code = form.desired_code.trim().toLowerCase();
   const codeBad = code.length > 0 && !CODE_RE.test(code);
@@ -99,8 +124,13 @@ export default function ApplyForm({ source }: Props) {
         <div>
           <label className={label} htmlFor="email">Email</label>
           <input id="email" required type="email" maxLength={254} className={field} value={form.email}
-                 onChange={(e) => set("email", e.target.value)} placeholder="you@university.edu" />
-          <p className={hint}>Use the email your HireDrop account has (or will have).</p>
+                 onChange={(e) => set("email", e.target.value)} placeholder="you@university.edu"
+                 readOnly={!!accountEmail} aria-readonly={!!accountEmail} />
+          <p className={hint}>
+            {accountEmail
+              ? "Your HireDrop account's email — your link attaches to this account."
+              : "Use the email your HireDrop account has (or will have)."}
+          </p>
         </div>
       </div>
 
