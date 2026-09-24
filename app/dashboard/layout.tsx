@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { gateUser } from "@/lib/supabase/gate";
 import AuthHiccup from "@/components/auth/AuthHiccup";
 import { PATHNAME_HEADER } from "@/lib/supabase/middleware";
+import { isOnboardingExempt } from "@/lib/gate/onboarding";
 
 /**
  * Fail-closed onboarding gate for EVERY /dashboard/* route.
@@ -51,14 +52,11 @@ export default async function DashboardGate({
   // Fail-closed: missing row, failed query or incomplete quiz all go to
   // onboarding — never flatter an unknown state with dashboard access.
   if (!profile?.onboarding_completed) {
+    // The rule itself lives in lib/gate/onboarding.ts, where it is tested
+    // without a server or a session (tests/onboarding-gate.test.ts) — including
+    // the boundary that keeps /dashboard/affiliates-admin OUT.
     const pathname = (await headers()).get(PATHNAME_HEADER) ?? "";
-    // Widened 2026-09-24: the affiliate screen is now where someone APPLIES,
-    // so requiring an affiliate row would gate the door on the thing you walk
-    // through it to get. Safe to open because that page is the one dashboard
-    // route that never acts on the profile — it asks for a link, shows a
-    // review status, or shows an existing partner's own numbers. Every other
-    // route still needs the quiz, because every other route runs a job search.
-    if (pathname.startsWith("/dashboard/affiliate")) return <>{children}</>;
+    if (isOnboardingExempt(pathname)) return <>{children}</>;
     redirect("/onboarding");
   }
 

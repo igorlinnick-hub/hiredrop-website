@@ -44,15 +44,22 @@ export default function ApplyForm({ source }: Props) {
   // in with ends up with an account and no link — and no way to work out why.
   // For them the field is their account's address and nothing else.
   const [accountEmail, setAccountEmail] = useState("");
+  // Sent with the application. The backend binds a signed-in applicant to
+  // their own address whatever the body says — this is what lets it: without
+  // the token every request looks like a stranger's, and the read-only field
+  // above would be the only thing standing between an approved code and an
+  // account it can never attach to.
+  const [token, setToken] = useState("");
 
   useEffect(() => {
     let alive = true;
     createClient()
-      .auth.getUser()
+      .auth.getSession()
       .then(({ data }) => {
-        const mail = data.user?.email ?? "";
+        const mail = data.session?.user?.email ?? "";
         if (!alive || !mail) return;
         setAccountEmail(mail);
+        setToken(data.session?.access_token ?? "");
         setForm((f) => ({ ...f, email: mail }));
       })
       .catch(() => {
@@ -77,7 +84,10 @@ export default function ApplyForm({ source }: Props) {
     try {
       const res = await fetch(`${API_BASE}/api/v1/affiliate/apply`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ ...form, desired_code: code, source }),
       });
       if (!res.ok) {
