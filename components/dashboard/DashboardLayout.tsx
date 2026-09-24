@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import ExtensionTokenSync from "@/components/dashboard/ExtensionTokenSync";
 import ExtensionBridgeBanner from "@/components/dashboard/ExtensionBridgeBanner";
+import CaptchaAlert from "@/components/dashboard/CaptchaAlert";
 import FitModeMenu from "@/components/dashboard/FitModeMenu";
 import ChecklistCard from "@/components/dashboard/ChecklistCard";
 import TapProgressDock from "@/components/dashboard/TapProgressDock";
@@ -246,6 +247,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 connected but Start never arrives. Mounted here (not per-page) so the warning
                 reaches every dashboard route, /dashboard/tap included. */}
             <ExtensionBridgeBanner />
+
+            {/* Pending captcha / consent wall — visible from EVERY dashboard page,
+                not just the campaign view (hides itself there; that page has the
+                richer in-context banner). */}
+            <CaptchaAlert />
 
             {/* Mobile nav keeps the horizontal pills — a fixed rail costs too much
                 width below lg. */}

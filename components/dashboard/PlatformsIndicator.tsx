@@ -14,10 +14,17 @@ const CONNECTABLE = LIVE_CONNECTABLE_PLATFORMS;
 const CONN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export type Conn = { status?: string; checkedAt?: string };
+export type ConnStatus = "connected" | "logged_out" | undefined;
+// Tri-state, not boolean: "logged_out" is a platform that kicked the user out and
+// deserves a red alarm, while undefined is merely "never checked in this browser".
+// Collapsing both into false is how a logout stayed invisible until 09-23.
+export function liveStatus(c?: Conn): ConnStatus {
+  if (!c?.status) return undefined;
+  if (c.checkedAt && Date.now() - Date.parse(c.checkedAt) > CONN_TTL_MS) return undefined;
+  return c.status as ConnStatus;
+}
 export function isLiveConnected(c?: Conn): boolean {
-  if (!c?.status) return false;
-  if (c.checkedAt && Date.now() - Date.parse(c.checkedAt) > CONN_TTL_MS) return false;
-  return c.status === "connected";
+  return liveStatus(c) === "connected";
 }
 
 export default function PlatformsIndicator() {
@@ -48,17 +55,25 @@ export default function PlatformsIndicator() {
   }, []);
 
   const connected = CONNECTABLE.filter((p) => isLiveConnected(connections[p.id])).length;
+  // A platform that actively signed the user out. Louder than "not connected yet":
+  // campaigns on it are quietly finding nothing until they log back in.
+  const signedOut = connReady
+    ? CONNECTABLE.filter((p) => liveStatus(connections[p.id]) === "logged_out")
+    : [];
   const total = CONNECTABLE.length;
   const allSet = connReady && connected === total;
   const noneYet = connReady && connected === 0;
 
   return (
     <Link href="/dashboard/platforms"
-      className="hd-glass mb-6 flex items-center gap-3 rounded-2xl px-4 py-3
-        hover:border-accent/40 transition group">
+      className={[
+        "hd-glass mb-6 flex items-center gap-3 rounded-2xl px-4 py-3 transition group",
+        signedOut.length ? "border-red/40 hover:border-red/60" : "hover:border-accent/40",
+      ].join(" ")}>
       <span className={[
         "flex items-center justify-center w-9 h-9 rounded-lg shrink-0",
-        allSet ? "bg-green/10 text-green" : "bg-accent/10 text-accent",
+        signedOut.length ? "bg-red/10 text-red animate-pulse"
+          : allSet ? "bg-green/10 text-green" : "bg-accent/10 text-accent",
       ].join(" ")}>
         <svg className="w-4.5 h-4.5" width="20" height="20" fill="none" stroke="currentColor" strokeWidth={2}
           strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
@@ -68,8 +83,13 @@ export default function PlatformsIndicator() {
 
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-text">Job platforms</p>
-        <p className="text-xs text-text2/70 truncate">
-          {!connReady
+        <p className={[
+          "text-xs truncate",
+          signedOut.length ? "text-red font-medium" : "text-text2/70",
+        ].join(" ")}>
+          {signedOut.length
+            ? `${signedOut.map((p) => p.name).join(" & ")} signed you out — log back in`
+            : !connReady
             ? "Connect your accounts so HireDrop can apply as you"
             : allSet
             ? "All accounts connected — you're ready to apply"
@@ -83,9 +103,11 @@ export default function PlatformsIndicator() {
       {connReady && (
         <span className={[
           "shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border",
-          allSet ? "bg-green/10 text-green border-green/20" : "bg-surface2 text-text2 border-border",
+          signedOut.length ? "bg-red/10 text-red border-red/20"
+            : allSet ? "bg-green/10 text-green border-green/20" : "bg-surface2 text-text2 border-border",
         ].join(" ")}>
-          <span className={`w-1.5 h-1.5 rounded-full ${allSet ? "bg-green" : "bg-accent"}`} />
+          <span className={`w-1.5 h-1.5 rounded-full ${
+            signedOut.length ? "bg-red animate-pulse" : allSet ? "bg-green" : "bg-accent"}`} />
           {connected}/{total} connected
         </span>
       )}
