@@ -19,13 +19,12 @@ import { PATHNAME_HEADER } from "@/lib/supabase/middleware";
  * finish() navigates only after profiles.onboarding_completed is successfully
  * set to true, and stays on the wizard showing the error otherwise.
  *
- * ONE exemption, added 2026-09-21: /dashboard/affiliate for someone who already
- * has an affiliate row. An ambassador who is not job hunting had no way in —
- * the gate demanded a resume and a job search from someone who only ever wanted
- * to see their link and their earnings, which is the whole reason a separate
- * affiliate login looked necessary. It isn't: same account, one route open.
- * The exemption is deliberately narrow — every other dashboard route still
- * needs the quiz, because every other route acts on an empty profile.
+ * ONE exemption: /dashboard/affiliate. An ambassador who is not job hunting had
+ * no way in — the gate demanded a resume and a job search from someone who only
+ * ever wanted their link, which is the whole reason a separate affiliate login
+ * looked necessary. It isn't: same account, one route open. Every other
+ * dashboard route still needs the quiz, because every other route acts on an
+ * empty profile; this one only ever reads the affiliate tables.
  */
 export default async function DashboardGate({
   children,
@@ -53,16 +52,13 @@ export default async function DashboardGate({
   // onboarding — never flatter an unknown state with dashboard access.
   if (!profile?.onboarding_completed) {
     const pathname = (await headers()).get(PATHNAME_HEADER) ?? "";
-    if (pathname.startsWith("/dashboard/affiliate")) {
-      // Read under RLS (affiliates_select_own): this can only ever return the
-      // caller's own row, so "is an affiliate" cannot be spoofed by the URL.
-      const { data: affiliate } = await supabase
-        .from("affiliates")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (affiliate) return <>{children}</>;
-    }
+    // Widened 2026-09-24: the affiliate screen is now where someone APPLIES,
+    // so requiring an affiliate row would gate the door on the thing you walk
+    // through it to get. Safe to open because that page is the one dashboard
+    // route that never acts on the profile — it asks for a link, shows a
+    // review status, or shows an existing partner's own numbers. Every other
+    // route still needs the quiz, because every other route runs a job search.
+    if (pathname.startsWith("/dashboard/affiliate")) return <>{children}</>;
     redirect("/onboarding");
   }
 

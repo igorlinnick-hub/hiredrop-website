@@ -3,6 +3,11 @@
 // The application form. Six questions, because a human reads every one of them
 // to decide whether to trust someone with a link — this is not a survey to be
 // aggregated, and every extra field is a person who closes the tab.
+//
+// It lives INSIDE the account (2026-09-24). The public /affiliate/apply page it
+// used to sit on now routes through signup, which removes the failure where
+// someone applied with one email, signed up with another, and ended up approved
+// with a link attached to nobody — invisible from every screen they could see.
 
 import { useEffect, useState } from "react";
 
@@ -89,32 +94,28 @@ export default function ApplyForm({ source }: Props) {
 
   if (done) {
     return (
-      <div className="bg-white rounded-[10px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.06)] p-8 text-center">
-        <h2 className="text-xl font-semibold text-gray-900">Got it — we&apos;ll read it ourselves</h2>
-        <p className="text-gray-600 text-sm mt-3 max-w-md mx-auto">
+      <div className="hd-glass rounded-2xl p-8 text-center">
+        <h2 className="text-xl font-semibold text-text">
+          Got it — we&apos;ll read it ourselves
+        </h2>
+        <p className="text-text2 text-sm mt-3 max-w-md mx-auto">
           Every application is reviewed by a person, usually within a day or two. If it&apos;s a
-          yes, we&apos;ll send you your link — <span className="font-medium text-gray-900">
-          hiredrop.io/?ref={code || "yourname"}</span> — and it will show up under{" "}
-          <span className="font-medium text-gray-900">Affiliate</span> in your HireDrop dashboard
-          with your referrals and earnings next to it.
-        </p>
-        <p className="text-gray-500 text-xs mt-4">
-          No account yet? Create one with the same email — your link attaches to it automatically.
+          yes, your link — <span className="font-medium text-text">
+          hiredrop.io/?ref={code || "yourname"}</span> — arrives by email and appears on this page,
+          with your opens, referrals and earnings next to it.
         </p>
       </div>
     );
   }
 
   const field =
-    "w-full rounded-[10px] border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
-  const label = "block text-sm font-medium text-gray-900 mb-1.5";
-  const hint = "text-xs text-gray-500 mt-1.5";
+    "w-full rounded-xl border border-border bg-surface2/60 px-4 py-3 text-sm text-text placeholder-text2/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
+  const label =
+    "block text-sm font-medium text-text mb-1.5";
+  const hint = "text-xs text-text2 mt-1.5";
 
   return (
-    <form
-      onSubmit={submit}
-      className="bg-white rounded-[10px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.06)] p-8 space-y-6"
-    >
+    <form onSubmit={submit} className="hd-glass rounded-2xl p-6 sm:p-7 space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
           <label className={label} htmlFor="name">Your name</label>
@@ -126,25 +127,23 @@ export default function ApplyForm({ source }: Props) {
           <input id="email" required type="email" maxLength={254} className={field} value={form.email}
                  onChange={(e) => set("email", e.target.value)} placeholder="you@university.edu"
                  readOnly={!!accountEmail} aria-readonly={!!accountEmail} />
-          <p className={hint}>
-            {accountEmail
-              ? "Your HireDrop account's email — your link attaches to this account."
-              : "Use the email your HireDrop account has (or will have)."}
-          </p>
+          <p className={hint}>Your HireDrop account&apos;s email — your link attaches to this account.</p>
         </div>
       </div>
 
       <div>
         <label className={label} htmlFor="code">The link you want</label>
-        <div className="flex items-center rounded-[10px] border border-gray-200 focus-within:border-accent focus-within:ring-1 focus-within:ring-accent">
-          <span className="pl-4 text-sm text-gray-400 select-none">hiredrop.io/?ref=</span>
+        <div className="flex items-center rounded-xl border border-border bg-surface2/60 focus-within:border-accent focus-within:ring-1 focus-within:ring-accent">
+          <span className="pl-4 text-sm text-text2/70 select-none">
+            hiredrop.io/?ref=
+          </span>
           <input id="code" required maxLength={39}
-                 className="flex-1 bg-transparent px-2 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none"
+                 className="flex-1 bg-transparent px-2 py-3 text-sm text-text placeholder-text2/60 focus:outline-none"
                  value={form.desired_code}
                  onChange={(e) => set("desired_code", e.target.value)} placeholder="luca" />
         </div>
         {codeBad ? (
-          <p className="text-xs text-red-600 mt-1.5">
+          <p className="text-xs text-red mt-1.5">
             Lowercase letters, numbers, dot, dash and underscore only — at least 2 characters.
           </p>
         ) : (
@@ -188,17 +187,17 @@ export default function ApplyForm({ source }: Props) {
              className="hidden" value={form.website} onChange={(e) => set("website", e.target.value)} />
 
       {error && (
-        <p className="rounded-[10px] bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
+        <p className="rounded-xl border border-red/30 bg-red/10 px-4 py-3 text-sm text-text">
           {error}
         </p>
       )}
 
       <div>
         <button type="submit" disabled={sending || codeBad}
-                className="w-full sm:w-auto bg-accent hover:bg-accent/90 disabled:opacity-50 text-white font-semibold px-8 py-3.5 rounded-[10px] transition shadow-lg shadow-accent/25">
+                className="w-full sm:w-auto bg-accent hover:bg-accent/90 disabled:opacity-50 text-white font-semibold px-8 py-3.5 rounded-xl transition">
           {sending ? "Sending…" : "Apply for a link"}
         </button>
-        <p className="text-gray-500 text-xs mt-4">
+        <p className="text-text2 text-xs mt-4">
           When you share your link you must say you earn a commission — &ldquo;I get a cut if you
           sign up&rdquo; or #ad. That&apos;s an FTC rule, and it&apos;s the one thing that gets a
           link revoked.

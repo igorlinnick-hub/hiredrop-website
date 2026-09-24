@@ -14,8 +14,8 @@ export const metadata = pageMetadata({
 const STEPS = [
   {
     n: "1",
-    title: "Ask for your link",
-    body: "A short form — who you'd share it with and the link name you want. A person reads it, usually the same day.",
+    title: "Create your account and ask",
+    body: "Email and password, then four questions: who you'd share it with and the link name you want. A person reads it, usually the same day.",
   },
   {
     n: "2",
@@ -49,8 +49,11 @@ export default function AffiliatePage() {
               </>
             }
             body="30% of every payment the people you refer make — every month they stay, not just the first one. Paid by PayPal."
-            cta={{ label: "Apply for your link", href: "/affiliate/apply" }}
-            note="Approved links appear under Affiliate in your HireDrop dashboard, with your opens, referrals and earnings next to them."
+            // One action, not two. A stranger cannot choose between "create a
+            // profile" and "send an application" — they don't yet know what
+            // either means. Account first, then the questions, inside it.
+            cta={{ label: "Get your link", href: "/signup?affiliate=1" }}
+            note="Takes about a minute: create your account, answer four questions, and a person reads it — usually within a day or two."
           />
 
           <section className="mt-16">
