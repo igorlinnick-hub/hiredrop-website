@@ -12,6 +12,11 @@
  *
  * `image` names a plate in public/bg. They are ours — generated from our own
  * renders by brand-visuals/skills-photo.py — so no outside art enters the product.
+ *
+ * `imageNight` is optional: give it and the panel carries a day plate and a night
+ * one (the same render, regraded — see wallpaper-daytwin.py), so the poster obeys
+ * the house rule that a theme switch reads as time of day. Without it the single
+ * plate is used in both themes, exactly as before.
  */
 
 export const POSTER_SERIF = "'Instrument Serif', 'Playfair Display', Georgia, serif";
@@ -21,13 +26,14 @@ export interface PosterPanelProps {
   children?: React.ReactNode;
   body?: React.ReactNode;
   image?: string;
+  imageNight?: string;
   badge?: React.ReactNode;
   id?: string;
   testId?: string;
 }
 
 export default function PosterPanel({
-  title, children, body, image = "/bg/skills-photo.jpg", badge, id, testId,
+  title, children, body, image = "/bg/skills-photo.jpg", imageNight, badge, id, testId,
 }: PosterPanelProps) {
   return (
     <div
@@ -38,9 +44,16 @@ export default function PosterPanel({
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0"
+        className={["pointer-events-none absolute inset-0", imageNight ? "hd-poster-day" : ""].join(" ")}
         style={{ background: `url("${image}") center / cover no-repeat` }}
       />
+      {imageNight && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 hd-poster-night"
+          style={{ background: `url("${imageNight}") center / cover no-repeat` }}
+        />
+      )}
       {/* Type lives left, so the scrim stays heaviest there and lets the plate
           show on the right rather than drowning it. */}
       <div

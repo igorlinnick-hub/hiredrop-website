@@ -28,6 +28,8 @@ import { createClient } from "@/lib/supabase/client";
 import { apiPatch, apiPost } from "@/lib/api";
 import { useHandbacks, handbackProgress, type Handback } from "@/components/dashboard/useHandbacks";
 import HandbackAnswers from "@/components/dashboard/HandbackAnswers";
+import HistoryInsights from "@/components/dashboard/HistoryInsights";
+import PosterPanel from "@/components/dashboard/PosterPanel";
 
 type Receipt = {
   at: string; job_title: string; company: string; platform: string;
@@ -57,7 +59,6 @@ const questionsFor = (h: { questions?: { label: string; options: string[] }[] })
 
 const userReason = (raw: string) => REASON_MAP.find(([re]) => re.test(raw))?.[1] ?? "we couldn't finish this one automatically";
 
-const RESPONSE_STATUSES = new Set(["interview", "interview_invite", "rejected", "received", "hired"]);
 // What the user may set by hand, in the order a search actually moves. Mirrors the
 // backend's USER_SETTABLE_STATUSES (routers/applications.py) — `applied_unconfirmed`
 // is missing from BOTH on purpose: it is the executor saying "we clicked but could
@@ -181,28 +182,12 @@ export default function HistoryView({
     return (a: Application) => map.get(`${(a.title || "").toLowerCase()}|${(a.company || "").toLowerCase()}`);
   }, [receipts]);
 
-  // Stable "now" for the mount: Date.now() inside useMemo violates react-hooks/purity
-  // (the memo must be a pure function of its deps). One timestamp per view is exactly
-  // right for a "this week" counter anyway.
-  const [now] = useState(() => Date.now());
-
   // Everything downstream reads the edited status, so the metrics strip and the
   // "Prep for this" affordance move the moment the user marks a reply.
   const rows = useMemo(
     () => applications.map((a) => (statusEdits[a.id] ? { ...a, status: statusEdits[a.id] } : a)),
     [applications, statusEdits]
   );
-
-  const metrics = useMemo(() => {
-    const week = rows.filter((a) => now - new Date(a.date_applied).getTime() < 7 * 86400000).length;
-    const responses = rows.filter((a) => RESPONSE_STATUSES.has(a.status)).length;
-    return {
-      total: rows.length,
-      week,
-      responses,
-      rate: rows.length ? Math.round((responses / rows.length) * 100) : 0,
-    };
-  }, [rows, now]);
 
   const byDay = useMemo(() => {
     const groups = new Map<string, Application[]>();
@@ -228,25 +213,40 @@ export default function HistoryView({
         </p>
       </div>
 
-      {/* Metrics strip. One tile inverts (the popup's rule: black digits on
-          white, white digits on black) so the row reads as a composition
-          instead of four equal boxes. */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: "Total applied", value: metrics.total },
-          { label: "This week", value: metrics.week },
-          { label: "Responses", value: metrics.responses },
-          { label: "Response rate", value: `${metrics.rate}%` },
-        ].map((m, i) => (
-          <div
-            key={m.label}
-            className={["p-4 sm:p-5", i === 0 ? "hd-tile-ink rounded-2xl" : "hd-sheet"].join(" ")}
-          >
-            <div className="hd-hist-num">{m.value}</div>
-            <div className="hd-eyebrow mt-2.5">{m.label}</div>
-          </div>
-        ))}
-      </div>
+      {/* The banner: a poster panel whose plate is one of OUR onboarding renders
+          put through brand-visuals/skills-photo.py (blurred, darkened) and, for
+          the day, regraded warm first — the Flow-style photographic ground Igor
+          asked for, in our own art. It earns its place by explaining the one
+          thing about this screen that isn't obvious: a row opens into the exact
+          documents we sent. */}
+      <PosterPanel
+        title={<>We kept <em className="italic">everything</em> we sent.</>}
+        body="Open any row and the record is right there — no digging through your sent folder."
+        image="/bg/poster-history-day.jpg"
+        imageNight="/bg/poster-history-night.jpg"
+        testId="history-poster"
+      >
+        <div className="mt-5 space-y-2">
+          {[
+            ["Job posting", "the exact listing we applied to"],
+            ["Cover letter", "the letter, word for word"],
+            ["Résumé PDF", "the file the employer received"],
+          ].map(([k, v]) => (
+            <div key={k} className="hd-poster-pair">
+              <span className="hd-pill hd-pill-key">{k}</span>
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8"
+                strokeLinecap="round" strokeLinejoin="round" className="hd-poster-arrow" aria-hidden>
+                <path d="M4 10h11M11 6l4 4-4 4" />
+              </svg>
+              <span className="hd-pill">{v}</span>
+            </div>
+          ))}
+        </div>
+      </PosterPanel>
+
+      {/* How much · when · what came back · where they went. Four blocks, four
+          questions, every number computed from the record we already store. */}
+      <HistoryInsights rows={rows} />
 
       {statusError && (
         <p className="text-[12px] text-red" role="alert">{statusError}</p>

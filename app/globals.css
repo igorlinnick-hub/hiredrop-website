@@ -1399,3 +1399,209 @@ h1, h2, h3 {
   background: rgba(26, 22, 14, .14);
 }
 .dark .hd-doc-label::after { background: rgba(255, 255, 255, .14); }
+
+/* ============================================================
+   HISTORY INSIGHTS — the panel above the list (Igor 09-23, from
+   the Wispr Flow "Insights" screen: «в подобном стиле, но
+   несильно напутано, с логикой»).
+
+   Four blocks, four questions: how much (stat tiles) · when
+   (calendar heatmap) · what came back (meter + its breakdown) ·
+   where they went (bars). Forms follow the dataviz rules — a
+   single ratio is a METER not a two-slice pie; nominal platforms
+   get ONE hue (length already encodes size); part-to-whole is a
+   stacked bar with 2px surface gaps and a labelled legend; the
+   heatmap is one sequential hue with a scale key.
+
+   Colour, by theme: day draws in INK on paper (the black-and-white
+   vocabulary), night in the violet accent. Status colours appear
+   only where the colour genuinely means a status.
+
+   Motion: the whole panel draws itself in on mount and is done
+   inside one second (Igor: «чтоб анимация начиналась каждый раз
+   при открытии страницы и продолжалась 1 секунду»). Cells wash in
+   column by column, bars grow from the baseline, the meter sweeps.
+   All of it is off under prefers-reduced-motion (the component
+   simply never sets .hd-insights-run).
+   ============================================================ */
+.hd-insights {
+  --hd-heat-0: rgba(26, 22, 14, .07);
+  --hd-heat-1: rgba(16, 16, 20, .16);
+  --hd-heat-2: rgba(16, 16, 20, .34);
+  --hd-heat-3: rgba(16, 16, 20, .58);
+  --hd-heat-4: rgba(16, 16, 20, .88);
+  --hd-draw: #14141A;                /* the one hue for meter + bars */
+  --hd-track: rgba(26, 22, 14, .11);
+  --hd-o-wait: rgba(26, 22, 14, .20);
+  --hd-o-recv: #B07C0A;
+  --hd-o-intv: #00806A;
+  --hd-o-rej:  #C2410C;
+}
+.dark .hd-insights {
+  --hd-heat-0: rgba(255, 255, 255, .06);
+  --hd-heat-1: rgba(124, 108, 255, .26);
+  --hd-heat-2: rgba(124, 108, 255, .48);
+  --hd-heat-3: rgba(124, 108, 255, .72);
+  --hd-heat-4: rgba(150, 136, 255, .98);
+  --hd-draw: rgba(255, 255, 255, .88);
+  --hd-track: rgba(255, 255, 255, .12);
+  /* Night steps are the ones scripts/validate_palette.js passed against a dark
+     surface (the bright day-ish trio failed the lightness band); the red↔green
+     pair sits in the CVD floor band, which is legal here because every segment
+     is also named in the legend beside its count. */
+  --hd-o-wait: rgba(255, 255, 255, .20);
+  --hd-o-recv: #B8862F;
+  --hd-o-intv: #0E8C72;
+  --hd-o-rej:  #D9584C;
+}
+
+/* Card headings inside the panel: one step under the page's display line,
+   sans and heavy, so a section reads as a section and not as a second title. */
+.hd-hist-sub-head {
+  font-size: 19px; font-weight: 700; letter-spacing: -0.012em; color: #101014;
+}
+.dark .hd-hist-sub-head { color: #F4F2FF; }
+/* Inline figures inside a label ("longest 3d", a bar's count). */
+.hd-stat-inline { font-size: 13px; font-weight: 700; color: #101014; font-variant-numeric: tabular-nums; }
+.dark .hd-stat-inline { color: #FFFFFF; }
+
+/* ── Rhythm: the calendar heatmap ──────────────────────────── */
+.hd-heat-wrap { overflow-x: auto; padding-bottom: 4px; }
+/* A weekday rail on the left, month ticks on top, the grid under them — the
+   calendar shape does the explaining, so no axis labels are needed.
+   Cells are capped at 15px: stretched to the card's full width they stopped
+   reading as a calendar and started reading as a bar chart. */
+.hd-heat {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  gap: 0 8px;
+  width: max-content;
+  max-width: 100%;
+}
+.hd-heat-rail {
+  grid-column: 1; grid-row: 2;
+  display: grid; grid-template-rows: repeat(7, 1fr); gap: 3px;
+  align-items: center;
+}
+.hd-heat-rail span { line-height: 1; }
+.hd-heat-months {
+  grid-column: 2; grid-row: 1;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 16px);
+  gap: 3px;
+  margin-bottom: 6px;
+}
+.hd-heat-months span { white-space: nowrap; }
+.hd-heat-grid {
+  grid-column: 2; grid-row: 2;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 16px);
+  grid-template-rows: repeat(7, 16px);
+  grid-auto-flow: column;
+  gap: 3px;
+}
+.hd-cell {
+  display: block;
+  border-radius: 3px;
+  background: var(--hd-heat-0);
+}
+.hd-cell[data-bin="1"] { background: var(--hd-heat-1); }
+.hd-cell[data-bin="2"] { background: var(--hd-heat-2); }
+.hd-cell[data-bin="3"] { background: var(--hd-heat-3); }
+.hd-cell[data-bin="4"] { background: var(--hd-heat-4); }
+/* Days that haven't happened yet are drawn, but barely — the grid keeps its
+   shape without claiming we sent nothing on a date that hasn't arrived. */
+.hd-cell.is-future { opacity: .35; }
+.hd-cell-key { width: 12px; min-width: 12px; height: 12px; border-radius: 3px; }
+/* A figure sitting inside a caps label keeps its own case. */
+.hd-untrack { text-transform: none; letter-spacing: 0; }
+
+/* ── Replies: meter + breakdown ────────────────────────────── */
+.hd-meter { width: 136px; height: 118px; flex: none; }
+.hd-meter-track { stroke: var(--hd-track); }
+.hd-meter-fill  { stroke: var(--hd-draw); stroke-dashoffset: var(--off); }
+.hd-meter-num {
+  font-size: 30px; font-weight: 700; letter-spacing: -0.02em;
+  fill: #101014; font-variant-numeric: tabular-nums;
+}
+.dark .hd-meter-num { fill: #FFFFFF; }
+.hd-meter-cap {
+  font-size: 10px; font-weight: 700; letter-spacing: .16em;
+  text-transform: uppercase; fill: #46464F;
+}
+.dark .hd-meter-cap { fill: rgba(226, 224, 242, .66); }
+
+.hd-stack { display: flex; gap: 2px; height: 12px; border-radius: 999px; overflow: hidden; }
+.hd-stack-seg { display: block; width: var(--w); border-radius: 3px; }
+.hd-dot { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+
+/* ── Where they went: one hue, length is the story ─────────── */
+.hd-bar-row { display: flex; align-items: center; gap: 12px; }
+.hd-bar-name { width: 88px; flex: none; }
+.hd-bar-track {
+  position: relative; flex: 1 1 auto; height: 10px;
+  border-radius: 999px; background: var(--hd-track); overflow: hidden;
+}
+.hd-bar-fill {
+  display: block; height: 100%; width: var(--w);
+  border-radius: 999px; background: var(--hd-draw);
+}
+
+/* ── The one-second entrance ───────────────────────────────── */
+@keyframes hdCellIn { from { opacity: 0; transform: scale(.55); } to { opacity: 1; transform: scale(1); } }
+@keyframes hdGrowW  { from { width: 0; } to { width: var(--w); } }
+@keyframes hdSweep  { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: var(--off); } }
+
+.hd-insights-run .hd-cell {
+  animation: hdCellIn 260ms cubic-bezier(.22, 1, .36, 1) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+.hd-insights-run .hd-cell-key { animation: none; }
+.hd-insights-run .hd-bar-fill {
+  animation: hdGrowW 780ms cubic-bezier(.22, 1, .36, 1) both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+.hd-insights-run .hd-stack-seg {
+  animation: hdGrowW 820ms cubic-bezier(.22, 1, .36, 1) both;
+}
+.hd-insights-run .hd-meter-fill {
+  animation: hdSweep 1000ms cubic-bezier(.22, 1, .36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hd-insights-run .hd-cell,
+  .hd-insights-run .hd-bar-fill,
+  .hd-insights-run .hd-stack-seg,
+  .hd-insights-run .hd-meter-fill { animation: none; }
+}
+
+/* ── Poster plates that follow the theme, and the Flow-style key→value
+   pairs inside one (Igor 09-23: «картинки чтоб были как в этих примерах,
+   но не точь-в-точь»). The plate is ours: an onboarding render blurred
+   and darkened by brand-visuals/skills-photo.py, with the day version
+   regraded warm first, so day and night are the same picture at two
+   times of day rather than two different photographs. ── */
+.hd-poster-night { opacity: 0; transition: opacity .25s; }
+.dark .hd-poster-night { opacity: 1; }
+.dark .hd-poster-day { opacity: 0; }
+
+.hd-poster-pair { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.hd-poster-arrow { width: 16px; height: 16px; flex: none; color: rgba(255, 255, 255, .5); }
+.hd-pill {
+  display: inline-flex; align-items: center;
+  padding: 7px 13px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .14);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: rgba(255, 255, 255, .92);
+  font-size: 13.5px; font-weight: 500; line-height: 1.2;
+}
+/* The left pill is the label you'd say out loud — it gets the cream face. */
+.hd-pill-key {
+  min-width: 124px;
+  background: rgba(247, 243, 234, .90);
+  color: #14101C;
+  font-weight: 600;
+}
+
