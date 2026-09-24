@@ -18,11 +18,22 @@ const PLANS = [
  *  tab is parked until the URL arrives; if the browser refused to open one, we
  *  fall back to navigating this tab, which is still better than nothing. */
 function openInNewTab(): { go: (url: string) => void; fail: () => void } {
-  const tab = typeof window !== "undefined" ? window.open("", "_blank", "noopener") : null;
+  // NOT "noopener": that feature string makes window.open return null by spec,
+  // so we would hold no handle, never navigate the new tab, and fall back to
+  // taking over THIS one — the exact bug this helper exists to prevent (caught
+  // by testing the live page, 09-24). We drop the back-reference instead, which
+  // gives the same protection and keeps the handle.
+  let tab: Window | null = null;
+  if (typeof window !== "undefined") {
+    tab = window.open("", "_blank");
+    if (tab) {
+      try { tab.opener = null; } catch { /* cross-origin already, nothing to clear */ }
+    }
+  }
   return {
     go: (url: string) => {
       if (tab && !tab.closed) tab.location.replace(url);
-      else window.location.assign(url);
+      else window.location.assign(url); // pop-up blocked → old behaviour beats nothing
     },
     fail: () => { if (tab && !tab.closed) tab.close(); },
   };

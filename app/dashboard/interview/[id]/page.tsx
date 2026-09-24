@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { gateUser } from "@/lib/supabase/gate";
+import AuthHiccup from "@/components/auth/AuthHiccup";
 import { getInterviewKit, type InterviewKitResponse } from "@/lib/api";
 import InterviewRoom from "@/components/dashboard/InterviewRoom";
 
@@ -13,11 +15,10 @@ export default async function InterviewPage({
   const { id } = await params;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) redirect("/login");
+  const gate = await gateUser();
+  if (gate.unreachable) return <AuthHiccup />;
+  const user = gate.user;
+  if (!user) redirect("/login");
 
   const {
     data: { session },

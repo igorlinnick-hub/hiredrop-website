@@ -67,6 +67,16 @@ export async function updateSession(request: NextRequest, requestHeaders?: Heade
     request.nextUrl.pathname.startsWith(path)
   );
 
+  // Only the anomaly is logged — a signed-out visitor hitting /dashboard is
+  // routine and would drown the signal.
+  if (authUnreachable) {
+    console.warn(
+      `[auth] auth service unreachable: name=${authError?.name} status=${
+        authError?.status ?? "none"
+      } path=${request.nextUrl.pathname}`
+    );
+  }
+
   if (!user && isProtected && !authUnreachable) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

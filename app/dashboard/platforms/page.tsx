@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { gateUser } from "@/lib/supabase/gate";
+import AuthHiccup from "@/components/auth/AuthHiccup";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import PlatformConnections from "@/components/dashboard/PlatformConnections";
 
@@ -11,9 +12,10 @@ export const metadata = {
 // status per platform) moved here off the main dashboard, which now shows only a
 // compact status pill — keeping the dashboard focused on filters + campaign.
 export default async function PlatformsPage() {
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) redirect("/login");
+  const gate = await gateUser();
+  if (gate.unreachable) return <AuthHiccup />;
+  const user = gate.user;
+  if (!user) redirect("/login");
 
   return (
     <DashboardLayout>

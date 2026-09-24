@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { gateUser } from "@/lib/supabase/gate";
+import AuthHiccup from "@/components/auth/AuthHiccup";
 import { apiGet, type CampaignStatusResponse } from "@/lib/api";
 import CampaignView from "@/components/dashboard/CampaignView";
 
@@ -10,8 +12,10 @@ export const metadata = {
 export default async function CampaignPage() {
   const supabase = await createClient();
 
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) redirect("/login");
+  const gate = await gateUser();
+  if (gate.unreachable) return <AuthHiccup />;
+  const user = gate.user;
+  if (!user) redirect("/login");
 
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
