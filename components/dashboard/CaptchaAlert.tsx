@@ -5,19 +5,28 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 /**
- * Dashboard-wide "your turn" alarm for a pending human hand-off (captcha or
- * consent wall). CampaignView has carried this banner since the beginning — but
- * only on /dashboard/campaign, so a user on any other page (or one who missed the
- * chrome.notification, which macOS often swallows) never learned the run was
- * paused (Igor, 09-23). Mounted in DashboardLayout, so every route gets it; it
- * hides itself on the campaign page, which shows the richer in-context banner.
+ * Dashboard-wide "your turn" block for a pending human hand-off (captcha or
+ * consent wall). CampaignView has carried a banner since the beginning — but
+ * only on /dashboard/campaign, so a user on any other page (or one whose macOS
+ * swallowed the chrome.notification) never learned the run was paused (Igor,
+ * 09-23). Mounted in DashboardLayout, so every route gets it; it hides itself
+ * on the campaign page, which shows the richer in-context banner.
+ *
+ * Look: NOT a red banner (Igor, 09-24 — "красного не надо") — the poster-panel
+ * language already approved on the skills dialog and the affiliate hero
+ * (AffiliateHero.tsx): dark ground, our own warm render as the photography,
+ * serif headline with the emphasis in an italic word, one pale pill. Default
+ * shape is the compact "cube"; the wide panel variant lives on
+ * /preview/captcha-alert for comparison.
  *
  * Reads the same source as CampaignView: chrome.storage.captchaWaiting over the
- * ping.js bridge (HIREDROP_GET_LIVE_STATE) — set on DETECTION_TRIPPED, cleared on
- * DETECTION_CLEARED / campaign start / stop.
+ * ping.js bridge (HIREDROP_GET_LIVE_STATE) — set on DETECTION_TRIPPED, cleared
+ * on DETECTION_CLEARED / campaign start / stop.
  */
 
-type CaptchaWaiting = {
+const SERIF = "'Instrument Serif', 'Playfair Display', Georgia, serif";
+
+export type CaptchaWaiting = {
   url?: string;
   site?: string;
   kind?: string;
@@ -25,9 +34,92 @@ type CaptchaWaiting = {
   at?: number;
 };
 
+export type CaptchaShape = "cube" | "wide";
+
 // The extension self-stops after 2h of an uncleared wall — anything older is a
 // leftover snapshot, not an active hand-off. Mirrors CampaignView's guard.
 const STALE_MS = 2 * 60 * 60 * 1000;
+
+/** Presentational half — the preview page renders it directly with fake data. */
+export function CaptchaPanel({
+  captcha,
+  shape = "cube",
+}: {
+  captcha: CaptchaWaiting;
+  shape?: CaptchaShape;
+}) {
+  const terms = captcha.kind === "terms";
+  const site = captcha.site || "The site";
+  const headline = terms ? (
+    <>Accept the <i>terms</i></>
+  ) : (
+    <>Solve the <i>captcha</i></>
+  );
+  const body = terms
+    ? `${site} wants you to accept its terms in the automation window. The campaign resumes on its own after.`
+    : `${site} is asking for a human check. Solve it in the automation window — everything else is filled. The campaign resumes on its own.`;
+
+  if (shape === "wide") {
+    return (
+      <section className="relative overflow-hidden rounded-[20px]" style={{ background: "#0A0710" }}>
+        {/* Our own render (well-night) — the same warm out-of-focus ground the
+            reference uses; never a stock photo. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/bg/well-night.jpg" alt="" aria-hidden
+          className="absolute inset-0 h-full w-full object-cover" />
+        <div aria-hidden className="pointer-events-none absolute inset-0" style={{
+          background:
+            "linear-gradient(100deg, rgba(8,5,14,.95) 0%, rgba(8,5,14,.86) 42%, rgba(8,5,14,.30) 75%, rgba(8,5,14,.06) 100%)",
+        }} />
+        <div className="relative p-7 sm:p-8 max-w-xl">
+          <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
+            Campaign paused — your turn
+          </p>
+          <h3 className="text-white text-[28px] leading-[1.08] sm:text-[32px]"
+            style={{ fontFamily: SERIF, letterSpacing: "-0.015em" }}>
+            {headline}
+          </h3>
+          <p className="mt-3 max-w-md text-[13.5px] leading-relaxed text-white/70">{body}</p>
+          <Link href="/dashboard/campaign"
+            className="mt-5 inline-block rounded-full bg-[#F3EFE7] px-6 py-2.5 text-[13.5px] font-semibold text-[#14100C] transition hover:bg-white">
+            Open campaign
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  // The cube — Igor's pick of shape (09-24): a compact square card, the render
+  // fills the whole block, the type sits on a darkened floor.
+  return (
+    <section
+      className="relative overflow-hidden rounded-[20px] w-full max-w-[340px] aspect-square"
+      style={{ background: "#0A0710" }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/bg/well-night.jpg" alt="" aria-hidden
+        className="absolute inset-0 h-full w-full object-cover" />
+      <div aria-hidden className="pointer-events-none absolute inset-0" style={{
+        background:
+          "linear-gradient(180deg, rgba(8,5,14,.30) 0%, rgba(8,5,14,.12) 32%, rgba(8,5,14,.62) 62%, rgba(8,5,14,.92) 100%)",
+      }} />
+      <div className="relative flex h-full flex-col justify-end p-6">
+        <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-white/60">
+          Campaign paused — your turn
+        </p>
+        <h3 className="text-white text-[27px] leading-[1.08]"
+          style={{ fontFamily: SERIF, letterSpacing: "-0.015em" }}>
+          {headline}
+        </h3>
+        <p className="mt-2 text-[12.5px] leading-relaxed text-white/70">{body}</p>
+        <Link href="/dashboard/campaign"
+          className="mt-4 inline-block self-start rounded-full bg-[#F3EFE7] px-5 py-2 text-[13px] font-semibold text-[#14100C] transition hover:bg-white">
+          Open campaign
+        </Link>
+      </div>
+    </section>
+  );
+}
 
 export default function CaptchaAlert() {
   const pathname = usePathname();
@@ -58,25 +150,9 @@ export default function CaptchaAlert() {
 
   if (!captcha || pathname === "/dashboard/campaign") return null;
 
-  const terms = captcha.kind === "terms";
   return (
-    <div className="mb-5 flex items-start gap-3 px-4 py-3.5 rounded-xl bg-red/8 border border-red/30">
-      <span className="mt-1 inline-block w-2.5 h-2.5 shrink-0 rounded-full bg-red animate-pulse" />
-      <div className="text-sm min-w-0 flex-1">
-        <p className="font-semibold text-text">
-          {terms ? "Your turn: accept the terms" : "Your turn: solve the captcha"}
-        </p>
-        <p className="text-xs text-text2 mt-0.5">
-          {captcha.site || "The site"} is asking for a human — the campaign is paused
-          in the automation window until you {terms ? "accept" : "solve it"}, then it
-          resumes on its own.
-        </p>
-      </div>
-      <Link href="/dashboard/campaign"
-        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red/10 text-red
-          border border-red/20 hover:bg-red/15 transition whitespace-nowrap">
-        Open campaign
-      </Link>
+    <div className="mb-6">
+      <CaptchaPanel captcha={captcha} shape="cube" />
     </div>
   );
 }
