@@ -10,6 +10,24 @@ const PLANS = [
   { key: "monthly", name: "Monthly", price: MONTHLY_PRICE, per: "/mo", blurb: "Same product, billed monthly — better value if your search runs longer." },
 ];
 
+/** Open Stripe in a NEW tab, keeping the dashboard tab alive (Igor 09-24: the
+ *  portal took over the page and coming back landed on /login).
+ *
+ *  The tab is opened SYNCHRONOUSLY inside the click — a window.open after an
+ *  await is not a user gesture any more and pop-up blockers eat it. The blank
+ *  tab is parked until the URL arrives; if the browser refused to open one, we
+ *  fall back to navigating this tab, which is still better than nothing. */
+function openInNewTab(): { go: (url: string) => void; fail: () => void } {
+  const tab = typeof window !== "undefined" ? window.open("", "_blank", "noopener") : null;
+  return {
+    go: (url: string) => {
+      if (tab && !tab.closed) tab.location.replace(url);
+      else window.location.assign(url);
+    },
+    fail: () => { if (tab && !tab.closed) tab.close(); },
+  };
+}
+
 export default function BillingSection() {
   const supabase = createClient();
   const [tier, setTier] = useState<string | null>(null);
@@ -18,6 +36,8 @@ export default function BillingSection() {
   const [error, setError] = useState("");
 
   // Load the current tier so we can mark the active plan / show the manage button.
+  // Re-read it when this tab regains focus: a plan bought or cancelled in the
+  // Stripe tab must not leave this one claiming the old one.
   useEffect(() => {
     async function load() {
       try {
@@ -33,6 +53,9 @@ export default function BillingSection() {
       }
     }
     load();
+    const onFocus = () => { load(); };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch a fresh token per action — it can expire between mount and click.
@@ -43,24 +66,30 @@ export default function BillingSection() {
   }
 
   async function upgrade(plan: string) {
+    const tab = openInNewTab();
     setBusy(plan);
     setError("");
     try {
       const { url } = await createCheckout(plan, await freshToken());
-      window.location.assign(url); // external Stripe Checkout — not a Next route
+      tab.go(url); // external Stripe Checkout — not a Next route
+      setBusy(null);
     } catch (e) {
+      tab.fail();
       setError(e instanceof ApiError ? e.message : "Could not start checkout. Please try again.");
       setBusy(null);
     }
   }
 
   async function manage() {
+    const tab = openInNewTab();
     setBusy("portal");
     setError("");
     try {
       const { url } = await openBillingPortal(await freshToken());
-      window.location.assign(url); // external Stripe Billing Portal
+      tab.go(url); // external Stripe Billing Portal
+      setBusy(null);
     } catch (e) {
+      tab.fail();
       setError(e instanceof ApiError ? e.message : "Could not open the billing portal.");
       setBusy(null);
     }

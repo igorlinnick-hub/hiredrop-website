@@ -64,9 +64,9 @@ export function FormFields({ profile, update, saveBar }: Props) {
         <h3 className="hd-hist-sub-head">Current employment</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input label="Current / most recent employer" value={profile.current_employer}
-            onChange={(e) => update({ current_employer: e.target.value })} placeholder="e.g. Acme Corp" />
+            onChange={(e) => update({ current_employer: e.target.value })} placeholder="Acme Corp" />
           <Input label="Current / most recent job title" value={profile.current_title}
-            onChange={(e) => update({ current_title: e.target.value })} placeholder="e.g. Software Engineer" />
+            onChange={(e) => update({ current_title: e.target.value })} placeholder="Software Engineer" />
         </div>
         {saveBar()}
       </div>

@@ -52,6 +52,11 @@ export async function updateSession(request: NextRequest, requestHeaders?: Heade
   if (!user && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    // Remember where they were headed: coming back from an external tab (Stripe)
+    // on an expired token used to dump the user on /login with no way back to the
+    // page they were on. LoginForm already honours ?next= when it is a local path.
+    const back = request.nextUrl.pathname + request.nextUrl.search;
+    url.search = `?next=${encodeURIComponent(back)}`;
     return NextResponse.redirect(url);
   }
 
