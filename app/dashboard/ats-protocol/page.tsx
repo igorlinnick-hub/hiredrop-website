@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { gateUser } from "@/lib/supabase/gate";
+import AuthHiccup from "@/components/auth/AuthHiccup";
 import { apiGet, type StatsResponse } from "@/lib/api";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 
@@ -7,8 +9,10 @@ export const metadata = { title: "ATS Protocol — HireDrop Admin" };
 
 export default async function AtsProtocolPage() {
   const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) redirect("/login");
+  const gate = await gateUser();
+  if (gate.unreachable) return <AuthHiccup />;
+  const user = gate.user;
+  if (!user) redirect("/login");
 
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;

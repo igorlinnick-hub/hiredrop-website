@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { gateUser } from "@/lib/supabase/gate";
+import AuthHiccup from "@/components/auth/AuthHiccup";
 import {
   apiGet,
   type StatsResponse,
@@ -24,8 +26,10 @@ export default async function DashboardPage() {
   const supabase = await createClient();
 
   // getUser validates the JWT against Supabase; getSession only reads cookies.
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError || !user) {
+  const gate = await gateUser();
+  if (gate.unreachable) return <AuthHiccup />;
+  const user = gate.user;
+  if (!user) {
     redirect("/login");
   }
 

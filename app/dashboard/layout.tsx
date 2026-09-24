@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { gateUser } from "@/lib/supabase/gate";
+import AuthHiccup from "@/components/auth/AuthHiccup";
 import { PATHNAME_HEADER } from "@/lib/supabase/middleware";
 
 /**
@@ -33,8 +35,11 @@ export default async function DashboardGate({
   const supabase = await createClient();
 
   // getUser validates the JWT against Supabase; getSession only reads cookies.
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) {
+  const gate = await gateUser();
+  // Could not ASK whether they are signed in → say that, don't fake a logout.
+  if (gate.unreachable) return <AuthHiccup />;
+  const user = gate.user;
+  if (!user) {
     redirect("/login");
   }
 
