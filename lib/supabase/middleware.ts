@@ -41,7 +41,25 @@ export async function updateSession(request: NextRequest, requestHeaders?: Heade
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
+
+  // "No session" and "couldn't ask" are different answers, and this used to treat
+  // them the same (Igor 09-24: came back from the Stripe tab and landed on /login).
+  // A network blip or a 5xx from the auth service made getUser() return no user,
+  // and the request was bounced as if the person had signed out — which also
+  // costs them the cookie refresh on the next try.
+  //
+  // Fail OPEN on an unreachable/erroring auth service: let the request through.
+  // Nothing is exposed by that — every dashboard page re-checks the session
+  // server-side and redirects on its own (see app/dashboard/*/page.tsx) — so the
+  // worst case is one page render that immediately redirects itself.
+  const authUnreachable =
+    !user &&
+    !!authError &&
+    (authError.name === "AuthRetryableFetchError" ||
+      authError.status === undefined ||
+      authError.status >= 500);
 
   // Redirect unauthenticated users away from protected routes
   const protectedPaths = ["/dashboard", "/onboarding"];
@@ -49,7 +67,7 @@ export async function updateSession(request: NextRequest, requestHeaders?: Heade
     request.nextUrl.pathname.startsWith(path)
   );
 
-  if (!user && isProtected) {
+  if (!user && isProtected && !authUnreachable) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     // Remember where they were headed: coming back from an external tab (Stripe)
