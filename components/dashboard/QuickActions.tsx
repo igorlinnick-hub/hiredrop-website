@@ -315,8 +315,8 @@ export default function QuickActions({
     persistChips({ workSetting: value });
   }
 
-  // A city picked on the map becomes the campaign location (a precise city string,
-  // not the coarse remote/usa/europe enum) — it flows to Indeed l= via the extension.
+  // A location pick (map city string OR the dropdown's remote/usa/europe enum)
+  // becomes the campaign location — it flows to Indeed l= via the extension.
   // Save the label directly (not from state, which updates async) so the write is fresh.
   function pickLocation(label: string) {
     setLocation(label);
@@ -626,7 +626,7 @@ export default function QuickActions({
         <div className="relative">
           <select
             value={location}
-            onChange={(e) => setLocation(e.target.value)}
+            onChange={(e) => pickLocation(e.target.value)}
             className="h-full pl-3 pr-7 bg-surface border border-border rounded-xl text-sm text-text
               appearance-none cursor-pointer focus:outline-none focus:border-accent/50
               focus:ring-2 focus:ring-accent/10 transition whitespace-nowrap"
