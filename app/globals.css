@@ -1238,19 +1238,22 @@ h1, h2, h3 {
    ============================================================ */
 
 /* ── 1. Ground ─────────────────────────────────────────────── */
-.hd-history { position: relative; }
-.hd-dash-root:not(.dark) .hd-history::before {
+.hd-history, .hd-ground { position: relative; }
+.hd-dash-root:not(.dark) .hd-history::before,
+.hd-dash-root:not(.dark) .hd-ground::before {
   content: ""; position: fixed; inset: -40px; z-index: -2;
   background: url("/bg/ground-day.jpg") 62% 28% / cover no-repeat;
   filter: blur(13px) saturate(1.1);
 }
-.hd-dash-root:not(.dark) .hd-history::after {
+.hd-dash-root:not(.dark) .hd-history::after,
+.hd-dash-root:not(.dark) .hd-ground::after {
   content: ""; position: fixed; inset: 0; z-index: -2;
   background: linear-gradient(180deg, rgba(255, 253, 247, .44) 0%, rgba(255, 252, 245, .70) 100%);
 }
 /* Night already has its own fixed wallpaper on .hd-dash-root — the History
    sheet only deepens the veil under it so white type keeps its contrast. */
-.dark .hd-history::after {
+.dark .hd-history::after,
+.dark .hd-ground::after {
   content: ""; position: fixed; inset: 0; z-index: -2;
   background: linear-gradient(180deg, rgba(10, 8, 18, .34), rgba(10, 8, 18, .52));
 }
@@ -1605,3 +1608,72 @@ h1, h2, h3 {
   font-weight: 600;
 }
 
+
+/* ── Settings: the section rail + the billing pieces (Igor 09-23). The rail
+   names the parts of Settings out loud and shows one at a time; before it,
+   "who you are", "what forms ask", résumé, billing and a poster ran together
+   in one column and the only way to find anything was to scroll. ── */
+.hd-set-rail { display: flex; flex-direction: column; gap: 2px; }
+.hd-set-tab {
+  display: flex; align-items: flex-start; gap: 11px;
+  width: 100%; padding: 11px 12px;
+  border-radius: 12px; border: 1px solid transparent;
+  text-align: left; cursor: pointer;
+  transition: background-color .18s, border-color .18s, color .18s;
+}
+.hd-set-tab:hover { background: rgba(26, 22, 14, .05); }
+.dark .hd-set-tab:hover { background: rgba(255, 255, 255, .06); }
+.hd-set-tab-icon { width: 18px; height: 18px; flex: none; margin-top: 1px; color: #46464F; }
+.dark .hd-set-tab-icon { color: rgba(226, 224, 242, .70); }
+.hd-set-tab-icon svg { width: 100%; height: 100%; }
+.hd-set-tab-label { display: block; font-size: 13.5px; font-weight: 600; color: #14141A; }
+.dark .hd-set-tab-label { color: #F1EFFA; }
+.hd-set-tab-hint {
+  display: block; margin-top: 2px;
+  font-size: 10.5px; font-weight: 600; letter-spacing: .13em;
+  text-transform: uppercase; color: #5A5A66;
+}
+.dark .hd-set-tab-hint { color: rgba(226, 224, 242, .55); }
+/* The open section is INK by day and paper by night — the same inversion the
+   dashboard uses for an active rail item. */
+.hd-set-tab.is-on {
+  background: linear-gradient(180deg, #26262F 0%, #101014 100%);
+  border-color: #101014;
+}
+.hd-set-tab.is-on .hd-set-tab-label { color: #FFFFFF; }
+.hd-set-tab.is-on .hd-set-tab-hint { color: rgba(255, 255, 255, .62); }
+.hd-set-tab.is-on .hd-set-tab-icon { color: #F0C874; }
+.dark .hd-set-tab.is-on {
+  background: linear-gradient(180deg, #FFFFFF 0%, #ECE8F8 100%);
+  border-color: rgba(255, 255, 255, .55);
+}
+.dark .hd-set-tab.is-on .hd-set-tab-label { color: #14141C; }
+.dark .hd-set-tab.is-on .hd-set-tab-hint { color: #4A4A5A; }
+.dark .hd-set-tab.is-on .hd-set-tab-icon { color: #6C5CE7; }
+
+/* Free-taste quota: the same meter language as Insights, drawn flat. */
+.hd-quota {
+  height: 10px; border-radius: 999px; overflow: hidden;
+  background: rgba(26, 22, 14, .11);
+}
+.dark .hd-quota { background: rgba(255, 255, 255, .12); }
+.hd-quota-fill {
+  display: block; height: 100%; width: var(--w);
+  border-radius: 999px; background: #14141A;
+  animation: hdGrowW 780ms cubic-bezier(.22, 1, .36, 1) both;
+}
+.dark .hd-quota-fill { background: rgba(255, 255, 255, .88); }
+@media (prefers-reduced-motion: reduce) { .hd-quota-fill { animation: none; } }
+
+.hd-plan {
+  display: flex; flex-direction: column;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(26, 22, 14, .13);
+  background: #FFFDF8;
+}
+.dark .hd-plan { border-color: rgba(255, 255, 255, .10); background: rgba(12, 11, 22, .5); }
+.hd-plan-price { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: #101014; }
+.dark .hd-plan-price { color: #FFFFFF; }
+.hd-plan-per { font-size: 12px; font-weight: 600; color: #5A5A66; }
+.dark .hd-plan-per { color: rgba(226, 224, 242, .62); }
