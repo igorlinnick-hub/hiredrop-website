@@ -132,7 +132,6 @@ export default function BillingSection() {
           the product costs instead of hiding it behind a portal redirect. */}
       <div className="hd-sheet p-5 sm:p-6">
         <h3 className="hd-hist-sub-head">Plans</h3>
-        <p className="hd-eyebrow mt-1.5">Same product on both · cancel any time</p>
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
           {PLANS.map((p) => (
             <div key={p.key} className="hd-plan">

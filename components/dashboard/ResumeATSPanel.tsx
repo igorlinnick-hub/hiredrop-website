@@ -499,7 +499,6 @@ export default function ResumeATSPanel() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-semibold text-text">Resume & ATS</h3>
-          <p className="text-xs text-text2 mt-0.5">Manage which version employers receive.</p>
         </div>
         {hasResume && (
           <div className={[
@@ -527,7 +526,6 @@ export default function ResumeATSPanel() {
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-text2">Base resume for applications</p>
               <p className="text-sm font-semibold text-text">
                 {effectiveDefault === "ats"
                   ? "Your ATS-optimized resume"
@@ -535,7 +533,6 @@ export default function ResumeATSPanel() {
                     ? "Your skills-first resume"
                     : "Your original resume"}
               </p>
-              <p className="text-xs text-text2 mt-0.5">Tailored to strong-match roles when you apply.</p>
             </div>
             <div className="flex flex-shrink-0 items-center gap-2">
               {/* Editing applies to the generated resume — the original is the user's own file. */}
@@ -690,7 +687,6 @@ export default function ResumeATSPanel() {
               </Button>
             )}
           </div>
-          <p className="text-xs text-text2">To change content — upload a new resume and regenerate.</p>
         </div>
       )}
 
@@ -750,7 +746,7 @@ export default function ResumeATSPanel() {
             <div className="flex items-center justify-between px-6 py-5 border-b border-border">
               <div>
                 <h3 className="font-semibold text-text">A few quick questions</h3>
-                <p className="text-xs text-text2 mt-0.5">ATS searches for exact tool names. Your answers go directly into Technical Skills — the section ATS scans first.</p>
+                <p className="text-xs text-text2 mt-0.5">Exact tool names — they go straight into Technical Skills.</p>
               </div>
               <button onClick={() => setShowQA(false)} className="text-text2 hover:text-text p-1 ml-4 flex-shrink-0">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -9,7 +9,11 @@
  * only way to find anything was to scroll and read. The rail names the parts
  * out loud and shows one at a time: a section is a subject, not a scroll depth.
  *
- * It is deliberately dumb — a list of {id, label, hint} and a callback. The page
+ * Nothing but the name and a glyph (Igor 09-24: «минималистичнее, убирай лишние
+ * слова под Account, Application details и т.д.») — a section that needs a
+ * subtitle to be understood is named wrong.
+ *
+ * It is deliberately dumb — a list of {id, label} and a callback. The page
  * owns which section is open and the deep link (?tab=), so a link from the
  * Upgrade banner still lands on Billing.
  */
@@ -17,7 +21,6 @@
 export interface SettingsSection {
   id: string;
   label: string;
-  hint: string;
   icon: React.ReactNode;
 }
 
@@ -42,10 +45,7 @@ export default function SettingsRail({
             className={["hd-set-tab", on ? "is-on" : ""].join(" ")}
           >
             <span className="hd-set-tab-icon" aria-hidden>{s.icon}</span>
-            <span className="min-w-0">
-              <span className="hd-set-tab-label">{s.label}</span>
-              <span className="hd-set-tab-hint">{s.hint}</span>
-            </span>
+            <span className="hd-set-tab-label">{s.label}</span>
           </button>
         );
       })}

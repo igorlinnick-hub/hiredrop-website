@@ -314,7 +314,6 @@ export default function HistoryInsights({
             pool empty → the sweep, not the cap, is what to fix. */}
         <div className="hd-sheet p-5 sm:p-6 lg:col-span-5" data-testid="insights-today">
           <h3 className="hd-hist-sub-head">Today</h3>
-          <p className="hd-eyebrow mt-1.5">Your daily cap, and what feeds it</p>
 
           {stats === null ? (
             <p className="hd-hist-sub mt-4">
@@ -344,15 +343,14 @@ export default function HistoryInsights({
 
                 <ul className="min-w-0 flex-1 space-y-2.5">
                   {[
-                    ["Applied today", kToday, `of ${stats?.daily_limit ?? "—"} allowed`],
-                    ["Left today", kLeft, "before the cap stops the run"],
-                    ["New jobs today", kNew, "found by the sweep"],
-                    ["Jobs found", kPool, "in the pool, waiting"],
-                  ].map(([label, value, hint]) => (
+                    [`Applied today`, kToday],
+                    [`Left of ${stats?.daily_limit ?? "—"}`, kLeft],
+                    ["New jobs today", kNew],
+                    ["Jobs found", kPool],
+                  ].map(([label, value]) => (
                     <li key={label as string} className="flex items-baseline gap-2.5">
                       <span className="hd-hist-sub flex-1 whitespace-nowrap">{label}</span>
                       <b className="hd-stat-inline tabular-nums">{dash(value as number)}</b>
-                      <span className="hd-eyebrow hidden xl:inline">{hint}</span>
                     </li>
                   ))}
                 </ul>
@@ -378,10 +376,7 @@ export default function HistoryInsights({
       {data.answered > 0 && (
         <div className="hd-sheet p-5 sm:p-6" data-testid="insights-outcomes">
           <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <div>
-              <h3 className="hd-hist-sub-head">What came back</h3>
-              <p className="hd-eyebrow mt-1.5">From the replies you marked</p>
-            </div>
+            <h3 className="hd-hist-sub-head">What came back</h3>
             <span className="hd-eyebrow">
               <b className="hd-stat-inline hd-untrack">{data.answered}</b> of {data.total} marked
             </span>
@@ -416,7 +411,6 @@ export default function HistoryInsights({
           the whole story and the name sits on the bar. */}
       <div className="hd-sheet p-5 sm:p-6">
           <h3 className="hd-hist-sub-head">Where they went</h3>
-          <p className="hd-eyebrow mt-1.5">Applications by platform</p>
 
           {data.platforms.length === 0 ? (
             <p className="hd-hist-sub mt-4">Nothing sent yet.</p>
