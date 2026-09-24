@@ -67,63 +67,101 @@ export default function BillingSection() {
   }
 
   const isAdmin = tier === "admin";
-  const isPaid = tier === "pro" || tier === "premium";
+  const isPaid = tier === "pro" || tier === "premium" || tier === "elite";
   const tierLabel = tier ? tier.charAt(0).toUpperCase() + tier.slice(1) : null;
+  const pct = freeTaste && freeTaste.limit
+    ? Math.min(100, Math.round((freeTaste.used / freeTaste.limit) * 100))
+    : null;
+
+  // What the state line says. It always says SOMETHING: a billing section that
+  // collapses to one grey sentence on an internal tier reads as "we have no
+  // billing" (Igor 09-23), which is exactly the wrong impression.
+  const state = isAdmin
+    ? { name: "Admin", blurb: "Internal plan — unlimited applications, nothing to pay." }
+    : isPaid
+      ? { name: tierLabel ?? "Subscribed", blurb: "Active subscription. Change the plan or cancel any time in the portal." }
+      : freeTaste
+        ? {
+          name: "Free taste",
+          blurb: freeTaste.used >= freeTaste.limit
+            ? `All ${freeTaste.limit} free applications used — pick a plan to keep applying.`
+            : `${freeTaste.used} of ${freeTaste.limit} free applications used.`,
+        }
+        : { name: tierLabel ?? "No plan yet", blurb: "Pick a plan to start applying." };
 
   return (
-    <section id="billing" className="bg-surface border border-border rounded-xl p-6 space-y-4 scroll-mt-24">
-      <div>
-        <h3 className="font-semibold text-text">Billing &amp; Plan</h3>
-        <p className="text-sm text-text2 mt-1">
-          {isAdmin
-            ? "You're on the Admin plan — unlimited."
-            : freeTaste
-              ? freeTaste.used >= freeTaste.limit
-                ? `You've used all ${freeTaste.limit} free applications — pick a plan to keep applying.`
-                : `Free taste: ${freeTaste.used} of ${freeTaste.limit} free applications used. Subscribe to keep going past ${freeTaste.limit}.`
-              : tierLabel
-                ? `Current plan: ${tierLabel}.`
-                : "Choose a plan to unlock more applications and features."}
-        </p>
+    <section id="billing" className="space-y-3 scroll-mt-24" data-testid="billing-section">
+      {/* THE STATE — what you are on right now, and the one action that changes it. */}
+      <div className="hd-sheet p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="hd-eyebrow">Current plan</p>
+            <h3 className="hd-hist-display mt-1.5 !text-[30px]">{state.name}</h3>
+            <p className="hd-hist-sub mt-2 max-w-md leading-relaxed">{state.blurb}</p>
+          </div>
+          {(isPaid || isAdmin) && (
+            <button
+              type="button"
+              disabled={busy !== null}
+              onClick={manage}
+              className="hd-chip shrink-0"
+            >
+              {busy === "portal" ? "Opening…" : "Manage / cancel"}
+            </button>
+          )}
+        </div>
+
+        {/* The free taste is a quota, so it gets a meter — the same form the
+            Insights panel uses for a single ratio. */}
+        {pct !== null && (
+          <div className="mt-5">
+            <div className="hd-quota" role="img"
+              aria-label={`${freeTaste!.used} of ${freeTaste!.limit} free applications used`}>
+              <span className="hd-quota-fill" style={{ ["--w" as string]: `${pct}%` }} />
+            </div>
+            <p className="hd-eyebrow mt-2 tabular-nums">
+              {freeTaste!.used} / {freeTaste!.limit} used
+            </p>
+          </div>
+        )}
       </div>
 
-      {error && <div className="p-3 rounded-lg bg-red/10 text-red text-sm">{error}</div>}
+      {error && <div className="hd-sheet p-3 text-sm text-red">{error}</div>}
 
-      {!isAdmin && !isPaid && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* THE PLANS — shown even to a subscriber, so the page always says what
+          the product costs instead of hiding it behind a portal redirect. */}
+      <div className="hd-sheet p-5 sm:p-6">
+        <h3 className="hd-hist-sub-head">Plans</h3>
+        <p className="hd-eyebrow mt-1.5">Same product on both · cancel any time</p>
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
           {PLANS.map((p) => (
-            <div key={p.key} className="rounded-lg border border-border p-4 flex flex-col">
-              <div className="flex items-baseline justify-between">
-                <span className="font-semibold text-text">{p.name}</span>
-                <span className="text-lg font-bold text-text">
-                  {p.price}
-                  <span className="text-xs text-text2 font-normal">{p.per}</span>
+            <div key={p.key} className="hd-plan">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="hd-eyebrow hd-eyebrow-ink">{p.name}</span>
+                <span className="hd-plan-price">
+                  {p.price}<span className="hd-plan-per">{p.per}</span>
                 </span>
               </div>
-              <p className="text-xs text-text2 mt-1 flex-1">{p.blurb}</p>
-              <button
-                type="button"
-                disabled={busy !== null}
-                onClick={() => upgrade(p.key)}
-                className="mt-3 text-sm font-medium py-2 px-4 rounded-lg transition bg-accent hover:bg-accent-hover text-white disabled:opacity-60"
-              >
-                {busy === p.key ? "Redirecting…" : `Choose ${p.name}`}
-              </button>
+              <p className="hd-hist-sub mt-2 flex-1 leading-snug">{p.blurb}</p>
+              {isAdmin || isPaid ? (
+                <p className="hd-eyebrow mt-3">
+                  {isAdmin ? "Not billed on this account" : "Switch plans in the portal"}
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => upgrade(p.key)}
+                  className="mt-4 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white
+                    transition hover:bg-accent-hover disabled:opacity-60"
+                >
+                  {busy === p.key ? "Redirecting…" : `Choose ${p.name}`}
+                </button>
+              )}
             </div>
           ))}
         </div>
-      )}
-
-      {isPaid && (
-        <button
-          type="button"
-          disabled={busy !== null}
-          onClick={manage}
-          className="text-sm font-medium text-accent hover:text-accent2 border border-accent/30 hover:border-accent/60 px-4 py-2 rounded-lg transition disabled:opacity-60"
-        >
-          {busy === "portal" ? "Opening…" : "Manage subscription / cancel"}
-        </button>
-      )}
+      </div>
     </section>
   );
 }

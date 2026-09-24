@@ -98,6 +98,44 @@ const APPS: Application[] = [
   } as Application,
 ];
 
+// A believable back-history so the Insights panel can be judged: ~4 months of
+// runs with quiet weeks, weekends, a few big days and a realistic reply mix.
+// Deterministic (a seeded LCG, never Math.random) so the server and the client
+// render the same grid and hydration stays quiet.
+function seeded(seed: number) {
+  let x = seed;
+  return () => ((x = (x * 1664525 + 1013904223) % 4294967296) / 4294967296);
+}
+const BACKLOG: Application[] = (() => {
+  const rnd = seeded(20260923);
+  const platforms = ["indeed", "greenhouse", "lever", "ashby", "ziprecruiter"];
+  const out: Application[] = [];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  for (let back = 120; back >= 2; back -= 1) {
+    const d = new Date(today.getTime() - back * 86400000);
+    const weekend = d.getDay() === 0 || d.getDay() === 6;
+    const r = rnd();
+    // quiet stretches (no campaign running), weekends thin, weekdays busier
+    const n = weekend ? (r < 0.75 ? 0 : 1) : r < 0.22 ? 0 : Math.ceil(r * 9);
+    for (let i = 0; i < n; i += 1) {
+      const pr = rnd();
+      const sr = rnd();
+      const status = sr < 0.71 ? "applied" : sr < 0.83 ? "received" : sr < 0.92 ? "rejected" : "interview";
+      const at = new Date(d); at.setHours(9 + Math.floor(rnd() * 9), Math.floor(rnd() * 60), 0, 0);
+      out.push({
+        id: `bk-${back}-${i}`,
+        title: "Marketing Manager",
+        company: "Acme",
+        platform: platforms[Math.min(platforms.length - 1, Math.floor(pr * pr * platforms.length))],
+        link: "https://example.com/job",
+        date_applied: at.toISOString(),
+        status,
+      } as Application);
+    }
+  }
+  return out;
+})();
+
 export default function PreviewHistoryChips() {
   const [dark, setDark] = useState(false);
   return (
@@ -121,7 +159,19 @@ export default function PreviewHistoryChips() {
         </header>
         {/* No session on a public preview — swallow the write so the picker is
             still clickable and the chip still moves. */}
-        <HistoryView applications={APPS} onSetStatus={async () => {}} handbacksOverride={HANDBACKS} />
+        <HistoryView
+          applications={[...APPS, ...BACKLOG]}
+          onSetStatus={async () => {}}
+          handbacksOverride={HANDBACKS}
+          statsOverride={{
+            // What /stats returns on a live account — the preview has no session,
+            // and the Today card must be judged with numbers in it.
+            total_jobs: 1284, total_applications: 331, applications_today: 18, new_today: 96,
+            tier: "pro", daily_limit: 30, remaining_today: 12,
+            platform_counts: { indeed: 9, greenhouse: 4, lever: 3, ashby: 2 },
+            max_per_platform: 12,
+          }}
+        />
       </div>
     </div>
   );
