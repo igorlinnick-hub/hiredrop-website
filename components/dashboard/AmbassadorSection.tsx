@@ -52,7 +52,7 @@ export default function AmbassadorSection() {
       </PosterPanel>
 
       <div className="hd-sheet p-5 sm:p-6">
-        <h3 className="hd-hist-sub-head">The deal, in three numbers</h3>
+        <h3 className="hd-hist-sub-head">The deal</h3>
         <dl className="mt-4 grid gap-4 sm:grid-cols-3">
           {FACTS.map(([k, v]) => (
             <div key={k}>
@@ -61,9 +61,6 @@ export default function AmbassadorSection() {
             </div>
           ))}
         </dl>
-        <p className="hd-eyebrow mt-5">
-          Applications are read by a person, usually the same day
-        </p>
       </div>
     </div>
   );

@@ -24,11 +24,11 @@ import type { UserProfile } from "@/lib/types";
  */
 
 const SECTIONS: SettingsSection[] = [
-  { id: "account", label: "Account", hint: "Name · contact · links", icon: <IconPerson /> },
-  { id: "forms", label: "Application details", hint: "What forms ask", icon: <IconForm /> },
-  { id: "resume", label: "Résumé & skills", hint: "ATS + tailoring", icon: <IconDoc /> },
-  { id: "billing", label: "Billing", hint: "Plan · invoices", icon: <IconCard /> },
-  { id: "ambassador", label: "Ambassador", hint: "Refer · earn 30%", icon: <IconShare /> },
+  { id: "account", label: "Account", icon: <IconPerson /> },
+  { id: "forms", label: "Application details", icon: <IconForm /> },
+  { id: "resume", label: "Résumé & skills", icon: <IconDoc /> },
+  { id: "billing", label: "Billing", icon: <IconCard /> },
+  { id: "ambassador", label: "Ambassador", icon: <IconShare /> },
 ];
 
 const MOCK: UserProfile = {
@@ -89,11 +89,7 @@ export default function PreviewSettingsRail() {
             <h1 className="hd-hist-display mt-2">
               Everything about <em className="italic">you</em>.
             </h1>
-            <p className="hd-hist-sub mt-2.5 max-w-xl leading-relaxed">
-              What we tell employers, what we charge you, and what you earn for sending
-              people our way — one subject at a time.
-            </p>
-          </div>
+            </div>
 
           <div className="grid gap-5 lg:grid-cols-[232px_minmax(0,1fr)]">
             <aside className="lg:sticky lg:top-6 lg:self-start">
