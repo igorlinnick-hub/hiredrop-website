@@ -7,7 +7,7 @@ import { apiGet, type StatsResponse } from "@/lib/api";
 
 import { LIVE_CONNECTABLE_PLATFORMS } from "@/lib/constants";
 import { checkExtensionPresent, detectBrowser, type BrowserKind } from "./StartReadiness";
-import { isLiveConnected, type Conn } from "./PlatformsIndicator";
+import { isLiveConnected, liveStatus, type Conn } from "./PlatformsIndicator";
 
 // Only platforms that apply to jobs today count here — see the constant's note.
 // A step you cannot finish is worse than no step.
@@ -42,12 +42,26 @@ type Row = {
   href?: string;
   badge?: string;
   onClick?: () => void;
+  // Red-alarm line shown INSTEAD of the hint: something that was working broke
+  // (a platform signed the user out) and campaigns are quietly starving until
+  // they act. Blinks — Igor's ask (09-23): a logout must not look like a calm
+  // "not done yet" step.
+  alert?: string;
 };
 
 /** The step marker: a ring that fills, so partial progress reads as partial. */
-function Ring({ p }: { p: number }) {
+function Ring({ p, alert = false }: { p: number; alert?: boolean }) {
   const C = 2 * Math.PI * 6;
   const done = p >= 1;
+  if (alert) {
+    // The alarm state replaces the progress ring entirely: a blinking red dot.
+    // Partial progress is beside the point when something regressed.
+    return (
+      <span className="relative mt-[3px] shrink-0 w-3.5 h-3.5 flex items-center justify-center">
+        <span className="w-2.5 h-2.5 rounded-full bg-red animate-pulse" />
+      </span>
+    );
+  }
   return (
     <span className="relative mt-[3px] shrink-0 w-3.5 h-3.5">
       {/* Colours go through stroke/fill utilities on purpose: a text-text2 class here
@@ -247,6 +261,11 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
   const connectedCount = demo ? 1 : connsAnswered
     ? CONNECTABLE.filter((p) => isLiveConnected(connections[p.id])).length
     : (snap?.conns ?? 0);
+  // Platforms that actively signed the user out — live state only, never the
+  // snapshot: an alarm painted from stale localStorage would cry wolf.
+  const signedOutNames = !demo && connsAnswered
+    ? CONNECTABLE.filter((p) => liveStatus(connections[p.id]) === "logged_out").map((p) => p.name)
+    : [];
   const extDone = demo ? true : extPresent !== null ? extPresent : (snap?.ext ?? false);
   const doneProfile = profileLoaded ? profileDone : (snap?.profile ?? false);
   const doneResume = profileLoaded ? hasResume : (snap?.resume ?? false);
@@ -317,7 +336,10 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
       id: "platforms",
       label: "Connect job platforms",
       hint: extDone ? "Each one is more jobs" : "Needs the extension first",
-      done: connectedCount === CONNECTABLE.length,
+      alert: signedOutNames.length
+        ? `${signedOutNames.join(" & ")} signed you out — log back in`
+        : undefined,
+      done: connectedCount === CONNECTABLE.length && signedOutNames.length === 0,
       progress: platformPct,
       badge: probing ? undefined : `${connectedCount}/${CONNECTABLE.length}`,
       href: extDone ? "/dashboard/platforms" : undefined,
@@ -362,6 +384,12 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
             <span className="text-[10px] text-text2/70">
               {left === 0 ? "full reach" : "for more applications"}
             </span>
+            {/* A collapsed card must still show the alarm — the whole point is
+                that a logout can't hide behind a calm progress bar. */}
+            {rows.some((r) => r.alert) && (
+              <span className="self-center w-2 h-2 shrink-0 rounded-full bg-red animate-pulse"
+                aria-label="a platform signed you out" />
+            )}
             <svg
               className={`ml-auto w-3.5 h-3.5 shrink-0 self-center text-text2/50 transition ${open ? "" : "-rotate-90"}`}
               fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"
@@ -382,17 +410,22 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
           {rows.map((row) => {
             const inner = (
               <>
-                <Ring p={row.progress} />
+                <Ring p={row.progress} alert={!!row.alert} />
 
                 <span className="min-w-0 flex-1">
                   <span className={[
                     "block leading-snug",
-                    row.done ? "text-text2/60" : "text-text",
+                    row.alert ? "text-red font-medium" : row.done ? "text-text2/60" : "text-text",
                   ].join(" ")}>
                     {row.label}
                   </span>
-                  {/* Done rows drop the hint — it only sells work you already did. */}
-                  {!row.done && (
+                  {/* The alert line beats the hint: a regression outranks a sales pitch. */}
+                  {row.alert ? (
+                    <span className="block text-[10.5px] leading-snug text-red">
+                      {row.alert}
+                    </span>
+                  ) : !row.done && (
+                    /* Done rows drop the hint — it only sells work you already did. */
                     <span className="block text-[10.5px] leading-snug text-text2/70">
                       {row.hint}
                     </span>
@@ -402,7 +435,7 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
                 {row.badge && (
                   <span className={[
                     "mt-[3px] shrink-0 text-[10px] font-semibold tabular-nums",
-                    row.done ? "text-green" : "text-text2/70",
+                    row.alert ? "text-red animate-pulse" : row.done ? "text-green" : "text-text2/70",
                   ].join(" ")}>
                     {row.badge}
                   </span>

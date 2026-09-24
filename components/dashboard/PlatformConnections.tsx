@@ -209,7 +209,13 @@ export default function PlatformConnections() {
                             Checking…
                           </span>
                         ) : loggedOut ? (
-                          <span className="hidden sm:inline text-[11px] text-yellow font-medium mr-0.5">Not signed in</span>
+                          // Red + blinking, not yellow: the platform kicked the user
+                          // out and every campaign on it is starving until they're
+                          // back in (Igor, 09-23).
+                          <span className="hidden sm:flex items-center gap-1.5 text-[11px] text-red font-semibold mr-0.5">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-red animate-pulse" />
+                            Signed out — log back in
+                          </span>
                         ) : (
                           <span className="hidden sm:inline text-[11px] text-text2/40 font-medium mr-0.5"
                             title="We haven't verified this platform in this browser yet — open it once and the status updates automatically">
