@@ -15,25 +15,36 @@ export default async function SignupPage({
 }: {
   searchParams: Promise<{ affiliate?: string; email?: string }>;
 }) {
-  // An issued affiliate link lands here. Read server-side and passed down, so
-  // the form stays free of useSearchParams and its Suspense boundary.
+  // Two different arrivals, one parameter. `affiliate=<code>` is an issued
+  // link whose code is reserved for that email — the invite we send. Plain
+  // `affiliate=1` is someone off the landing page who has no code yet and is
+  // here to ask for one; they get the affiliate wording and the affiliate
+  // destination, but nothing is promised to them.
   const { affiliate = "", email = "" } = await searchParams;
-  const affiliateCode = affiliate.slice(0, 39);
+  const raw = affiliate.slice(0, 39);
+  const affiliateIntent = raw.length > 0;
+  const affiliateCode = raw === "1" || raw === "yes" ? "" : raw;
 
   return (
     <AuthLayout
-      title={affiliateCode ? "Create your affiliate account" : "Create your account"}
+      title={affiliateIntent ? "Create your affiliate account" : "Create your account"}
       subtitle={
         affiliateCode
           ? `hiredrop.io/?ref=${affiliateCode} goes live the moment this account exists`
-          : "Your first 40 applications are free — no card required"
+          : affiliateIntent
+            ? "Then four questions, and a person reads them — usually within a day or two"
+            : "Your first 40 applications are free — no card required"
       }
       footerText="Already have an account?"
       footerLinkText="Sign in"
       footerLinkHref="/login"
       showcase
     >
-      <SignupForm affiliateCode={affiliateCode} prefillEmail={email.slice(0, 254)} />
+      <SignupForm
+        affiliateCode={affiliateCode}
+        affiliateIntent={affiliateIntent}
+        prefillEmail={email.slice(0, 254)}
+      />
     </AuthLayout>
   );
 }

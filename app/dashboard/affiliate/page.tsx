@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { gateUser } from "@/lib/supabase/gate";
@@ -9,6 +8,8 @@ import AffiliateView, {
   type AffiliateStats,
   type AffiliateCommission,
 } from "@/components/dashboard/AffiliateView";
+import ApplyForm from "@/components/affiliate/ApplyForm";
+import AffiliateHero from "@/components/affiliate/AffiliateHero";
 
 export const metadata = {
   title: "Affiliate — HireDrop",
@@ -80,25 +81,23 @@ export default async function AffiliatePage() {
       );
     }
 
+    // The form itself, not a link to it. Someone who arrived here from the
+    // landing's one button has already decided; sending them back out to a
+    // public page to decide again is where the people we asked for go missing.
     return (
       <DashboardLayout>
-        <div className="max-w-xl">
-          <h1 className="text-2xl font-bold text-text">Affiliate</h1>
-          <p className="text-text2 mt-2">
-            You&apos;re not in the affiliate program yet. It pays 30% of everything the people you
-            refer pay us, every month they stay subscribed — and three paying referrals make your
-            own HireDrop free.
-          </p>
-          <p className="text-text2 mt-3">
-            Applications are read by a person, so it&apos;s a short form rather than an instant
-            signup — tell us who you&apos;d share it with and pick the link you want.
-          </p>
-          <Link
-            href="/affiliate/apply"
-            className="inline-block mt-5 bg-accent hover:bg-accent/90 text-white font-semibold px-6 py-3 rounded-xl transition"
-          >
-            Apply for a link
-          </Link>
+        <div className="max-w-3xl space-y-6">
+          <AffiliateHero
+            compact
+            eyebrow="HireDrop affiliate program"
+            title={
+              <>
+                Ask for <em className="italic">your link</em>.
+              </>
+            }
+            body="30% of every payment the people you refer make — every month they stay, not just the first one. A person reads every application, usually within a day or two."
+          />
+          <ApplyForm source="dashboard" />
         </div>
       </DashboardLayout>
     );

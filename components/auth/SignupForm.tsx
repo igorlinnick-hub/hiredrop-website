@@ -18,9 +18,12 @@ import Button from "@/components/ui/Button";
  */
 export default function SignupForm({
   affiliateCode = "",
+  affiliateIntent = false,
   prefillEmail = "",
 }: {
   affiliateCode?: string;
+  /** Came from the affiliate landing without a code — they are here to apply. */
+  affiliateIntent?: boolean;
   prefillEmail?: string;
 }) {
   const router = useRouter();
@@ -63,11 +66,19 @@ export default function SignupForm({
     // First-touch attribution (utm_*/ref) rides the same way — /auth/callback
     // persists it to profiles after the email is confirmed.
     const attribution = getStoredAttribution();
+    // With email confirmation on there is no session here, so the push below
+    // never runs — /auth/callback decides where they land. It honours a safe
+    // relative `next`, which is how an affiliate arrival survives the round
+    // trip through their inbox instead of being dropped into the job-seeker
+    // quiz they never asked for.
+    const afterAuth = affiliateCode || affiliateIntent ? "/dashboard/affiliate" : "";
     const { data: signUpData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo:
+          `${window.location.origin}/auth/callback` +
+          (afterAuth ? `?next=${encodeURIComponent(afterAuth)}` : ""),
         data: {
           first_name: firstName,
           last_name: lastName,
@@ -108,7 +119,7 @@ export default function SignupForm({
           .is("attribution", null);
       }
       setLoading(false);
-      router.push(affiliateCode ? "/dashboard/affiliate" : "/onboarding");
+      router.push(affiliateCode || affiliateIntent ? "/dashboard/affiliate" : "/onboarding");
       router.refresh();
       return;
     }
@@ -120,10 +131,15 @@ export default function SignupForm({
   }
 
   async function handleGoogleSignup() {
+    // Same reason as the email path: Google takes them off-site, so the
+    // destination has to travel in the URL or it is lost.
+    const afterAuth = affiliateCode || affiliateIntent ? "/dashboard/affiliate" : "";
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo:
+          `${window.location.origin}/auth/callback` +
+          (afterAuth ? `?next=${encodeURIComponent(afterAuth)}` : ""),
       },
     });
   }

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { gateUser } from "@/lib/supabase/gate";
 import AuthHiccup from "@/components/auth/AuthHiccup";
 import { PATHNAME_HEADER } from "@/lib/supabase/middleware";
+import { isOnboardingExempt } from "@/lib/gate/onboarding";
 
 /**
  * Fail-closed onboarding gate for EVERY /dashboard/* route.
@@ -19,13 +20,12 @@ import { PATHNAME_HEADER } from "@/lib/supabase/middleware";
  * finish() navigates only after profiles.onboarding_completed is successfully
  * set to true, and stays on the wizard showing the error otherwise.
  *
- * ONE exemption, added 2026-09-21: /dashboard/affiliate for someone who already
- * has an affiliate row. An ambassador who is not job hunting had no way in —
- * the gate demanded a resume and a job search from someone who only ever wanted
- * to see their link and their earnings, which is the whole reason a separate
- * affiliate login looked necessary. It isn't: same account, one route open.
- * The exemption is deliberately narrow — every other dashboard route still
- * needs the quiz, because every other route acts on an empty profile.
+ * ONE exemption: /dashboard/affiliate. An ambassador who is not job hunting had
+ * no way in — the gate demanded a resume and a job search from someone who only
+ * ever wanted their link, which is the whole reason a separate affiliate login
+ * looked necessary. It isn't: same account, one route open. Every other
+ * dashboard route still needs the quiz, because every other route acts on an
+ * empty profile; this one only ever reads the affiliate tables.
  */
 export default async function DashboardGate({
   children,
@@ -52,17 +52,11 @@ export default async function DashboardGate({
   // Fail-closed: missing row, failed query or incomplete quiz all go to
   // onboarding — never flatter an unknown state with dashboard access.
   if (!profile?.onboarding_completed) {
+    // The rule itself lives in lib/gate/onboarding.ts, where it is tested
+    // without a server or a session (tests/onboarding-gate.test.ts) — including
+    // the boundary that keeps /dashboard/affiliates-admin OUT.
     const pathname = (await headers()).get(PATHNAME_HEADER) ?? "";
-    if (pathname.startsWith("/dashboard/affiliate")) {
-      // Read under RLS (affiliates_select_own): this can only ever return the
-      // caller's own row, so "is an affiliate" cannot be spoofed by the URL.
-      const { data: affiliate } = await supabase
-        .from("affiliates")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (affiliate) return <>{children}</>;
-    }
+    if (isOnboardingExempt(pathname)) return <>{children}</>;
     redirect("/onboarding");
   }
 
