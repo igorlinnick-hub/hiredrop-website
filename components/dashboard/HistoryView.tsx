@@ -557,14 +557,24 @@ function ApplicationDetail({ a }: { a: Application }) {
       {a.cover_letter && (
         <DocBlock label="Cover letter we sent" text={a.cover_letter} delay={140} />
       )}
+      {!a.cover_letter && hasDocs && (
+        // Name the reason instead of leaving a gap where a letter used to be. A letter is
+        // written only when the employer's form actually asks for one, and most don't —
+        // measured 2026-09-23, Indeed's apply wizard has never shown a cover-letter step.
+        // Until now this card displayed a letter on every application, which claimed the
+        // employer had read something they were never sent.
+        <p className="text-[12px] text-text2 hd-rise mb-3" style={{ animationDelay: "140ms" }}>
+          No cover letter — this employer&apos;s application form didn&apos;t ask for one.
+        </p>
+      )}
       {a.tailored_resume && (
         <DocBlock label="Tailored resume" text={a.tailored_resume} delay={190} />
       )}
       {!hasDocs && (
         <p className="text-[12px] text-text2 hd-rise" style={{ animationDelay: "90ms" }}>
           No documents stored for this application — it went through with your standard resume,
-          before per-job documents were kept. Newer applications include the cover letter and the
-          exact résumé PDF submitted.
+          before per-job documents were kept. Newer applications include the exact résumé PDF
+          submitted, and the cover letter whenever the employer asked for one.
         </p>
       )}
     </div>
