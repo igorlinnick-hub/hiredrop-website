@@ -16,7 +16,9 @@ import { useEffect, useState } from "react";
  * language already approved on the skills dialog and the affiliate hero
  * (AffiliateHero.tsx): dark ground, our own warm render as the photography,
  * serif headline with the emphasis in an italic word, one pale pill. Default
- * shape is the compact "cube"; the wide panel variant lives on
+ * shape is the "wide" panel (Igor picked it over the cube on 09-25 — the block
+ * spans the content column, so the hand-off reads at a glance from across the
+ * room rather than sitting in a corner); the cube variant lives on
  * /preview/captcha-alert for comparison.
  *
  * Reads the same source as CampaignView: chrome.storage.captchaWaiting over the
@@ -43,7 +45,7 @@ const STALE_MS = 2 * 60 * 60 * 1000;
 /** Presentational half — the preview page renders it directly with fake data. */
 export function CaptchaPanel({
   captcha,
-  shape = "cube",
+  shape = "wide",
 }: {
   captcha: CaptchaWaiting;
   shape?: CaptchaShape;
@@ -89,8 +91,8 @@ export function CaptchaPanel({
     );
   }
 
-  // The cube — Igor's pick of shape (09-24): a compact square card, the render
-  // fills the whole block, the type sits on a darkened floor.
+  // The cube — the compact square alternative: the render fills the whole block
+  // and the type sits on a darkened floor. Kept on /preview/captcha-alert.
   return (
     <section
       className="relative overflow-hidden rounded-[20px] w-full max-w-[340px] aspect-square"
@@ -152,7 +154,7 @@ export default function CaptchaAlert() {
 
   return (
     <div className="mb-6">
-      <CaptchaPanel captcha={captcha} shape="cube" />
+      <CaptchaPanel captcha={captcha} shape="wide" />
     </div>
   );
 }

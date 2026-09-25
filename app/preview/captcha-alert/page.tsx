@@ -14,7 +14,8 @@ const TERMS = { site: "Greenhouse", kind: "terms", at: Date.now() };
 
 export default function CaptchaAlertPreview() {
   const [dark, setDark] = useState(true);
-  const [shape, setShape] = useState<CaptchaShape>("cube");
+  // Opens on the shape that actually ships, so the preview and the dashboard agree.
+  const [shape, setShape] = useState<CaptchaShape>("wide");
 
   return (
     <div className={["min-h-screen bg-background hd-dash-root", dark ? "dark" : ""].join(" ")}>
