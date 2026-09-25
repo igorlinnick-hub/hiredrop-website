@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { redeemPromoCode } from "@/lib/promo";
 import { getStoredAttribution } from "@/lib/attribution";
+import { isObfuscatedExistingUser } from "@/lib/auth/signup-result";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 
@@ -33,6 +35,12 @@ export default function SignupForm({
   const [waitlisted, setWaitlisted] = useState(false);
   const [confirmationSent, setConfirmationSent] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState("");
+  // Supabase will not admit that an address is taken — signUp answers a
+  // *successful-looking* result with no identities instead, so that this form
+  // cannot be used to enumerate who has an account. Without reading that
+  // signal, someone who already has a HireDrop account is told to check an
+  // inbox nothing will ever arrive in.
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -103,6 +111,13 @@ export default function SignupForm({
       return;
     }
 
+    if (isObfuscatedExistingUser(signUpData)) {
+      setLoading(false);
+      setConfirmationEmail(email);
+      setAlreadyRegistered(true);
+      return;
+    }
+
     // If a session exists (email confirmation off), redeem the promo now for
     // instant Elite. Otherwise onboarding redeems it from metadata after confirm.
     if (signUpData.session) {
@@ -142,6 +157,37 @@ export default function SignupForm({
           (afterAuth ? `?next=${encodeURIComponent(afterAuth)}` : ""),
       },
     });
+  }
+
+  if (alreadyRegistered) {
+    const signInHref = affiliateCode || affiliateIntent
+      ? "/login?next=%2Fdashboard%2Faffiliate"
+      : "/login";
+    return (
+      <div className="text-center space-y-4 py-4">
+        <div className="w-14 h-14 mx-auto rounded-full bg-accent/10 flex items-center justify-center">
+          <svg className="w-7 h-7 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold text-text">You already have an account</h3>
+        <p className="text-sm text-text2">
+          <span className="text-text font-medium">{confirmationEmail}</span> is already registered.
+          {affiliateCode || affiliateIntent
+            ? " Sign in — the affiliate form is on your Affiliate page, and your link attaches to this account."
+            : " Sign in to keep going."}
+        </p>
+        <Link
+          href={signInHref}
+          className="inline-block bg-accent hover:bg-accent/90 text-white font-semibold px-6 py-3 rounded-xl transition"
+        >
+          Sign in
+        </Link>
+        <p className="text-xs text-text2">
+          Forgot the password? <Link href="/auth/reset-password" className="text-accent">Reset it</Link>.
+        </p>
+      </div>
+    );
   }
 
   if (confirmationSent) {
