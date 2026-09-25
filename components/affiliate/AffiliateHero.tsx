@@ -1,4 +1,6 @@
 import Link from "next/link";
+
+import AffiliateCta from "./AffiliateCta";
 import PeopleCluster from "./PeopleCluster";
 
 /**
@@ -20,12 +22,22 @@ interface Props {
   title: React.ReactNode;
   body: React.ReactNode;
   cta?: { label: string; href: string };
+  /** Let the button choose its own destination from the session. */
+  smartCta?: { label: string };
   note?: React.ReactNode;
   /** Dashboard variant: shorter, no button — the link itself sits below it. */
   compact?: boolean;
 }
 
-export default function AffiliateHero({ eyebrow, title, body, cta, note, compact }: Props) {
+export default function AffiliateHero({
+  eyebrow,
+  title,
+  body,
+  cta,
+  smartCta,
+  note,
+  compact,
+}: Props) {
   return (
     <section
       className="relative overflow-hidden rounded-[20px]"
@@ -78,6 +90,7 @@ export default function AffiliateHero({ eyebrow, title, body, cta, note, compact
           </h1>
           <p className="mt-4 max-w-md text-[15px] leading-relaxed text-white/70">{body}</p>
 
+          {smartCta && <AffiliateCta label={smartCta.label} />}
           {cta && (
             <Link
               href={cta.href}
