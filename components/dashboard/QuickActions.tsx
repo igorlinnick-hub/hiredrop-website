@@ -4,6 +4,7 @@ import { KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
+import { stopCampaignEverywhere } from "@/lib/campaign/stop";
 import { PLATFORMS, LOCATIONS, JOB_TYPES, WORK_SETTINGS } from "@/lib/constants";
 import LaunchModal, { ALL_PLATFORMS_ID } from "@/components/dashboard/LaunchModal";
 import StartReadinessModal, { gateStart, type ReadinessCheck } from "@/components/dashboard/StartReadiness";
@@ -546,15 +547,17 @@ export default function QuickActions({
 
   async function stopCampaign() {
     setBusy("stop"); setErr(null);
-    try {
-      const t = await getFreshToken();
-      await apiPost("/campaign/stop", t, {});
-      window.postMessage({ type: "HIREDROP_STOP_CAMPAIGN" }, "*");
-      setCampaignRunning(false);
-      router.refresh();
-    } catch (e) {
-      setErr(e instanceof ApiError ? e.message : String(e));
-    } finally { setBusy(null); }
+    // Extension first, server second, one try each — the order is the fix, and it lives in
+    // lib/campaign/stop.ts with the test that keeps it that way.
+    setCampaignRunning(false);
+    const { error } = await stopCampaignEverywhere(
+      () => window.postMessage({ type: "HIREDROP_STOP_CAMPAIGN" }, "*"),
+      async () => apiPost("/campaign/stop", await getFreshToken(), {}),
+    );
+    // The run is already halted; name what did NOT happen instead of an opaque error.
+    if (error) setErr(`Stopped the extension, but the server didn't confirm (${error}). It catches up on the next ping — refresh in a minute if this still says running.`);
+    setBusy(null);
+    router.refresh();
   }
 
   // ── render ─────────────────────────────────────────────────────────────────
