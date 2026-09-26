@@ -8,6 +8,7 @@ import StartReadinessModal, { gateStart, type ReadinessCheck } from "@/component
 import { apiGet, apiPost, apiPatch } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { startTapRun, markTapSessionStart } from "@/lib/tap-run";
+import { stopCampaignEverywhere } from "@/lib/campaign/stop";
 import { PLATFORMS } from "@/lib/constants";
 import type { Job } from "@/lib/types";
 
@@ -297,13 +298,16 @@ export default function TapView({ token: initialToken }: { token: string }) {
 
   async function stop() {
     if (busy) return;
-    setBusy("stop");
-    try {
-      const t = await getToken();
-      await apiPost("/campaign/stop", t, {});
-      window.postMessage({ type: "HIREDROP_STOP_CAMPAIGN" }, "*");
-      setRunning(false);
-    } catch {} finally { setBusy(null); }
+    setBusy("stop"); setErr(null);
+    // Extension first, server second — a backend error must never skip the halt.
+    // lib/campaign/stop.ts holds the order and the test.
+    setRunning(false);
+    const { error } = await stopCampaignEverywhere(
+      () => window.postMessage({ type: "HIREDROP_STOP_CAMPAIGN" }, "*"),
+      async () => apiPost("/campaign/stop", await getToken(), {}),
+    );
+    if (error) setErr(`Stopped the extension, but the server didn't confirm (${error}). It catches up on the next ping.`);
+    setBusy(null);
   }
 
   // ── Decide: approve → queued for background apply; skip → out of the pool ──
