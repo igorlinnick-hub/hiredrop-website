@@ -91,7 +91,16 @@ export async function GET(request: NextRequest) {
       .select("onboarding_completed")
       .eq("user_id", user.id)
       .maybeSingle();
-    destination = profile?.onboarding_completed ? "/dashboard" : "/onboarding";
+    // Someone who signed up to become an affiliate did not ask for a job
+    // search. Their intent rides in user metadata because the confirmation
+    // email does not carry redirect_to — the link it sends is
+    // /auth/callback?token_hash=…&type=signup and nothing more, so anything
+    // put in the signup URL is gone by the time they click.
+    if (!profile?.onboarding_completed && user.user_metadata?.affiliate_intent) {
+      destination = "/dashboard/affiliate";
+    } else {
+      destination = profile?.onboarding_completed ? "/dashboard" : "/onboarding";
+    }
   }
 
   // Preserve the Set-Cookie headers from the original response on the new redirect.

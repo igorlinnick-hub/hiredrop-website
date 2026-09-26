@@ -84,6 +84,13 @@ export default function SignupForm({
           last_name: lastName,
           ...(promoCode ? { promo_code: promoCode } : {}),
           ...(attribution ? { attribution } : {}),
+          // Survives the round trip through their inbox. The confirmation
+          // template does not carry redirect_to — measured 25.09 on the live
+          // site: the emailed link is /auth/callback?token_hash=…&type=signup
+          // and nothing else — so an affiliate confirming by email landed in
+          // the job-seeker quiz. Metadata is on the user, so the callback can
+          // still tell who they are.
+          ...(afterAuth ? { affiliate_intent: true } : {}),
         },
       },
     });
