@@ -64,11 +64,13 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
              09-11: "не фиолетовые — крем, белый, жёлтый, слегка полупрозрачно").
              Violet stays the SELECTED-state ring (that's the functional accent),
              day's atmosphere is warm. Night keeps the violet world. */
-          --card:linear-gradient(165deg,#fffefa 0%,#fdf4e3 100%);
-          --body:linear-gradient(180deg,#fffdf6 0%,#faf0da 100%);
-          --edge:rgba(198,158,74,.20);
-          --bloomA:rgba(255,216,130,.48); --bloomB:rgba(255,240,205,.30);
-          --halo:rgba(255,204,110,.32); --star:rgba(206,158,64,.55);
+          --card:linear-gradient(165deg,#ffffff 0%,#f6f3ec 100%);
+          --body:linear-gradient(180deg,#ffffff 0%,#f4f1e9 100%);
+          --edge:rgba(26,22,14,.14);
+          /* white, not butter: the day pane must read as clear glass, and a
+             warm bloom under it turned the whole card yellow. */
+          --bloomA:rgba(255,255,255,.72); --bloomB:rgba(255,255,255,.34);
+          --halo:rgba(120,110,90,.16); --star:rgba(120,105,70,.30);
           --title:#2A2418; --sub:rgba(110,95,64,.82);
           --pen:#5a5040; --script:#B8860B;
           /* the card IS the space window: scene runs edge-to-edge under the frame,
@@ -77,37 +79,68 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
           padding:0;border-radius:22px;border:1px solid var(--edge);background:var(--body);
           text-align:center;transform:perspective(950px) rotateX(0) rotateY(0);transform-style:preserve-3d;
           transition:transform .5s cubic-bezier(.25,1,.4,1),box-shadow .35s,border-color .25s;
-          box-shadow:0 20px 45px -22px rgba(178,138,58,.38),inset 0 1px 0 rgba(255,255,255,.85)}
+          box-shadow:0 20px 45px -24px rgba(40,32,10,.34),inset 0 1px 0 rgba(255,255,255,.9)}
         .dark .lmc-card{
           /* NIGHT: deep dark glass, bright violet→blue bloom through the slab */
           --card:linear-gradient(165deg,#1b1830 0%,#100d1c 100%);
           --body:linear-gradient(180deg,#151222 0%,#0c0a15 100%);
           --edge:rgba(255,255,255,.12);
-          --bloomA:rgba(146,138,255,.92); --bloomB:rgba(74,98,240,.42);
-          --halo:rgba(108,92,231,.72); --star:#ffffff;
+          --bloomA:rgba(146,138,255,.62); --bloomB:rgba(74,98,240,.26);
+          --halo:rgba(108,92,231,.55); --star:rgba(255,255,255,.85);
           --title:#f2f1fa; --sub:rgba(199,200,216,.72);
           --pen:#e8e4ff; --script:#c3b6ff;
           box-shadow:0 26px 55px -22px rgba(70,48,150,.6),inset 0 1px 0 rgba(255,255,255,.12)}
         .lmc-card:hover{transform:perspective(950px) rotateX(5deg) rotateY(-6deg) translateY(-4px);
-          box-shadow:0 30px 60px -20px rgba(178,138,58,.44)}
+          box-shadow:0 30px 60px -22px rgba(40,32,10,.4)}
         .dark .lmc-card:hover{box-shadow:0 30px 60px -20px rgba(108,92,231,.5)}
         .lmc-tap:hover{transform:perspective(950px) rotateX(5deg) rotateY(6deg) translateY(-4px)}
         .lmc-card.on{border-color:color-mix(in srgb,var(--color-accent) 60%,transparent);
-          box-shadow:0 0 30px -6px var(--color-accent),0 20px 45px -22px rgba(178,138,58,.38)}
+          box-shadow:0 0 30px -6px var(--color-accent),0 20px 45px -24px rgba(40,32,10,.34)}
         .lmc-card.on-tap{border-color:color-mix(in srgb,var(--color-green) 60%,transparent);
-          box-shadow:0 0 30px -6px var(--color-green),0 20px 45px -22px rgba(178,138,58,.38)}
+          box-shadow:0 0 30px -6px var(--color-green),0 20px 45px -24px rgba(40,32,10,.34)}
         .dark .lmc-card.on{box-shadow:0 0 30px -6px var(--color-accent),0 20px 45px -22px rgba(108,92,231,.42)}
         .dark .lmc-card.on-tap{box-shadow:0 0 30px -6px var(--color-green),0 20px 45px -22px rgba(108,92,231,.42)}
 
-        /* The fan pair lives INSIDE the card now (Igor 09-12): the same
-           day/night image the campaign well uses, softly blurred; a veil keeps
-           the scene and captions readable. inset:-12px hides the blur fringe. */
-        .lmc-fan{position:absolute;inset:-12px;pointer-events:none;
-          background:url("/bg/fan-day.jpg") center 72% / cover no-repeat;
-          filter:blur(5px) saturate(1.05)}
-        .dark .lmc-fan{background-image:url("/bg/fan-night.jpg")}
-        .lmc-veil{position:absolute;inset:0;pointer-events:none;background:rgba(255,253,248,.50)}
-        .dark .lmc-veil{background:rgba(10,9,18,.42)}
+        /* 09-25, Igor: «картинки в этих блоках не нравятся — днём сделать
+           белыми, ночью тёмными полупрозрачными, в стиле стекла, выпуклости
+           так же и днём». So the photograph is gone and the surface is DRAWN:
+           a convex pane of glass. Three layers do the convexity —
+             1. a wide highlight pooling at the top (light hits the dome first),
+             2. a body gradient that darkens toward the bottom edge,
+             3. an inset shadow along the bottom rim, which is what reads as
+                "the glass curves away from you" rather than "a flat card".
+           Day is white glass, night the same dome in smoked translucent glass;
+           the scene animations inside are untouched. */
+        .lmc-fan{position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+          background:
+            radial-gradient(140% 82% at 50% -26%, rgba(255,255,255,1), rgba(255,255,255,.62) 42%, rgba(255,255,255,0) 74%),
+            linear-gradient(180deg, #FFFFFF 0%, #FBF9F5 44%, #EFEBE1 78%, #E4DFD2 100%);
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,1),
+            inset 0 -34px 54px -28px rgba(40,32,10,.55),
+            inset 0 -1px 0 rgba(40,32,10,.10),
+            inset 0 0 0 1px rgba(255,255,255,.6)}
+        /* the lens streak — a soft ellipse across the upper third, the giveaway
+           that a surface is curved glass and not paper */
+        .lmc-fan::after{content:"";position:absolute;left:5%;right:5%;top:3%;height:46%;
+          border-radius:50%;pointer-events:none;
+          background:linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,0));
+          filter:blur(9px);opacity:.9}
+        .dark .lmc-fan{
+          background:
+            radial-gradient(135% 78% at 50% -22%, rgba(255,255,255,.20), rgba(255,255,255,.06) 48%, rgba(255,255,255,0) 72%),
+            linear-gradient(180deg, rgba(32,28,52,.72) 0%, rgba(18,15,32,.78) 54%, rgba(10,8,20,.86) 100%);
+          -webkit-backdrop-filter:blur(14px) saturate(1.1);backdrop-filter:blur(14px) saturate(1.1);
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,.18),
+            inset 0 -28px 46px -30px rgba(0,0,0,.85),
+            inset 0 0 0 1px rgba(255,255,255,.07)}
+        .dark .lmc-fan::after{background:linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0));opacity:.6}
+        /* the veil was there to calm a photograph; with drawn glass it only
+           needs to keep the caption legible over the dome */
+        .lmc-veil{position:absolute;inset:0;pointer-events:none;
+          background:linear-gradient(180deg, rgba(255,255,255,0) 52%, rgba(255,255,255,.55) 100%)}
+        .dark .lmc-veil{background:linear-gradient(180deg, rgba(10,9,18,0) 52%, rgba(10,9,18,.55) 100%)}
 
         /* the glass window that the bloom glows through */
         .lmc-body{position:absolute;inset:0;overflow:hidden;
