@@ -37,7 +37,9 @@ export default async function SignupPage({
       }
       footerText="Already have an account?"
       footerLinkText="Sign in"
-      footerLinkHref="/login"
+      // An affiliate arrival who already has HireDrop should land on the
+      // affiliate page, not the job-search dashboard.
+      footerLinkHref={affiliateIntent ? "/login?next=%2Fdashboard%2Faffiliate" : "/login"}
       showcase
     >
       <SignupForm

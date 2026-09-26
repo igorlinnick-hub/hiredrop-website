@@ -51,8 +51,10 @@ export default function AffiliatePage() {
             body="30% of every payment the people you refer make — every month they stay, not just the first one. Paid by PayPal."
             // One action, not two. A stranger cannot choose between "create a
             // profile" and "send an application" — they don't yet know what
-            // either means. Account first, then the questions, inside it.
-            cta={{ label: "Get your link", href: "/signup?affiliate=1" }}
+            // either means. Account first, then the questions, inside it. The
+            // button picks its own destination: someone already signed in has
+            // no business on a signup form.
+            smartCta={{ label: "Get your link" }}
             note="Takes about a minute: create your account, answer four questions, and a person reads it — usually within a day or two."
           />
 
