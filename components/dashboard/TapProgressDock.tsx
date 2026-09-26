@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { apiGet, apiPost, type CampaignStatusResponse } from "@/lib/api";
 import { checkExtensionPresent } from "@/components/dashboard/StartReadiness";
 import { readTapBaseline, markTapSessionStart, clearTapBaseline, startTapRun } from "@/lib/tap-run";
+import { stopCampaignEverywhere } from "@/lib/campaign/stop";
 
 /**
  * The arch — where a swipe sitting stays visible after you leave the deck.
@@ -86,9 +87,15 @@ export default function TapProgressDock(
     return () => { alive = false; };
   }, [demo]);
 
+  // Read the dismissal AFTER mount, not in a useState initializer: the server has no
+  // sessionStorage, so seeding state from it would render a different tree than the client
+  // and break hydration. That makes this the one place the setState-in-effect rule has to
+  // be waived. (It only became visible once stop() lost its try/catch — that construct made
+  // the compiler bail on this whole file and silenced the rule everywhere in it.)
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(DISMISS_KEY);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time read of an external store; see above
       if (raw) setDismissedAt(Number(raw) || null);
     } catch { /* private mode */ }
   }, []);
@@ -126,6 +133,7 @@ export default function TapProgressDock(
 
   useEffect(() => {
     if (demo) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- bootstrap read of an external system (the backend); the interval below is the same call
     refresh();
     const iv = setInterval(() => { if (!document.hidden) refresh(); }, POLL_MS);
     const onVisible = () => { if (!document.hidden) refresh(); };
@@ -165,13 +173,21 @@ export default function TapProgressDock(
 
   async function stop() {
     if (busy) return;
-    setBusy("stop");
-    try {
-      const { data: { session } } = await createClient().auth.getSession();
-      if (session?.access_token) await apiPost("/campaign/stop", session.access_token, {});
-      window.postMessage({ type: "HIREDROP_STOP_CAMPAIGN" }, "*");
-      setSnap((s) => (s ? { ...s, running: false } : s));
-    } catch { /* the extension's own Stop still lands */ } finally { setBusy(null); }
+    setBusy("stop"); setNote(null);
+    // Extension first. The comment that used to sit here claimed "the extension's own Stop
+    // still lands" on error — it did not: the postMessage sat AFTER the awaits inside the
+    // same try, so a missing session or a failed apiPost skipped the halt entirely and the
+    // engine kept applying. Order and test: lib/campaign/stop.ts.
+    setSnap((s) => (s ? { ...s, running: false } : s));
+    const { error } = await stopCampaignEverywhere(
+      () => window.postMessage({ type: "HIREDROP_STOP_CAMPAIGN" }, "*"),
+      async () => {
+        const { data: { session } } = await createClient().auth.getSession();
+        if (session?.access_token) await apiPost("/campaign/stop", session.access_token, {});
+      },
+    );
+    if (error) setNote(`Stopped the extension, but the server didn't confirm (${error}).`);
+    setBusy(null);
   }
 
   function dismiss() {
