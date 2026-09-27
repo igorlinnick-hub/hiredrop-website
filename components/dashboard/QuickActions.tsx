@@ -53,6 +53,7 @@ export default function QuickActions({
 }: Props) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const workSettingRef = useRef<HTMLSelectElement>(null);
 
   const [keywords, setKeywords] = useState<string[]>(initialKeywords);
   const [location, setLocation] = useState(initialLocation || "remote");
@@ -458,6 +459,13 @@ export default function QuickActions({
     if (!onboardingComplete) { setErr("Complete your profile setup first — click \"Start setup\" above."); return; }
     if (!keywords.length) { setErr("Add at least one keyword"); inputRef.current?.focus(); return; }
     if (!effPlatforms.length) { setErr("Select at least one platform"); return; }
+    // Required: an auto run submits on its own (overnight too), and remote-only vs.
+    // "my city" changes which jobs it may send. Blank = never asked, not "anything".
+    if (!workSetting) {
+      setErr("Pick a work setting — Remote, Hybrid, On-site, or Any.");
+      workSettingRef.current?.focus();
+      return;
+    }
     // Auto-apply needs a logged-in account on the target platform. If the extension
     // told us the user is signed out, open the login/sign-up page instead of starting
     // a campaign that would just stall at a login wall. In all-mode the list already
@@ -741,13 +749,19 @@ export default function QuickActions({
         {/* Work setting chip (remote / hybrid / on-site) — separate axis from job type */}
         <div className="relative">
           <select
+            ref={workSettingRef}
             value={workSetting}
             onChange={(e) => pickWorkSetting(e.target.value)}
-            className="appearance-none pl-3 pr-6 py-1 text-xs font-medium rounded-full border
-              border-border bg-surface text-text2 cursor-pointer
-              hover:border-accent/40 hover:text-text focus:outline-none focus:border-accent/50 transition"
+            aria-required="true"
+            className={[
+              "appearance-none pl-3 pr-6 py-1 text-xs font-medium rounded-full border bg-surface cursor-pointer",
+              "hover:border-accent/40 hover:text-text focus:outline-none focus:border-accent/50 transition",
+              workSetting ? "border-border text-text2" : "border-accent/60 text-text",
+            ].join(" ")}
           >
-            {WORK_SETTINGS.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
+            {WORK_SETTINGS.map((w) => (
+              <option key={w.value} value={w.value} disabled={!w.value}>{w.label}</option>
+            ))}
           </select>
           <svg className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-text2/50 pointer-events-none"
             fill="none" stroke="currentColor" viewBox="0 0 24 24">
