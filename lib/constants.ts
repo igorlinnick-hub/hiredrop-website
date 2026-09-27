@@ -92,10 +92,14 @@ export const JOB_TYPES: JobType[] = [
 ];
 
 // Work setting is a SEPARATE axis from job type (employment type). Remote/Hybrid/On-site.
-// "" = Any (no filter). Flows to the extension via the START payload → URL builders
-// (LinkedIn uses its native f_WT param; Indeed/ZR bias the query with "hybrid").
+// Flows to the extension via the START payload → URL builders (LinkedIn uses its native
+// f_WT param; Indeed/ZR bias the query with "hybrid") and to the server's apply filter.
+// REQUIRED before an auto Start (09-27): "" means "never asked", and the night shift will
+// not submit unwatched without an answer. "any" is the explicit answer "no preference" —
+// the server treats it like the old blank; the extension's maps default it to no param.
 export const WORK_SETTINGS: JobType[] = [
-  { value: "", label: "Any setting" },
+  { value: "", label: "Work setting" },
+  { value: "any", label: "Any setting" },
   { value: "remote", label: "Remote" },
   { value: "hybrid", label: "Hybrid" },
   { value: "onsite", label: "On-site" },
