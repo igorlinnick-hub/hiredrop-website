@@ -830,6 +830,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
         onClose={() => setReadyOpen(false)}
         checks={readyChecks}
         onFix={fixReadiness}
+        onRecheck={() => { setReadyOpen(false); void ensureReadyThenStart(); }}
       />
     </DashboardLayout>
   );

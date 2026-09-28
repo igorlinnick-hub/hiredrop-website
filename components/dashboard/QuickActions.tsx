@@ -846,6 +846,7 @@ export default function QuickActions({
         onClose={() => setReadyOpen(false)}
         checks={readyChecks}
         onFix={fixReadiness}
+        onRecheck={() => { setReadyOpen(false); void ensureReadyThenLaunch(); }}
       />
 
       <LaunchModal
