@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import EmployerAnswersForm, { type MissingAnswer } from "@/components/dashboard/EmployerAnswersForm";
 import { apiGet } from "@/lib/api";
 
 // One server-side start precondition (GET /campaign/readiness). `fix` is a machine id
@@ -11,6 +12,8 @@ export interface ReadinessCheck {
   ok: boolean;
   reason: string | null;
   fix: string | null;
+  // fix === "answers": the questions still unanswered, drawn as a form in the row.
+  missing?: MissingAnswer[];
 }
 
 export interface Readiness {
@@ -191,19 +194,27 @@ export default function StartReadinessModal({
   onClose,
   checks,
   onFix,
+  onRecheck,
 }: {
   open: boolean;
   onClose: () => void;
   checks: ReadinessCheck[];
   onFix: (fix: string) => void;
+  // Called when the last blocking row is answered in place — the parent re-runs its
+  // Start gate, so answering is one step closer to applying, not a dead "hit Start again".
+  onRecheck?: () => void;
 }) {
   // "Copy link for Chrome" is handled here rather than in each parent's fixReadiness: it is
   // a self-contained UI action (clipboard + its own feedback), not a route change. A page
   // cannot launch Chrome itself — macOS Chrome registers no URL scheme — so we hand over
   // the link instead of promising an open we can't perform.
   const [copied, setCopied] = useState(false);
+  // Keyed to the gate result it answered: a fresh `checks` from the server is a fresh
+  // question, and the server's word beats our local "done".
+  const [answeredFor, setAnsweredFor] = useState<ReadinessCheck[] | null>(null);
+  const answered = answeredFor === checks;
   if (!open) return null;
-  const failed = checks.filter((c) => !c.ok);
+  const failed = checks.filter((c) => !c.ok && !(c.fix === "answers" && answered));
 
   return (
     // A driver that clicks Start and sees nothing happen needs to know WHICH modal
@@ -217,7 +228,7 @@ export default function StartReadinessModal({
     >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
       <div
-        className="relative w-full max-w-md bg-surface border border-border rounded-2xl shadow-xl p-6"
+        className="relative w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto bg-surface border border-border rounded-2xl shadow-xl p-6"
         onClick={(e) => e.stopPropagation()}
         style={{ animation: "hdReadyIn .18s ease" }}
       >
@@ -236,7 +247,16 @@ export default function StartReadinessModal({
         </p>
 
         <div className="space-y-2.5">
-          {failed.map((c) => (
+          {failed.map((c) => c.fix === "answers" && c.missing?.length ? (
+            <EmployerAnswersForm
+              key={c.id}
+              missing={c.missing}
+              onDone={() => {
+                setAnsweredFor(checks);
+                if (failed.length === 1) onRecheck?.();
+              }}
+            />
+          ) : (
             <div key={c.id}
               className="flex items-center gap-3 rounded-xl border border-border bg-surface2/40 p-3.5">
               <span className="shrink-0 w-6 h-6 rounded-full bg-yellow/15 text-yellow flex items-center justify-center">
