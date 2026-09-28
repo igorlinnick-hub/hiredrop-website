@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { ApiError, apiGet, createCheckout, openBillingPortal, type StatsResponse } from "@/lib/api";
-import { MONTHLY_PRICE, WEEKLY_PRICE } from "@/lib/pricing";
+import { MONTHLY_PRICE, MONTHLY_USD, WEEKLY_PRICE, WEEKLY_USD } from "@/lib/pricing";
+import { trackAd } from "@/lib/adPixels";
 import { createClient } from "@/lib/supabase/client";
 
 const PLANS = [
@@ -82,6 +83,14 @@ export default function BillingSection() {
     setError("");
     try {
       const { url } = await createCheckout(plan, await freshToken());
+      // Meta InitiateCheckout — only if the pixel is ALREADY on this page
+      // (normally it is not: the dashboard never loads it). Purchase is
+      // reported server-side by the backend, never from the browser.
+      trackAd("InitiateCheckout", {
+        currency: "USD",
+        value: plan === "monthly" ? MONTHLY_USD : WEEKLY_USD,
+        content_name: plan,
+      });
       tab.go(url); // external Stripe Checkout — not a Next route
       setBusy(null);
     } catch (e) {

@@ -10,8 +10,20 @@
 //   1. SignupForm — rides in auth signUp metadata + direct write when the
 //      session is immediate (email confirmation off).
 //   2. /auth/callback — covers email-confirm and Google OAuth paths.
+//
+// At signup both write sites add the ad identity keys (fbp, fbc, ua,
+// ads_optout — see mergeSignupAttribution in lib/adPixels.ts). The backend
+// reads them to report conversions to Meta server-side; the names are a
+// contract.
 
 import { API_BASE } from "./api";
+import {
+  META_BROWSER_ID_COOKIE,
+  META_CLICK_ID_COOKIE,
+  browserAdsOptedOut,
+  mergeSignupAttribution,
+  readCookie,
+} from "./adPixels";
 
 export const ATTRIBUTION_COOKIE = "hd_attribution";
 const STORAGE_KEY = "hd_attribution";
@@ -22,18 +34,39 @@ export interface Attribution {
   utm_medium?: string;
   utm_campaign?: string;
   utm_content?: string;
+  utm_term?: string;
+  utm_id?: string;
   /** Partner referral code — hiredrop.io/?ref=luca */
   ref?: string;
+  /** Ad click ids: Meta, Google (web / iOS app→web / web→iOS app). An ad
+   *  click that carries nothing but its click id is still captured. */
+  fbclid?: string;
+  gclid?: string;
+  gbraid?: string;
+  wbraid?: string;
   landing_page?: string;
   captured_at?: string;
+  // Added at signup only (lib/adPixels.ts → mergeSignupAttribution):
+  fbp?: string;
+  fbc?: string;
+  ua?: string;
+  ads_optout?: boolean;
 }
 
-const PARAM_KEYS: (keyof Attribution)[] = [
-  "utm_source",
-  "utm_medium",
-  "utm_campaign",
-  "utm_content",
-  "ref",
+/** URL params captured on first touch, with their length cap. Click ids get
+ *  more room: a truncated fbclid/gclid silently matches nothing. */
+const PARAM_LIMITS: [keyof Attribution, number][] = [
+  ["utm_source", 200],
+  ["utm_medium", 200],
+  ["utm_campaign", 200],
+  ["utm_content", 200],
+  ["utm_term", 200],
+  ["utm_id", 200],
+  ["ref", 200],
+  ["fbclid", 500],
+  ["gclid", 500],
+  ["gbraid", 500],
+  ["wbraid", 500],
 ];
 
 /** Read utm/ref params from the current URL; store first-touch. Client-only. */
@@ -43,12 +76,12 @@ export function captureAttributionFromUrl(): void {
     if (getStoredAttribution()) return; // first touch wins
 
     const params = new URLSearchParams(window.location.search);
-    const attribution: Attribution = {};
+    const attribution: Record<string, string> = {};
     let hasAny = false;
-    for (const key of PARAM_KEYS) {
+    for (const [key, limit] of PARAM_LIMITS) {
       const value = params.get(key);
       if (value) {
-        attribution[key] = value.slice(0, 200);
+        attribution[key] = value.slice(0, limit);
         hasAny = true;
       }
     }
@@ -80,6 +113,28 @@ export function getStoredAttribution(): Attribution | null {
     return typeof parsed === "object" && parsed !== null ? (parsed as Attribution) : null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * What SignupForm stores for a new account: first-touch attribution plus the
+ * ad identity keys read from THIS browser (Meta cookies, user agent for a
+ * Meta-attributed visitor, opt-out). Null when there is nothing to store.
+ * Client-only; never throws — attribution must not break a signup.
+ */
+export function getSignupAttribution(): Attribution | null {
+  if (typeof window === "undefined") return null;
+  const stored = getStoredAttribution();
+  try {
+    const merged = mergeSignupAttribution(stored as Record<string, unknown> | null, {
+      fbp: readCookie(document.cookie, META_BROWSER_ID_COOKIE),
+      fbc: readCookie(document.cookie, META_CLICK_ID_COOKIE),
+      userAgent: navigator.userAgent,
+      optedOut: browserAdsOptedOut(),
+    });
+    return Object.keys(merged).length > 0 ? (merged as Attribution) : null;
+  } catch {
+    return stored;
   }
 }
 

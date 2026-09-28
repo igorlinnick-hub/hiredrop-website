@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { redeemPromoCode } from "@/lib/promo";
-import { getStoredAttribution } from "@/lib/attribution";
+import { getSignupAttribution } from "@/lib/attribution";
+import { markNewSignup } from "@/lib/adPixels";
 import { isObfuscatedExistingUser } from "@/lib/auth/signup-result";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
@@ -71,9 +72,10 @@ export default function SignupForm({
 
     // Sign up. The promo code rides along in metadata so onboarding can redeem it
     // even when email confirmation is on (no session yet at this point).
-    // First-touch attribution (utm_*/ref) rides the same way — /auth/callback
+    // First-touch attribution (utm_*/ref/click ids) rides the same way, plus
+    // this browser's ad identity keys (fbp/fbc/ua/ads_optout) — /auth/callback
     // persists it to profiles after the email is confirmed.
-    const attribution = getStoredAttribution();
+    const attribution = getSignupAttribution();
     // With email confirmation on there is no session here, so the push below
     // never runs — /auth/callback decides where they land. It honours a safe
     // relative `next`, which is how an affiliate arrival survives the round
@@ -134,11 +136,21 @@ export default function SignupForm({
       // /auth/callback is never visited on this path — persist attribution
       // directly. Guarded server-side by "attribution is null" (first touch).
       if (attribution && signUpData.user) {
-        await supabase
-          .from("profiles")
-          .update({ attribution, attributed_at: new Date().toISOString() })
-          .eq("user_id", signUpData.user.id)
-          .is("attribution", null);
+        try {
+          await supabase
+            .from("profiles")
+            .update({ attribution, attributed_at: new Date().toISOString() })
+            .eq("user_id", signUpData.user.id)
+            .is("attribution", null);
+        } catch {
+          // attribution is analytics, not auth
+        }
+      }
+      // Same hand-off /auth/callback makes on the confirm path: the next page
+      // reports the sign-up conversion once. Affiliates are partners, not
+      // customers, and are never reported. No-op unless ads are configured.
+      if (signUpData.user && !affiliateCode && !affiliateIntent) {
+        markNewSignup(signUpData.user.id);
       }
       setLoading(false);
       router.push(affiliateCode || affiliateIntent ? "/dashboard/affiliate" : "/onboarding");
