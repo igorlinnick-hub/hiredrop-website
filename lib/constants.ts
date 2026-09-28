@@ -72,10 +72,11 @@ export const LIVE_CONNECTABLE_PLATFORMS = PLATFORMS.filter(
   (p) => p.connectable && p.stage === "auto",
 );
 
+// US-only (Igor, 09-27): region is not a question. Europe was removed; the server
+// applies the US country gate to every profile (HireDrop #274).
 export const LOCATIONS: Location[] = [
   { value: "remote", label: "Remote" },
   { value: "usa", label: "United States" },
-  { value: "europe", label: "Europe" },
 ];
 
 // "" = Any (no employment-type filter), same convention WORK_SETTINGS already uses.
