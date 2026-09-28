@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import AttributionCapture from "@/components/AttributionCapture";
+import AdPixels from "@/components/AdPixels";
 import "./globals.css";
+
+// Meta Business domain verification (Business Settings → Brand safety →
+// Domains). Emitted only when set, like every other ad setting.
+const META_DOMAIN_VERIFICATION = (process.env.NEXT_PUBLIC_META_DOMAIN_VERIFICATION ?? "").trim();
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://hiredrop.io"),
@@ -21,6 +26,9 @@ export const metadata: Metadata = {
   verification: {
     google: "0R9KfhdGASPU2RI189FBNtRY3vI9l2unld0XB9Ncebo",
   },
+  ...(META_DOMAIN_VERIFICATION
+    ? { other: { "facebook-domain-verification": META_DOMAIN_VERIFICATION } }
+    : {}),
   twitter: {
     card: "summary_large_image",
     title: "HireDrop — Automate Your Job Search",
@@ -43,6 +51,8 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {children}
         <AttributionCapture />
+        {/* Inert unless NEXT_PUBLIC_META_PIXEL_ID / NEXT_PUBLIC_GOOGLE_ADS_ID are set. */}
+        <AdPixels />
         <Analytics />
         <SpeedInsights />
       </body>

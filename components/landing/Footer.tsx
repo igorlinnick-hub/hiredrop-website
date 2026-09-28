@@ -53,6 +53,8 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li><Link href="/privacy" className="hover:text-white transition">Privacy Policy</Link></li>
               <li><Link href="/terms" className="hover:text-white transition">Terms of Service</Link></li>
+              {/* CCPA/CPRA opt-out of "sharing" for ad measurement — must be reachable from every public page. */}
+              <li><Link href="/privacy/choices" className="hover:text-white transition">Your Privacy Choices</Link></li>
               <li><Link href="/login" className="hover:text-white transition">Log in</Link></li>
               <li><Link href="/signup" className="hover:text-white transition">Sign up</Link></li>
             </ul>

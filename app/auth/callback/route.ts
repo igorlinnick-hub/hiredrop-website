@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { landingAfterAuth } from "@/lib/gate/landing";
 import { createServerClient } from "@supabase/ssr";
 import { ATTRIBUTION_COOKIE, parseAttributionCookie } from "@/lib/attribution";
+import {
+  ADS_CONFIGURED,
+  ADS_OPTOUT_COOKIE,
+  META_BROWSER_ID_COOKIE,
+  META_CLICK_ID_COOKIE,
+  NEW_SIGNUP_COOKIE,
+  NEW_SIGNUP_MAX_AGE_SEC,
+  isAdsOptedOut,
+  isNewSignupConversion,
+  mergeSignupAttribution,
+} from "@/lib/adPixels";
 import type { EmailOtpType } from "@supabase/supabase-js";
 
 export async function GET(request: NextRequest) {
@@ -32,7 +43,7 @@ export async function GET(request: NextRequest) {
 
   // Build the response up front so Supabase can attach Set-Cookie headers to IT,
   // not to a cookies() store that gets discarded on redirect.
-  let response = NextResponse.redirect(`${origin}/dashboard`);
+  const response = NextResponse.redirect(`${origin}/dashboard`);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!.trim(),
@@ -61,16 +72,32 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login`);
   }
 
-  // Persist first-touch attribution (utm/ref params). Sources, in priority order:
-  // signup metadata (email flow) → hd_attribution cookie (Google OAuth flow,
-  // where no client code runs before this route). Guarded by "attribution is
-  // null" so an existing user's re-login never rewrites their first touch.
-  // Best-effort: an error here must never break the login redirect.
+  // Ad opt-out as THIS request states it: our cookie or Global Privacy Control.
+  const adsOptedOut = isAdsOptedOut({
+    optoutCookie: request.cookies.get(ADS_OPTOUT_COOKIE)?.value,
+    gpc: request.headers.get("sec-gpc"),
+  });
+
+  // Persist first-touch attribution (utm/ref/click-id params). Sources, in
+  // priority order: signup metadata (email flow) → hd_attribution cookie
+  // (Google OAuth flow, where no client code runs before this route). Merged
+  // with the ad identity keys (fbp/fbc/ua/ads_optout — lib/adPixels.ts) from
+  // this request, and written only if something is there. Guarded by
+  // "attribution is null" so an existing user's re-login never rewrites their
+  // first touch. Best-effort: an error here must never break the login redirect.
   try {
-    const attribution =
+    const base =
       (user.user_metadata?.attribution as Record<string, unknown> | undefined) ??
-      parseAttributionCookie(request.cookies.get(ATTRIBUTION_COOKIE)?.value);
-    if (attribution) {
+      (parseAttributionCookie(request.cookies.get(ATTRIBUTION_COOKIE)?.value) as
+        | Record<string, unknown>
+        | null);
+    const attribution = mergeSignupAttribution(base, {
+      fbp: request.cookies.get(META_BROWSER_ID_COOKIE)?.value,
+      fbc: request.cookies.get(META_CLICK_ID_COOKIE)?.value,
+      userAgent: request.headers.get("user-agent"),
+      optedOut: adsOptedOut,
+    });
+    if (Object.keys(attribution).length > 0) {
       await supabase
         .from("profiles")
         .update({ attribution, attributed_at: new Date().toISOString() })
@@ -109,5 +136,34 @@ export async function GET(request: NextRequest) {
   response.cookies.getAll().forEach((cookie) => {
     finalResponse.cookies.set(cookie);
   });
+
+  // A brand-new job seeker just confirmed: hand the sign-up conversion to the
+  // next page, where <AdPixels/> reports it once as reg_<user id> and deletes
+  // this cookie. Not httpOnly on purpose — the browser has to read it. Only
+  // when an ad platform is configured and the person has not opted out.
+  try {
+    if (
+      ADS_CONFIGURED &&
+      !adsOptedOut &&
+      isNewSignupConversion({
+        createdAt: user.created_at,
+        nowMs: Date.now(),
+        isAffiliate: !!affiliate,
+        affiliateIntent: user.user_metadata?.affiliate_intent === true,
+        next,
+        otpType,
+      })
+    ) {
+      finalResponse.cookies.set(NEW_SIGNUP_COOKIE, user.id, {
+        maxAge: NEW_SIGNUP_MAX_AGE_SEC,
+        path: "/",
+        sameSite: "lax",
+        httpOnly: false,
+        secure: origin.startsWith("https://"),
+      });
+    }
+  } catch {
+    // ignore — ad measurement must never break the login redirect
+  }
   return finalResponse;
 }
