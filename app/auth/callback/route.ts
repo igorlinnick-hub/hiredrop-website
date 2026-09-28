@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { landingAfterAuth } from "@/lib/gate/landing";
 import { createServerClient } from "@supabase/ssr";
 import { ATTRIBUTION_COOKIE, parseAttributionCookie } from "@/lib/attribution";
 import type { EmailOtpType } from "@supabase/supabase-js";
@@ -80,28 +81,28 @@ export async function GET(request: NextRequest) {
     // ignore — attribution is analytics, not auth
   }
 
-  let destination: string;
-  // Honour a safe relative `next` (must be a same-origin path) and skip the
-  // onboarding routing — password recovery needs to land on update-password.
-  if (next && next.startsWith("/") && !next.startsWith("//")) {
-    destination = next;
-  } else {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("onboarding_completed")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    // Someone who signed up to become an affiliate did not ask for a job
-    // search. Their intent rides in user metadata because the confirmation
-    // email does not carry redirect_to — the link it sends is
-    // /auth/callback?token_hash=…&type=signup and nothing more, so anything
-    // put in the signup URL is gone by the time they click.
-    if (!profile?.onboarding_completed && user.user_metadata?.affiliate_intent) {
-      destination = "/dashboard/affiliate";
-    } else {
-      destination = profile?.onboarding_completed ? "/dashboard" : "/onboarding";
-    }
-  }
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("onboarding_completed")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const { data: affiliate } = await supabase
+    .from("affiliates")
+    .select("code")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  // One rule for every way in (lib/gate/landing.ts): a safe relative `next`
+  // wins — password recovery needs to land on update-password — then the quiz
+  // for a new job seeker, their own page for an affiliate. Affiliate intent
+  // rides in user metadata because the confirmation email does not carry
+  // redirect_to: the link it sends is /auth/callback?token_hash=…&type=signup
+  // and nothing more.
+  const destination = landingAfterAuth({
+    next,
+    onboarded: !!profile?.onboarding_completed,
+    isAffiliate: !!affiliate,
+    affiliateIntent: user.user_metadata?.affiliate_intent === true,
+  });
 
   // Preserve the Set-Cookie headers from the original response on the new redirect.
   const finalResponse = NextResponse.redirect(`${origin}${destination}`);

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { isAffiliateOnly } from "@/lib/gate/landing";
 import ExtensionTokenSync from "@/components/dashboard/ExtensionTokenSync";
 import ExtensionBridgeBanner from "@/components/dashboard/ExtensionBridgeBanner";
 import CaptchaAlert from "@/components/dashboard/CaptchaAlert";
@@ -120,14 +121,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .from("affiliates")
         .select("code")
         .maybeSingle();
-      setIsAffiliate(!!affiliate);
-      if (affiliate && user) {
+      // Signed up to ask for a link. Before approval there is no affiliate
+      // row, and without this the applicant's own page came wrapped in the
+      // job seeker's furniture ("40 free applications left") — measured 26.09
+      // on a live pending application.
+      const affiliateIntent = user?.user_metadata?.affiliate_intent === true;
+      // The Affiliate tab is where their state lives: the link once approved,
+      // the review status before that.
+      setIsAffiliate(!!affiliate || affiliateIntent);
+      if ((affiliate || affiliateIntent) && user) {
         const { data: profile } = await supabase
           .from("profiles")
           .select("onboarding_completed")
           .eq("user_id", user.id)
           .maybeSingle();
-        setAffiliateOnly(!profile?.onboarding_completed);
+        setAffiliateOnly(
+          isAffiliateOnly({
+            onboarded: !!profile?.onboarding_completed,
+            isAffiliate: !!affiliate,
+            affiliateIntent,
+          }),
+        );
       }
     }
     loadUser();

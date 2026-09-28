@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { landingAfterAuth, safeNextPath } from "@/lib/gate/landing";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 
@@ -69,10 +70,28 @@ export default function LoginForm() {
       // fail-closed: unknown state → onboarding (the wizard bounces completed
       // users onward via the dashboard gate anyway)
     }
+    // An affiliate coming back to check their earnings must not be handed the
+    // job-seeker quiz — measured 26.09: the email path had learned this, the
+    // password path had not. Both now ask lib/gate/landing.ts.
+    let isAffiliate = false;
+    try {
+      const { data: affiliate } = await supabase
+        .from("affiliates")
+        .select("code")
+        .eq("user_id", signInData.user.id)
+        .maybeSingle();
+      isAffiliate = !!affiliate;
+    } catch {
+      // unknown → not an affiliate; the worst case is the quiz, as before
+    }
 
     const params = new URLSearchParams(window.location.search);
-    const next = params.get("next");
-    const dest = next && next.startsWith("/") ? next : onboarded ? "/dashboard" : "/onboarding";
+    const dest = landingAfterAuth({
+      next: params.get("next"),
+      onboarded,
+      isAffiliate,
+      affiliateIntent: signInData.user.user_metadata?.affiliate_intent === true,
+    });
     const h = window.location.hostname;
     const onWrongDomain = h !== "hiredrop.io" && !h.endsWith(".hiredrop.io");
     // If on a preview URL, navigate to hiredrop.io so the extension can inject
@@ -81,10 +100,15 @@ export default function LoginForm() {
   }
 
   async function handleGoogleLogin() {
+    // Google takes them off-site, so a ?next= has to travel in the URL or it
+    // is lost; the callback applies the same rule the password path does.
+    const next = safeNextPath(new URLSearchParams(window.location.search).get("next"));
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo:
+          `${window.location.origin}/auth/callback` +
+          (next ? `?next=${encodeURIComponent(next)}` : ""),
       },
     });
   }
