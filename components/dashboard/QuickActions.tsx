@@ -317,7 +317,7 @@ export default function QuickActions({
     persistChips({ workSetting: value });
   }
 
-  // A location pick (map city string OR the dropdown's remote/usa/europe enum)
+  // A location pick (map city string OR the dropdown's remote/usa enum)
   // becomes the campaign location — it flows to Indeed l= via the extension.
   // Save the label directly (not from state, which updates async) so the write is fresh.
   function pickLocation(label: string) {
