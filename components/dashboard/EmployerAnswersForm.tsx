@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { apiPost, ApiError } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
@@ -11,20 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 export interface MissingAnswer {
   key: string;
   label: string;
-  kind: "text" | "yesno" | "country";
-}
-
-// ISO 3166 region codes; names come from the browser (Intl), so no 250-line table here.
-const REGIONS =
-  "US CA GB IE AU NZ IN PH MX BR AR CO CL PE DE FR ES PT IT NL BE CH AT SE NO DK FI PL CZ RO UA GR TR IL AE SA EG NG KE ZA MA JP KR CN HK TW SG MY TH VN ID PK BD LK NP";
-
-function countryNames(): string[] {
-  try {
-    const dn = new Intl.DisplayNames(["en"], { type: "region" });
-    return REGIONS.split(" ").map((c) => dn.of(c) || c);
-  } catch {
-    return ["United States", "Canada", "United Kingdom", "India"];
-  }
+  kind: "text" | "yesno" | "us_resident";
 }
 
 const PLACEHOLDER: Record<string, string> = {
@@ -36,8 +23,8 @@ const PLACEHOLDER: Record<string, string> = {
 };
 
 // "Once, and never again": every question employers keep asking, answered in one sheet
-// before the first Start. Saving returns the server's fresh `missing` list — picking the
-// United States, for instance, adds State — so the sheet simply redraws until it is empty.
+// before the first Start. Saving returns the server's fresh `missing` list, so the sheet
+// simply redraws until it is empty. US only: "No" to living in the US ends it right here.
 export default function EmployerAnswersForm({
   missing,
   onDone,
@@ -50,15 +37,16 @@ export default function EmployerAnswersForm({
   const [noLinkedin, setNoLinkedin] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const countries = useMemo(countryNames, []);
+  // HireDrop applies to US jobs only — a No is a closed door, not an answer to save.
+  const abroad = asked.some((q) => q.kind === "us_resident" && values[q.key] === false);
 
   const set = (k: string, v: string | boolean) => setValues((s) => ({ ...s, [k]: v }));
   const answered = (q: MissingAnswer) => {
     if (q.key === "linkedin_url" && noLinkedin) return true;
     const v = values[q.key];
-    return q.kind === "yesno" ? typeof v === "boolean" : typeof v === "string" && v.trim() !== "";
+    return q.kind === "text" ? typeof v === "string" && v.trim() !== "" : typeof v === "boolean";
   };
-  const complete = asked.every(answered);
+  const complete = !abroad && asked.every(answered);
 
   async function save() {
     if (!complete || saving) return;
@@ -100,7 +88,7 @@ export default function EmployerAnswersForm({
         {asked.map((q) => (
           <div key={q.key} data-testid={`answer-${q.key}`}>
             <span className="mb-1 block text-xs font-medium text-text2">{q.label}</span>
-            {q.kind === "yesno" ? (
+            {q.kind !== "text" ? (
               <div className="flex gap-2">
                 {[true, false].map((v) => (
                   <button
@@ -125,10 +113,9 @@ export default function EmployerAnswersForm({
                   className={field}
                   value={typeof values[q.key] === "string" ? (values[q.key] as string) : ""}
                   onChange={(e) => set(q.key, e.target.value)}
-                  placeholder={q.kind === "country" ? "Start typing…" : PLACEHOLDER[q.key]}
-                  list={q.kind === "country" ? "hd-countries" : undefined}
+                  placeholder={PLACEHOLDER[q.key]}
                   disabled={q.key === "linkedin_url" && noLinkedin}
-                  autoComplete={q.kind === "country" ? "country-name" : "off"}
+                  autoComplete="off"
                 />
                 {q.key === "linkedin_url" && (
                   <label className="mt-1.5 flex items-center gap-2 text-xs text-text2/80">
@@ -145,12 +132,12 @@ export default function EmployerAnswersForm({
           </div>
         ))}
       </div>
-      <datalist id="hd-countries">
-        {countries.map((c) => (
-          <option key={c} value={c} />
-        ))}
-      </datalist>
 
+      {abroad && (
+        <p className="mt-3 rounded-lg border border-yellow/30 bg-yellow/10 px-3 py-2 text-xs text-text" data-testid="us-only">
+          HireDrop applies to jobs in the United States only — it can&apos;t run from abroad yet.
+        </p>
+      )}
       {err && <p className="mt-3 text-xs text-red">{err}</p>}
       <button
         type="button"
