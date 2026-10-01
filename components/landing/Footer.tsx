@@ -61,7 +61,27 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-gray-800 text-sm text-center">
+        {/* Google's brand verification reads the home page for what the app
+            does and for an explicit "no AI imagery of people" statement — it
+            rejected HireDrop once without one (30.09). Keep it accurate if
+            the product starts touching images or more Google data. */}
+        <div className="mt-12 pt-8 border-t border-gray-800 text-xs leading-relaxed max-w-4xl">
+          <h4 className="text-sm font-semibold text-white mb-2">About HireDrop</h4>
+          <p>
+            HireDrop is a job-application assistant for job seekers in the United States. It finds
+            openings that match your resume and preferences, writes a tailored resume, cover letter,
+            and answers to application questions for each one, and submits applications from your own
+            browser after you approve them. Its AI works with text only: it does not create, edit, or
+            analyze images or video of people, and never produces intimate or sexual imagery.
+          </p>
+          <p className="mt-2">
+            Google Sign-In is optional and is used only to create and sign in to your HireDrop
+            account; from Google we use only your name and email address. See our{" "}
+            <Link href="/privacy" className="underline hover:text-white transition">Privacy Policy</Link>.
+          </p>
+        </div>
+
+        <div className="mt-8 pt-8 border-t border-gray-800 text-sm text-center">
           &copy; {new Date().getFullYear()} HireDrop. All rights reserved.
         </div>
       </div>
