@@ -192,7 +192,7 @@ export async function gateStart(token: string): Promise<Readiness> {
         : bridgeDead
           ? "This tab didn't pick up the HireDrop extension — one reload reconnects it."
           : switchedOff
-            ? `Chrome turned HireDrop off. Open ${EXTENSIONS_PAGE} and switch it on, or press Repair.`
+            ? `Chrome paused HireDrop after a routine file check. Open ${EXTENSIONS_PAGE} and press Repair — your settings are safe.`
             : browser === "mobile"
               ? "HireDrop applies from Chrome on your computer — a phone can't run the extension."
               : wrongBrowser
