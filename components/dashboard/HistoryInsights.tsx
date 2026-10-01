@@ -36,13 +36,16 @@
  * prefers-reduced-motion.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Application } from "@/lib/types";
 import { PLATFORMS } from "@/lib/constants";
 import { apiGet, type StatsResponse } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 
 const DAY = 86400000;
+const HOUR = 3600000;
+const LIVE_MS = 60000;      // how often the panel re-reads the record while it's on screen
 const WEEKS = 18;           // ≈ 4 months, in whole weeks — wider than the card can hold at a legible cell size
 const ANIM_MS = 1000;       // the whole panel draws itself in one second
 
@@ -73,20 +76,26 @@ const dayStamp = (d: Date) => {
 /** Digits that count up to their value on mount — the KPI row's share of the
  *  one-second entrance. Honest about the end state: it always lands on `value`,
  *  and it lands there on the first frame for a reader who asked for less motion.
- *  Every setState happens inside the rAF callback, never in the effect body. */
+ *  Every setState happens inside the rAF callback, never in the effect body.
+ *  A live update counts on from where the digits stand, not from zero again —
+ *  6 → 7 should read as one more, not as the whole day replaying. */
 function useCountUp(value: number) {
   const [shown, setShown] = useState(0);
+  const from = useRef(0);
   useEffect(() => {
     let raf = 0;
     let started = 0;
+    const start = from.current;
     const calm = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     const tick = (t: number) => {
       if (!started) started = t;
-      if (calm) { setShown(value); return; }
+      if (calm) { from.current = value; setShown(value); return; }
       const p = Math.min(1, (t - started) / ANIM_MS);
       // same ease as the bars, so the whole panel moves as one object
       const eased = 1 - Math.pow(1 - p, 3);
-      setShown(Math.round(value * eased));
+      const v = Math.round(start + (value - start) * eased);
+      from.current = v;
+      setShown(v);
       if (p < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -107,30 +116,69 @@ export default function HistoryInsights({
   // loading, `null` = we asked and could not get them; the card says which
   // rather than drawing a confident zero.
   const [stats, setStats] = useState<StatsResponse | null | undefined>(statsOverride);
+  const router = useRouter();
+
+  // One "now" per render: every bucket below is relative to it, and a timestamp
+  // that moved mid-render would put a row in two buckets. It does move BETWEEN
+  // renders — see the live loop below.
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (statsOverride) return;
     let alive = true;
-    (async () => {
+    const readStats = async (first: boolean) => {
       try {
         const { data: { session } } = await createClient().auth.getSession();
-        if (!session?.access_token) { if (alive) setStats(null); return; }
+        if (!session?.access_token) { if (alive && first) setStats(null); return; }
         const s = await apiGet<StatsResponse>("/stats", session.access_token);
         if (alive) setStats(s);
       } catch {
-        if (alive) setStats(null);
+        // A failed refresh keeps the last good numbers; only a failed FIRST read
+        // turns the card into "couldn't read".
+        if (alive && first) setStats(null);
       }
-    })();
-    return () => { alive = false; };
-  }, [statsOverride]);
+    };
+    readStats(true);
 
-  // One "now" per mount: every bucket below is relative to it, and a timestamp
-  // that moved mid-render would put a row in two buckets.
-  const [now] = useState(() => Date.now());
+    // Live tracking (Igor 10-01: «сделай last 24 hours и трекинг»). "Last 24
+    // hours" is a window that slides on its own — a row ages out of it with
+    // nobody touching anything — so the clock ticks every minute; and while a
+    // run is sending, new rows land, so the record is re-read on the same beat.
+    // router.refresh() re-runs the page's server fetch, which moves the list
+    // below AND this panel together — the tile can never count a row the list
+    // doesn't show. Hidden tab = no polling; coming back catches up at once.
+    const live = () => {
+      if (document.visibilityState !== "visible") return;
+      setNow(Date.now());
+      router.refresh();
+      readStats(false);
+    };
+    const iv = setInterval(live, LIVE_MS);
+    document.addEventListener("visibilitychange", live);
+    return () => {
+      alive = false;
+      clearInterval(iv);
+      document.removeEventListener("visibilitychange", live);
+    };
+  }, [statsOverride, router]);
 
   const data = useMemo(() => {
     const total = rows.length;
     const week = rows.filter((a) => now - new Date(a.date_applied).getTime() < 7 * DAY).length;
+
+    // ── Last 24 hours, hour by hour (oldest → newest) ─────────────────────
+    // A rolling window, not the calendar day: at 9am "today" is nearly empty
+    // while last night's run is exactly what the person wants to see. (The
+    // daily CAP still counts by the local day — that's the Today card, below.)
+    const hours = new Array<number>(24).fill(0);
+    for (const a of rows) {
+      const ago = now - new Date(a.date_applied).getTime();
+      if (ago >= 24 * HOUR) continue;
+      // a row stamped a moment "in the future" (clock skew) is this hour's
+      hours[23 - Math.max(0, Math.floor(ago / HOUR))] += 1;
+    }
+    const last24 = hours.reduce((s, n) => s + n, 0);
+    const hourMax = Math.max(...hours);
 
     // ── Outcomes ──────────────────────────────────────────────────────────
     const counts: Record<string, number> = { waiting: 0, received: 0, interview: 0, rejected: 0 };
@@ -184,7 +232,7 @@ export default function HistoryInsights({
       if (!months.length || months[months.length - 1].label !== label) months.push({ col: w, label });
     }
 
-    return { total, week, counts, answered, rate, platforms, platformMax, cells, busiest, current, longest, months };
+    return { total, week, hours, last24, hourMax, counts, answered, rate, platforms, platformMax, cells, busiest, current, longest, months };
   }, [rows, now]);
 
   // Heat bins: four steps of ONE hue (sequential), plus "nothing that day".
@@ -199,6 +247,7 @@ export default function HistoryInsights({
 
   const kTotal = useCountUp(data.total);
   const kWeek = useCountUp(data.week);
+  const k24 = useCountUp(data.last24);
   const kToday = useCountUp(stats?.applications_today ?? 0);
   const kPool = useCountUp(stats?.total_jobs ?? 0);
   const kLeft = useCountUp(stats?.remaining_today ?? 0);
@@ -225,9 +274,16 @@ export default function HistoryInsights({
   const kpis = [
     { label: "Total applied", value: kTotal },
     { label: "This week", value: kWeek },
-    { label: "Applied today", value: dash(kToday) },
+    { label: "Last 24 hours", value: k24, spark: true },
     { label: "Jobs found", value: dash(kPool) },
   ];
+
+  const hourTitle = (j: number) => {
+    const ago = 23 - j;
+    const n = data.hours[j];
+    const when = ago === 0 ? "Last hour" : `${ago}–${ago + 1}h ago`;
+    return `${when} — ${n === 0 ? "nothing sent" : `${n} application${n === 1 ? "" : "s"}`}`;
+  };
 
   return (
     /* .hd-insights-run is always on: the CSS itself drops every animation under
@@ -241,7 +297,30 @@ export default function HistoryInsights({
             key={m.label}
             className={["p-4 sm:p-5", i === 0 ? "hd-tile-ink rounded-2xl" : "hd-sheet"].join(" ")}
           >
-            <div className="hd-hist-num">{m.value}</div>
+            {m.spark ? (
+              /* The number and its own trace: 24 hourly ticks, newest on the
+                 right, so "6" also says WHEN — one burst overnight or a steady
+                 drip. Same one hue as every other bar on the page. */
+              <div className="flex items-end gap-3" data-testid="insights-last24">
+                <div className="hd-hist-num">{m.value}</div>
+                <div className="hd-spark" role="img"
+                  aria-label={`${data.last24} applications in the last 24 hours, by hour`}>
+                  {data.hours.map((n, j) => (
+                    <i
+                      key={j}
+                      className={["hd-spark-bar", n ? "" : "is-empty"].join(" ")}
+                      style={{
+                        ["--h" as string]: n && data.hourMax ? `${Math.max(18, (n / data.hourMax) * 100)}%` : "2px",
+                        ["--i" as string]: j,
+                      }}
+                      title={hourTitle(j)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="hd-hist-num">{m.value}</div>
+            )}
             <div className="hd-eyebrow mt-2.5">{m.label}</div>
           </div>
         ))}

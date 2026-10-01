@@ -1559,9 +1559,23 @@ h1, h2, h3 {
   border-radius: 999px; background: var(--hd-draw);
 }
 
+/* ── Last 24 hours: the KPI's own trace, one tick per hour ─── */
+.hd-spark {
+  flex: 1 1 auto; max-width: 132px; height: 26px;
+  display: flex; align-items: flex-end; gap: 2px;
+}
+.hd-spark-bar {
+  flex: 1 1 0; min-width: 2px; height: var(--h);
+  border-radius: 2px; background: var(--hd-draw);
+  transform-origin: bottom;
+  transition: height .4s cubic-bezier(.22, 1, .36, 1);   /* a live update grows, not jumps */
+}
+.hd-spark-bar.is-empty { background: var(--hd-track); }
+
 /* ── The one-second entrance ───────────────────────────────── */
 @keyframes hdCellIn { from { opacity: 0; transform: scale(.55); } to { opacity: 1; transform: scale(1); } }
 @keyframes hdGrowW  { from { width: 0; } to { width: var(--w); } }
+@keyframes hdGrowH  { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @keyframes hdSweep  { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: var(--off); } }
 
 .hd-insights-run .hd-cell {
@@ -1579,11 +1593,17 @@ h1, h2, h3 {
 .hd-insights-run .hd-meter-fill {
   animation: hdSweep 1000ms cubic-bezier(.22, 1, .36, 1) both;
 }
+.hd-insights-run .hd-spark-bar {
+  animation: hdGrowH 420ms cubic-bezier(.22, 1, .36, 1) both;
+  animation-delay: calc(var(--i, 0) * 24ms);              /* 24 ticks inside the 1s */
+}
 @media (prefers-reduced-motion: reduce) {
   .hd-insights-run .hd-cell,
   .hd-insights-run .hd-bar-fill,
   .hd-insights-run .hd-stack-seg,
-  .hd-insights-run .hd-meter-fill { animation: none; }
+  .hd-insights-run .hd-meter-fill,
+  .hd-insights-run .hd-spark-bar { animation: none; }
+  .hd-spark-bar { transition: none; }
 }
 
 /* ── Poster plates that follow the theme, and the Flow-style key→value
