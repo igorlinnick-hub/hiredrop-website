@@ -11,6 +11,7 @@ import CaptchaAlert from "@/components/dashboard/CaptchaAlert";
 import FitModeMenu from "@/components/dashboard/FitModeMenu";
 import ChecklistCard from "@/components/dashboard/ChecklistCard";
 import TapProgressDock from "@/components/dashboard/TapProgressDock";
+import DashboardBuddy from "@/components/dashboard/DashboardBuddy";
 import { useHandbacks } from "@/components/dashboard/useHandbacks";
 
 const NAV_ITEMS = [
@@ -292,6 +293,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           count, what's being worked on, and the one action that state needs. Not on
           the deck itself: there the cards ARE the surface. */}
       {pathname !== "/dashboard/tap" && <TapProgressDock />}
+
+      {/* Drop sits in the corner of every dashboard screen except the swipe deck,
+          where the cards own the whole surface. */}
+      {pathname !== "/dashboard/tap" && <DashboardBuddy />}
+
     </div>
   );
 }

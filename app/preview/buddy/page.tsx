@@ -9,7 +9,8 @@
 
 import { useState } from "react";
 import Buddy from "@/components/buddy/Buddy";
-import BuddyOrb, { type BuddyState } from "@/components/buddy/BuddyOrb";
+import DropFigure from "@/components/buddy/DropFigure";
+import { type BuddyState } from "@/components/buddy/BuddyOrb";
 
 const MOODS: { state: BuddyState; label: string; note: string }[] = [
   { state: "idle", label: "Idle", note: "Breathing, blinking every few seconds, watching your cursor. Never perfectly still — that is the whole trick." },
@@ -178,7 +179,7 @@ function MoodsView() {
         {MOODS.map((m) => (
           <section key={m.state} className="flex gap-5 items-start">
             <div className="shrink-0 pt-1">
-              <BuddyOrb size={78} state={m.state} />
+              <DropFigure size={116} state={m.state} working={m.state === "thinking"} />
             </div>
             <div className="min-w-0 pt-2">
               <p className="text-[13px] font-semibold text-text mb-1">{m.label}</p>
@@ -191,12 +192,11 @@ function MoodsView() {
       <div className="mt-16 pt-10 border-t border-border">
         <p className="text-[13px] font-semibold text-text mb-1">At the size it actually ships</p>
         <p className="text-[12.5px] text-text2 leading-snug mb-6 max-w-lg">
-          58px in the corner of every dashboard route. Big enough to read as a creature,
-          small enough to ignore.
+          116px in the corner of every dashboard route — big enough that the whole figure reads.
         </p>
         <div className="flex items-center gap-8">
           {(["idle", "thinking", "stuck"] as BuddyState[]).map((s) => (
-            <BuddyOrb key={s} size={58} state={s} />
+            <DropFigure key={s} size={116} state={s} />
           ))}
         </div>
       </div>
