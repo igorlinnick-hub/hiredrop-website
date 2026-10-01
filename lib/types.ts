@@ -85,6 +85,12 @@ export interface Job {
   link: string;
   description?: string;
   score?: number;
+  // Fit judge verdict for the CURRENT profile (GET /jobs/deck, daily-30). fit_current
+  // false = nobody judged this posting for today's resume (Indeed is not prejudged yet) —
+  // the judge decides it at apply time, and the card must not pretend otherwise.
+  fit_score?: number | null;
+  fit_reason?: string | null;
+  fit_current?: boolean;
   ai_verdict?: string;
   ai_flags?: string[];
   ats_keywords?: string[];

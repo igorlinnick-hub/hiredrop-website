@@ -55,7 +55,9 @@ function StatCard({ label, value, icon, href, hint, ink }: StatCardProps) {
 }
 
 interface StatsCardsProps {
-  totalJobs: number;
+  /** Postings the fit judge passed in today's list; null = unknown (shown as "—").
+   *  Replaced "Jobs Found" (the pool size) 09-30 — Igor: the big pool number goes. */
+  fitsToday: number | null;
   totalApplications: number;
   applicationsToday: number;
 }
@@ -64,17 +66,17 @@ interface StatsCardsProps {
 // (response-tracking was cut), so a "Response Rate %" was a made-up number. We only
 // show stats we can stand behind.
 export default function StatsCards({
-  totalJobs,
+  fitsToday,
   totalApplications,
   applicationsToday,
 }: StatsCardsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <StatCard
-        label="Jobs Found"
-        value={totalJobs}
+        label="Fit you today"
+        value={fitsToday ?? "—"}
         href="#jobs"
-        hint="View job listings →"
+        hint="See today's list →"
         icon={
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}

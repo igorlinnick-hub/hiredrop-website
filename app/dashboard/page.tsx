@@ -5,13 +5,13 @@ import AuthHiccup from "@/components/auth/AuthHiccup";
 import {
   apiGet,
   type StatsResponse,
-  type ApiJob,
+  type DeckResponse,
   type CampaignStatusResponse,
 } from "@/lib/api";
 import type { Job } from "@/lib/types";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import StatsCards from "@/components/dashboard/StatsCards";
-import JobsTable from "@/components/dashboard/JobsTable";
+import TodayList from "@/components/dashboard/TodayList";
 import DevPanel from "@/components/dashboard/DevPanel";
 import QuickActions from "@/components/dashboard/QuickActions";
 import MobileHandoff from "@/components/dashboard/MobileHandoff";
@@ -61,14 +61,21 @@ export default async function DashboardPage() {
   }
 
   // Fetch all dashboard data in parallel
-  const [stats, jobs, campaign] = await Promise.allSettled([
+  // /jobs/deck, not /jobs: the dashboard shows today's list — the one Tap swipes and auto
+  // applies in — not the archive (daily-30, Igor 09-30).
+  const [stats, deck, campaign] = await Promise.allSettled([
     apiGet<StatsResponse>("/stats", token),
-    apiGet<ApiJob[]>("/jobs", token),
+    apiGet<DeckResponse>("/jobs/deck", token),
     apiGet<CampaignStatusResponse>("/campaign/status", token),
   ]);
 
   const statsData = stats.status === "fulfilled" ? stats.value : null;
-  const jobsData = (jobs.status === "fulfilled" ? jobs.value : []) as Job[];
+  const todayJobs = (deck.status === "fulfilled" ? deck.value.cards ?? [] : []) as Job[];
+  // null when the read failed — the tile and the list say so instead of showing a 0.
+  const fitsToday =
+    deck.status === "fulfilled"
+      ? deck.value.fits_today ?? todayJobs.filter((j) => j.fit_current).length
+      : null;
   const campaignRunning = campaign.status === "fulfilled" ? campaign.value.running : false;
   const campaignData = campaign.status === "fulfilled" ? campaign.value : null;
 
@@ -114,13 +121,13 @@ export default async function DashboardPage() {
 
       <div className="space-y-6">
         <StatsCards
-          totalJobs={statsData?.total_jobs ?? 0}
+          fitsToday={fitsToday}
           totalApplications={statsData?.total_applications ?? 0}
           applicationsToday={statsData?.applications_today ?? 0}
         />
 
         <div id="jobs">
-          <JobsTable jobs={jobsData} />
+          <TodayList jobs={todayJobs} fitsToday={fitsToday} />
         </div>
 
         {/* The full record — applications by day, links, statuses, receipts, and the
