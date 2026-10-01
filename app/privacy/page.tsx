@@ -21,7 +21,7 @@ export default function PrivacyPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Privacy Policy</h1>
 
           <div className="space-y-6 text-gray-600 text-sm leading-relaxed">
-            <p>Last updated: September 28, 2026</p>
+            <p>Last updated: September 30, 2026</p>
 
             <section>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">1. Information We Collect</h2>
@@ -72,7 +72,15 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">9. Contact</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">9. Signing In With Google</h2>
+              <p>Signing in with Google is optional; you can always use an email and password instead. If you choose it, Google shares with HireDrop only your basic profile: your name, email address, profile picture, and Google account ID (the <code>openid</code>, <code>email</code>, and <code>profile</code> scopes). We do not request access to Gmail, Google Drive, Google Calendar, contacts, or any other Google data.</p>
+              <p className="mt-2">We use this information to create your HireDrop account and sign you in, and to pre-fill your name during onboarding, where you can change it. Your email address then serves as your account email, the same as if you had typed it in: for messages you request, such as password resets, and in hashed form for the ad measurement described in section 6, which you can opt out of (section 7). We do not use your profile picture.</p>
+              <p className="mt-2">We do not sell data received from Google, do not use it to train AI models, and do not share it with anyone other than the service providers that run HireDrop (Supabase stores your account). HireDrop&apos;s use of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" className="text-accent hover:underline" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>.</p>
+              <p className="mt-2">You can disconnect HireDrop from your Google account at any time at <a href="https://myaccount.google.com/connections" className="text-accent hover:underline" target="_blank" rel="noopener noreferrer">myaccount.google.com/connections</a>; to delete the data itself, follow section 8.</p>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">10. Contact</h2>
               <p>Questions about this privacy policy or about data we hold on you: support@hiredrop.io.</p>
             </section>
           </div>
