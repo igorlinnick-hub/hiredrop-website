@@ -24,6 +24,15 @@ export interface UserProfile {
   // measure). Filled from here; blank means the filler hands the job back.
   current_employer?: string;
   current_title?: string;
+  // Education — Greenhouse's required "School" / "Degree". Asked at signup; `no_degree`
+  // is an answer (the filler hands a required School back instead of inventing one).
+  school?: string;
+  degree?: string;
+  no_degree?: boolean;
+  // What we tell an employer who asks about pay — the user's own words. NOT the
+  // salary_min search filter, which only decides which jobs they see.
+  salary_expectation?: string;
+  no_salary_expectation?: boolean;
   // Screener-answer fields the extension's deterministic handlers use to fill the
   // most frequent required application questions (work auth / sponsorship / notice /
   // English) — honestly, from the user, never guessed on a knockout.

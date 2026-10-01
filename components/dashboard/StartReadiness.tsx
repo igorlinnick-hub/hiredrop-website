@@ -294,7 +294,7 @@ export default function StartReadinessModal({
           {failed.map((c) => c.fix === "answers" && c.missing?.length ? (
             <EmployerAnswersForm
               key={c.id}
-              missing={c.missing}
+              questions={c.missing}
               onDone={() => {
                 setAnsweredFor(checks);
                 if (failed.length === 1) onRecheck?.();

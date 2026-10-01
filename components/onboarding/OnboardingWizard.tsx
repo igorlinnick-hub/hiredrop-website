@@ -12,24 +12,14 @@ import StepReassurance from "./StepReassurance";
 import StepPlatforms from "./StepPlatforms";
 import StepResume from "./StepResume";
 import StepATSCheck from "./StepATSCheck";
+import StepEmployerAnswers from "./StepEmployerAnswers";
 import StepWritingStyle from "./StepWritingStyle";
 import StepPlan from "./StepPlan";
 import StepConnectExtension from "./StepConnectExtension";
 import StepDone from "./StepDone";
+import { resumeStep, SNAPSHOT_VERSION, STEP, STEPS } from "@/lib/onboarding/steps";
 import type { UserProfile } from "@/lib/types";
 
-const STEPS = [
-  { id: 1, title: "Profile" },
-  { id: 2, title: "Preferences" },
-  { id: 3, title: "Safety" },
-  { id: 4, title: "Platforms" },
-  { id: 5, title: "Resume" },
-  { id: 6, title: "ATS" },
-  { id: 7, title: "Style" },
-  { id: 8, title: "Plan" },
-  { id: 9, title: "Connect" },
-  { id: 10, title: "Done" },
-];
 
 const initialProfile: UserProfile = {
   name: "",
@@ -56,7 +46,7 @@ const initialProfile: UserProfile = {
 // answers the user already typed. resumeFile isn't stored — by the time we reach the
 // extension step the resume is already uploaded to storage (resume_url), so it's safe.
 const STORAGE_KEY = "hd_onboarding_v1";
-function loadSaved(): { step?: number; profile?: Partial<UserProfile> } | null {
+function loadSaved(): { v?: number; step?: number; profile?: Partial<UserProfile> } | null {
   if (typeof window === "undefined") return null;
   try {
     return JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "null");
@@ -68,7 +58,7 @@ function loadSaved(): { step?: number; profile?: Partial<UserProfile> } | null {
 export default function OnboardingWizard({ initialStep }: { initialStep?: number } = {}) {
   const router = useRouter();
   const supabase = createClient();
-  const [step, setStep] = useState<number>(() => initialStep ?? loadSaved()?.step ?? 1);
+  const [step, setStep] = useState<number>(() => initialStep ?? resumeStep(loadSaved()) ?? 1);
   const [profile, setProfile] = useState<UserProfile>(() => ({
     ...initialProfile,
     ...(loadSaved()?.profile || {}),
@@ -125,7 +115,7 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, profile }));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: SNAPSHOT_VERSION, step, profile }));
     } catch {
       /* storage full / private mode — non-fatal */
     }
@@ -161,7 +151,7 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
     }
 
     setSaving(false);
-    setStep(6); // → ATS Check
+    setStep(STEP.ats);
   }
 
   function next() {
@@ -189,10 +179,11 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
         job_type: profile.job_type,
         platforms: profile.platforms,
         writing_style: profile.writing_style,
-        // Knockout answers from step 2. Without these two lines the step would collect
-        // them and the save would drop them on the floor.
-        work_authorized_us: profile.work_authorized_us,
-        needs_sponsorship: profile.needs_sponsorship,
+        // The employer answers (work eligibility included) are saved by their own step,
+        // through the server. Only a wizard already under way when that step appeared
+        // still carries the two it collected on step 2 — never write a null over them.
+        ...(profile.work_authorized_us !== null && { work_authorized_us: profile.work_authorized_us }),
+        ...(profile.needs_sponsorship !== null && { needs_sponsorship: profile.needs_sponsorship }),
         onboarding_completed: true,
       })
       .eq("user_id", user.id);
@@ -319,19 +310,22 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
               />
             </>
           )}
-          {step === 6 && (
+          {step === STEP.ats && (
             <StepATSCheck onNext={next} onBack={back} hasResume={!!resumeFile || !!profile.resume_url} />
           )}
-          {step === 7 && (
-            <StepWritingStyle profile={profile} updateProfile={updateProfile} onNext={next} onBack={back} />
+          {step === STEP.answers && (
+            <StepEmployerAnswers profile={profile} onNext={next} onBack={back} />
           )}
           {step === 8 && (
-            <StepPlan onNext={next} onBack={back} />
+            <StepWritingStyle profile={profile} updateProfile={updateProfile} onNext={next} onBack={back} />
           )}
           {step === 9 && (
+            <StepPlan onNext={next} onBack={back} />
+          )}
+          {step === STEP.connect && (
             <StepConnectExtension onNext={next} onBack={back} />
           )}
-          {step === 10 && (
+          {step === STEP.done && (
             <>
               {saveError && (
                 <div className="mb-4 p-3 rounded-lg bg-red/10 border border-red/20 text-red text-sm">

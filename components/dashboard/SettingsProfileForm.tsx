@@ -71,6 +71,30 @@ export function FormFields({ profile, update, saveBar }: Props) {
         {saveBar()}
       </div>
 
+      {/* Education. Greenhouse asks "School" and "Degree" as required fields; blank here
+          means such a form is handed back rather than filled with a guess. */}
+      <div className="hd-sheet p-5 sm:p-6 space-y-4">
+        <h3 className="hd-hist-sub-head">Education</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input label="School or university" value={profile.school || ""}
+            onChange={(e) => update({ school: e.target.value })} placeholder="University of Texas at Austin" />
+          <Input label="Degree" value={profile.degree || ""}
+            onChange={(e) => update({ degree: e.target.value })} placeholder="BA Communications" />
+        </div>
+        {saveBar()}
+      </div>
+
+      {/* Salary expectation — what an employer is told when the form asks. Separate from
+          the salary filter on the dashboard, which only decides which jobs you see. Blank
+          means we never name a number: such a question is left for you to answer. */}
+      <div className="hd-sheet p-5 sm:p-6 space-y-4">
+        <h3 className="hd-hist-sub-head">Salary expectation</h3>
+        <Input label="What we tell employers who ask" value={profile.salary_expectation || ""}
+          onChange={(e) => update({ salary_expectation: e.target.value })} placeholder="$85,000 per year"
+          hint="In your own words. Leave it empty and we never name a number for you." />
+        {saveBar()}
+      </div>
+
       {/* Mailing address. ZipRecruiter's contact step labels these Optional and then
           refuses to advance while they are blank, so a missing address quietly costs
           applications. We never invent one — the filler leaves the field empty and
