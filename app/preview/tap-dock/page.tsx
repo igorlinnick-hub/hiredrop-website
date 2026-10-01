@@ -39,6 +39,22 @@ const STATES: { label: string; note: string; demo: DockDemo }[] = [
     note: "The whole batch is with the employers. The arc goes green, and the dock retires itself after half a minute.",
     demo: { done: 7, waiting: 0, held: 0, running: true, doneToday: 7, next: null },
   },
+  {
+    label: "Auto run — live counter",
+    note: "No swiped batch, an Auto run is live. The arc is today against today's cap, the number pops on every new send, the line splits today by platform.",
+    demo: {
+      done: 0, waiting: 0, held: 0, running: true, doneToday: 5, next: null,
+      dailyLimit: 30, platformCounts: { indeed: 3, ziprecruiter: 2 },
+    },
+  },
+  {
+    label: "Auto run — no cap (admin)",
+    note: "An unlimited tier has nothing to fill against, so the arc stays a track and the number reads as today's count.",
+    demo: {
+      done: 0, waiting: 0, held: 0, running: true, doneToday: 78, next: null,
+      dailyLimit: 10_000_000, platformCounts: { indeed: 51, greenhouse: 27 },
+    },
+  },
 ];
 
 const CONTEXT_DEMO: DockDemo = {

@@ -142,6 +142,9 @@ export interface CampaignStatusResponse {
   today_applications: number;
   platform_counts: Record<string, number>;
   limit_per_platform: number;
+  // Today's total budget for this tier + mode; admin gets a 10M "unlimited" sentinel.
+  daily_limit?: number;
+  tier?: string;
   jobs_ready: number;
   // Swipes approved on the Tap deck that are still undone. Reported in every mode —
   // only a tap run consumes them, so in auto this is a stranded stack (#185).
