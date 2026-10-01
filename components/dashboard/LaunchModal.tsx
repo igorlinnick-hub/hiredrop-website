@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PLATFORMS } from "@/lib/constants";
+import TrackingPopupRow from "@/components/dashboard/TrackingPopupRow";
 
 // Launch-time platform picker (Igor 2026-07-16; reshaped 2026-09-11): pressing Start asks
 // ONE question — "Where should we apply today?" The default answer is "All connected
@@ -179,6 +180,8 @@ export default function LaunchModal({
             ? "Start on all connected"
             : `Start on ${PLATFORMS.find((p) => p.id === selected)?.name || "…"}`}
         </button>
+
+        <TrackingPopupRow />
       </div>
     </div>
   );
