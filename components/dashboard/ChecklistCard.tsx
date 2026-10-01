@@ -6,7 +6,9 @@ import { createClient } from "@/lib/supabase/client";
 import { apiGet, type StatsResponse } from "@/lib/api";
 
 import { LIVE_CONNECTABLE_PLATFORMS } from "@/lib/constants";
-import { checkExtensionPresent, detectBrowser, type BrowserKind } from "./StartReadiness";
+import {
+  checkExtensionPresent, detectBrowser, extensionSeenHere, EXTENSIONS_PAGE, type BrowserKind,
+} from "./StartReadiness";
 import { isLiveConnected, liveStatus, type Conn } from "./PlatformsIndicator";
 
 // Only platforms that apply to jobs today count here — see the constant's note.
@@ -126,6 +128,11 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
   const [freeLeft, setFreeLeft] = useState<number | null>(null);
 
   const [extPresent, setExtPresent] = useState<boolean | null>(null);
+  // Answered in this browser before, silent now: Chrome disabled it (see
+  // extensionSeenHere). A regression, not an unfinished step — and the install page
+  // is a dead end for it, the store just says "installed".
+  const [extOff, setExtOff] = useState(false);
+  const [extAddrCopied, setExtAddrCopied] = useState(false);
   const [browser, setBrowser] = useState<BrowserKind>("chromium");
   const [connections, setConnections] = useState<Record<string, Conn>>({});
 
@@ -190,6 +197,7 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
       checkExtensionPresent().then((v) => {
         if (cancelled) return;
         setExtPresent(v);
+        setExtOff(!v && detectBrowser() === "chromium" && extensionSeenHere());
         setBrowser(detectBrowser());
       });
     probe();
@@ -326,11 +334,23 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
     },
     {
       id: "extension",
-      label: "Install the extension",
+      label: extOff ? "Turn the extension back on" : "Install the extension",
       hint: chromium ? "It sends the applications" : "Finish this in Chrome",
+      alert: extOff
+        ? extAddrCopied ? "Copied — paste it in the address bar" : `Chrome turned it off · copy ${EXTENSIONS_PAGE}`
+        : undefined,
       done: extDone,
       progress: extDone ? 1 : 0,
       href: chromium ? "/extension" : undefined,
+      // A page can't open chrome:// URLs, so the row hands over the address.
+      onClick: extOff
+        ? () => {
+            navigator.clipboard.writeText(EXTENSIONS_PAGE).then(
+              () => setExtAddrCopied(true),
+              () => { /* clipboard denied — the address is printed on the row */ },
+            );
+          }
+        : undefined,
     },
     {
       id: "platforms",

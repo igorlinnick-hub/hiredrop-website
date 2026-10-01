@@ -44,12 +44,39 @@ export function checkExtensionPresent(timeoutMs = 1500): Promise<boolean> {
       resolve(v);
     };
     function onMsg(e: MessageEvent) {
-      if (e.source === window && e.data === "HIREDROP_PONG") finish(true);
+      if (e.source !== window || e.data !== "HIREDROP_PONG") return;
+      rememberExtensionSeen();
+      finish(true);
     }
     window.addEventListener("message", onMsg);
     window.postMessage("HIREDROP_PING", "*");
     setTimeout(() => finish(false), timeoutMs);
   });
+}
+
+// "It answered here before" — per BROWSER, so an extension on another computer can't
+// trip it. Silence after that is a different failure from never-installed: Chrome
+// disables a store extension whose files fail its signature check ("This extension may
+// have been corrupted" → Repair), and a disabled extension is invisible to the page —
+// no content script, no resources, indistinguishable from absent. Live 09-30: Antonia's
+// gate said "Install", the store said "installed", and the fix was at chrome://extensions.
+const EXT_SEEN_KEY = "hd_ext_seen";
+export const EXTENSIONS_PAGE = "chrome://extensions";
+
+function rememberExtensionSeen() {
+  try {
+    localStorage.setItem(EXT_SEEN_KEY, "1");
+  } catch {
+    /* storage blocked — we just fall back to the install copy */
+  }
+}
+
+export function extensionSeenHere(): boolean {
+  try {
+    return localStorage.getItem(EXT_SEEN_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
 // Which browser is this? The extension is Chrome MV3, so only a desktop Chromium browser
@@ -101,21 +128,24 @@ async function extensionSeenByServer(token: string): Promise<boolean> {
 // One reload advice per tab. The server's view is per-USER, not per-browser: someone whose
 // extension runs on another computer would otherwise be told to reload this tab forever.
 // After the advice has been spent once and the bridge is still silent, we say "install".
+// The "switched off" advice is spent the same way: someone who removed the extension on
+// purpose finds nothing at chrome://extensions, and their next Start says "install".
 const RELOAD_ADVISED_KEY = "hd_bridge_reload_advised";
+const REPAIR_ADVISED_KEY = "hd_ext_repair_advised";
 
-function reloadAlreadyAdvised(): boolean {
+function alreadyAdvised(key: string): boolean {
   try {
-    return sessionStorage.getItem(RELOAD_ADVISED_KEY) === "1";
+    return sessionStorage.getItem(key) === "1";
   } catch {
     return false;
   }
 }
 
-function rememberReloadAdvised() {
+function rememberAdvised(key: string) {
   try {
-    sessionStorage.setItem(RELOAD_ADVISED_KEY, "1");
+    sessionStorage.setItem(key, "1");
   } catch {
-    /* storage blocked — worst case we advise a reload twice */
+    /* storage blocked — worst case we give the same advice twice */
   }
 }
 
@@ -139,36 +169,48 @@ export async function gateStart(token: string): Promise<Readiness> {
   const bridgeDead =
     !extPresent &&
     browser === "chromium" &&
-    !reloadAlreadyAdvised() &&
+    !alreadyAdvised(RELOAD_ADVISED_KEY) &&
     (await extensionSeenByServer(token));
-  if (bridgeDead) rememberReloadAdvised();
+  if (bridgeDead) rememberAdvised(RELOAD_ADVISED_KEY);
+  const switchedOff =
+    !extPresent &&
+    browser === "chromium" &&
+    !bridgeDead &&
+    extensionSeenHere() &&
+    !alreadyAdvised(REPAIR_ADVISED_KEY);
+  if (switchedOff) rememberAdvised(REPAIR_ADVISED_KEY);
   const checks: ReadinessCheck[] = [
     ...server.checks,
     {
-      // A driver reading data-blockers must be able to tell the two apart: "bridge" means
-      // the extension is there and this tab isn't talking to it.
-      id: bridgeDead ? "bridge" : "extension",
+      // A driver reading data-blockers must be able to tell them apart: "bridge" means
+      // the extension is there and this tab isn't talking to it; "switched_off" means it
+      // answered in this browser before and Chrome has since disabled it.
+      id: bridgeDead ? "bridge" : switchedOff ? "switched_off" : "extension",
       ok: extPresent,
       reason: extPresent
         ? null
         : bridgeDead
           ? "This tab didn't pick up the HireDrop extension — one reload reconnects it."
-          : browser === "mobile"
-            ? "HireDrop applies from Chrome on your computer — a phone can't run the extension."
-            : wrongBrowser
-              ? `HireDrop applies from Chrome — you're in ${BROWSER_LABEL[browser]}. Copy this page's link and open it there.`
-              : "Install the HireDrop extension — it does the actual applying",
+          : switchedOff
+            ? `Chrome turned HireDrop off. Open ${EXTENSIONS_PAGE} and switch it on, or press Repair.`
+            : browser === "mobile"
+              ? "HireDrop applies from Chrome on your computer — a phone can't run the extension."
+              : wrongBrowser
+                ? `HireDrop applies from Chrome — you're in ${BROWSER_LABEL[browser]}. Copy this page's link and open it there.`
+                : "Install the HireDrop extension — it does the actual applying",
       // No button on a phone: there is no useful action to offer, and a link to copy is
       // not one. Better a plain honest row than a button that leads nowhere.
       fix: extPresent
         ? null
         : bridgeDead
           ? "reload"
-          : browser === "mobile"
-            ? null
-            : wrongBrowser
-              ? "chrome"
-              : "extension",
+          : switchedOff
+            ? "repair"
+            : browser === "mobile"
+              ? null
+              : wrongBrowser
+                ? "chrome"
+                : "extension",
     },
   ];
   return { ready: server.ready && extPresent, checks };
@@ -184,6 +226,8 @@ const FIX_LABELS: Record<string, string> = {
   extension: "Get the extension",
   chrome: "Copy link",
   reload: "Reload this tab",
+  // A page can't open chrome:// URLs, so the button hands over the address instead.
+  repair: "Copy address",
 };
 
 // "Almost there" checklist — shown INSTEAD of starting when something is missing.
@@ -273,8 +317,9 @@ export default function StartReadinessModal({
                     // parent's fixReadiness: neither is a route change, and both would
                     // otherwise have to be duplicated in QuickActions and TapView.
                     if (c.fix === "reload") return window.location.reload();
-                    if (c.fix !== "chrome") return onFix(c.fix!);
-                    navigator.clipboard.writeText(window.location.href).then(
+                    if (c.fix !== "chrome" && c.fix !== "repair") return onFix(c.fix!);
+                    const text = c.fix === "repair" ? EXTENSIONS_PAGE : window.location.href;
+                    navigator.clipboard.writeText(text).then(
                       () => {
                         setCopied(true);
                         setTimeout(() => setCopied(false), 4000);
@@ -287,7 +332,7 @@ export default function StartReadinessModal({
                   className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent text-white
                     hover:bg-accent2 transition"
                 >
-                  {c.fix === "chrome" && copied ? "Copied" : FIX_LABELS[c.fix] || "Fix"}
+                  {(c.fix === "chrome" || c.fix === "repair") && copied ? "Copied" : FIX_LABELS[c.fix] || "Fix"}
                 </button>
               )}
             </div>
