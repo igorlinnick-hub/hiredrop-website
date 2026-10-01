@@ -17,6 +17,7 @@ import StepWritingStyle from "./StepWritingStyle";
 import StepPlan from "./StepPlan";
 import StepConnectExtension from "./StepConnectExtension";
 import StepDone from "./StepDone";
+import { forgetResumeHints } from "@/lib/employerAnswersHints";
 import { resumeStep, SNAPSHOT_VERSION, STEP, STEPS } from "@/lib/onboarding/steps";
 import type { UserProfile } from "@/lib/types";
 
@@ -148,6 +149,8 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
       }
 
       await supabase.from("profiles").update({ resume_url: filePath }).eq("user_id", user.id);
+      // What an earlier resume said is no hint about this one.
+      forgetResumeHints();
     }
 
     setSaving(false);
@@ -314,7 +317,15 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
             <StepATSCheck onNext={next} onBack={back} hasResume={!!resumeFile || !!profile.resume_url} />
           )}
           {step === STEP.answers && (
-            <StepEmployerAnswers profile={profile} onNext={next} onBack={back} />
+            <StepEmployerAnswers
+              profile={profile}
+              onNext={next}
+              onBack={back}
+              // The step saved work eligibility through the server. The copy this wizard
+              // may still carry from an old step 2 is dropped, or finish() would write
+              // it back over what the person just corrected.
+              onSaved={() => updateProfile({ work_authorized_us: null, needs_sponsorship: null })}
+            />
           )}
           {step === 8 && (
             <StepWritingStyle profile={profile} updateProfile={updateProfile} onNext={next} onBack={back} />

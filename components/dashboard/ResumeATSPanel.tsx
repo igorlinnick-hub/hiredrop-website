@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { forgetResumeHints } from "@/lib/employerAnswersHints";
 import { createClient } from "@/lib/supabase/client";
 import Button from "@/components/ui/Button";
 import ResumeEditor, { EMPTY_STRUCTURE, type ResumeStructure } from "./ResumeEditor";
@@ -195,6 +196,8 @@ export default function ResumeATSPanel() {
     }));
     setPreviewUrl(null);
     setUploading(false);
+    // What the previous resume said is no hint about this one.
+    forgetResumeHints();
     flash("Resume uploaded. Run ATS check to analyze it.");
   }
 

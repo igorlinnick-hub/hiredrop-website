@@ -4,6 +4,7 @@ import { KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
+import { answersUi } from "@/lib/employerAnswers";
 import { stopCampaignEverywhere } from "@/lib/campaign/stop";
 import { PLATFORMS, LOCATIONS, JOB_TYPES, WORK_SETTINGS } from "@/lib/constants";
 import LaunchModal, { ALL_PLATFORMS_ID } from "@/components/dashboard/LaunchModal";
@@ -489,7 +490,7 @@ export default function QuickActions({
       const started = await apiPost<{
         filters?: { keywords?: string[]; platforms?: string[] };
         skipped_platforms?: string[];
-      }>("/campaign/start", t, { keywords, platforms: effPlatforms, location, job_type: jobType });
+      }>(answersUi("/campaign/start"), t, { keywords, platforms: effPlatforms, location, job_type: jobType });
       const runKeywords = started?.filters?.keywords?.length ? started.filters.keywords : keywords;
       // Same reason for PLATFORMS: an auto run cannot finish a Lever apply (captcha needs a
       // human), so the server leaves Lever out and names it in `skipped_platforms`. Sending

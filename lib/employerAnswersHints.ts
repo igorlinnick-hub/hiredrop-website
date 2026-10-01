@@ -23,3 +23,14 @@ export async function resumeHints(token: string, userId: string): Promise<Record
   } catch { /* private mode — we simply ask again next time */ }
   return found;
 }
+
+/** A new resume makes what the old one said worthless. Called wherever one is uploaded. */
+export function forgetResumeHints(): void {
+  try {
+    const store = window.sessionStorage;
+    for (let i = store.length - 1; i >= 0; i--) {
+      const key = store.key(i);
+      if (key && key.startsWith("hd_answer_hints:")) store.removeItem(key);
+    }
+  } catch { /* nothing cached, nothing to forget */ }
+}

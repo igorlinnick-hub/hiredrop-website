@@ -4,6 +4,31 @@
 
 export type AnswerKind = "text" | "yesno" | "us_resident";
 
+// Which list of questions this build can ask PROPERLY (their "I don't have one"
+// tickboxes included). Sent on /campaign/readiness, /campaign/start and the save; the
+// server holds a client that sends nothing — a tab loaded before a question existed — to
+// the list it has always seen, so nobody is asked something their screen cannot answer
+// honestly. Bump together with ANSWERS_UI in modules/employer_answers.py.
+export const ANSWERS_UI = 2;
+
+/** `?answers_ui=N` for the three endpoints that count missing answers. */
+export const answersUi = (path: string) => `${path}${path.includes("?") ? "&" : "?"}answers_ui=${ANSWERS_UI}`;
+
+// A backend older than the tickboxes-travel-with-the-question change (a rollback) sends
+// the LinkedIn question bare. Its opt-out existed long before that, so it is restored
+// here rather than lost for as long as the rollback lasts.
+const LEGACY_OPT_OUT: Record<string, { flag: string; label: string }> = {
+  linkedin_url: { flag: "no_linkedin", label: "I don't have a LinkedIn" },
+};
+
+/** The questions as the form should draw them, whatever vintage of server sent them. */
+export function normalizeQuestions(questions: AnswerQuestion[]): AnswerQuestion[] {
+  return (questions || []).map((q) => {
+    const kind: AnswerKind = q.kind === "yesno" || q.kind === "us_resident" ? q.kind : "text";
+    return { ...q, kind, opt_out: q.opt_out ?? LEGACY_OPT_OUT[q.key] };
+  });
+}
+
 export interface AnswerQuestion {
   key: string;
   label: string;

@@ -19,17 +19,24 @@ type AnswersResponse = { questions: AnswerQuestion[] } & Record<string, unknown>
 //
 // The list is the server's (GET /profile/employer-answers) — the same one the Start gate
 // refuses on, which stays as the backstop for accounts older than a question.
+// A hung request must end on the screen that offers a way on, not on "Loading…" forever.
+const LOAD_TIMEOUT_MS = 15000;
+
 export default function StepEmployerAnswers({
   profile,
   onNext,
   onBack,
+  onSaved,
   preset,
 }: {
   profile: UserProfile;
   onNext: () => void;
   onBack: () => void;
+  // The answers were saved through the server; the wizard's own copy of two of them
+  // (work eligibility, from a wizard that began before this step existed) is now stale.
+  onSaved?: () => void;
   // Questions handed in instead of fetched — /preview/answers draws the real step
-  // without a session.
+  // without a session, and without saving anything.
   preset?: AnswerQuestion[];
 }) {
   const [questions, setQuestions] = useState<AnswerQuestion[] | null>(preset ?? null);
@@ -45,7 +52,12 @@ export default function StepEmployerAnswers({
         const { data } = await createClient().auth.getSession();
         const token = data.session?.access_token;
         if (!token) throw new Error("Your session expired — sign in again.");
-        const res = await apiGet<AnswersResponse>("/profile/employer-answers", token);
+        const res = await Promise.race([
+          apiGet<AnswersResponse>("/profile/employer-answers", token),
+          new Promise<never>((_resolve, reject) =>
+            setTimeout(() => reject(new Error("the server took too long to answer")), LOAD_TIMEOUT_MS),
+          ),
+        ]);
         // Answers typed on an earlier step of a wizard that is already under way.
         const local: Record<string, boolean | null> = {
           work_authorized_us: profile.work_authorized_us,
@@ -107,14 +119,24 @@ export default function StepEmployerAnswers({
           </div>
         </div>
       ) : questions === null ? (
-        <p className="text-sm text-text2" data-testid="answers-loading">Loading…</p>
+        <div className="space-y-4">
+          <p className="text-sm text-text2" data-testid="answers-loading">Loading…</p>
+          {/* Back stays reachable while we wait: a step with no buttons is a trap. */}
+          <div className="flex justify-between">
+            <Button type="button" variant="ghost" onClick={onBack}>Back</Button>
+          </div>
+        </div>
       ) : (
         <EmployerAnswersForm
           questions={questions}
           flags={flags}
-          onDone={onNext}
+          onDone={() => {
+            onSaved?.();
+            onNext();
+          }}
           onBack={onBack}
           onSkip={onNext}
+          preview={!!preset}
         />
       )}
     </div>

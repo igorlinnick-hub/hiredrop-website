@@ -9,7 +9,9 @@ import type { UserProfile } from "@/lib/types";
 
 // Logged-out look at the "answer these once" form in both of its homes: the signup step
 // (every question, pre-filled from the resume) and the Start gate (only what is still
-// missing). Both are the REAL components with mock questions — nothing here can save.
+// missing). Both are the REAL components with mock questions, in their `preview` mode:
+// no resume is read and Save posts nothing — this page is public, and a visitor who is
+// signed in must not have mock answers written into a real profile by clicking around.
 // `?dark=1` flips the dashboard half; signup has one look.
 const NO_LINKEDIN = { flag: "no_linkedin", label: "I don't have a LinkedIn" };
 const NO_DEGREE = { flag: "no_degree", label: "I don't have a college degree" };
@@ -63,7 +65,7 @@ export default function AnswersPreviewClient({ dark }: { dark: boolean }) {
           <p className="text-sm text-text2/70 mb-4">
             A couple of things before your campaign can actually apply:
           </p>
-          <EmployerAnswersForm questions={MISSING} onDone={noop} />
+          <EmployerAnswersForm questions={MISSING} onDone={noop} preview />
         </div>
       </div>
     </div>

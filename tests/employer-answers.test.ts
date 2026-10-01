@@ -9,12 +9,15 @@ import { strict as assert } from "node:assert";
 import { test } from "node:test";
 
 import {
+  ANSWERS_UI,
+  answersUi,
   applyHints,
   awaitsHint,
   buildBody,
   initialValues,
   isAnswered,
   livesAbroad,
+  normalizeQuestions,
   optOutAnchors,
   spansRow,
   type AnswerQuestion,
@@ -118,4 +121,29 @@ test("a snapshot saved before the Answers step resumes on the same screen", () =
   assert.equal(resumeStep({ v: 2, step: 10 }), STEP.connect);
   assert.equal(resumeStep(null), undefined);
   assert.equal(resumeStep({ step: 99 }), STEPS.length);
+});
+
+test("every count of missing answers says which list this build can ask", () => {
+  // A client that says nothing is held by the server to the list it always saw — that is
+  // what keeps an old tab from being asked something it cannot draw. This build says 2.
+  assert.equal(ANSWERS_UI, 2);
+  assert.equal(answersUi("/campaign/readiness"), "/campaign/readiness?answers_ui=2");
+  assert.equal(answersUi("/campaign/start?x=1"), "/campaign/start?x=1&answers_ui=2");
+});
+
+test("questions from any vintage of server are drawable", () => {
+  const fromOldServer = [
+    { key: "linkedin_url", label: "LinkedIn profile URL", kind: "text" },
+    { key: "city", label: "City", kind: "text" },
+  ] as AnswerQuestion[];
+  const [linkedin, city] = normalizeQuestions(fromOldServer);
+  // A rolled-back backend sends LinkedIn without its tickbox; it has always had one.
+  assert.deepEqual(linkedin.opt_out, { flag: "no_linkedin", label: "I don't have a LinkedIn" });
+  assert.equal(city.opt_out, undefined);
+  // What the server sends wins over the fallback.
+  const own = { flag: "no_linkedin", label: "No LinkedIn" };
+  assert.deepEqual(normalizeQuestions([{ ...fromOldServer[0], opt_out: own }])[0].opt_out, own);
+  // A kind this build has never heard of is a text box — not a Yes/No that posts true.
+  const future = [{ key: "start_date", label: "Start date", kind: "date" }] as unknown as AnswerQuestion[];
+  assert.equal(normalizeQuestions(future)[0].kind, "text");
 });

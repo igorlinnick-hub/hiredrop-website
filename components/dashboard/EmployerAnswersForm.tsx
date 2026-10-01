@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import Button from "@/components/ui/Button";
 import { apiPost, ApiError } from "@/lib/api";
 import {
+  answersUi,
   applyHints,
   awaitsHint,
   buildBody,
   initialValues,
   isAnswered,
   livesAbroad,
+  normalizeQuestions,
   optedOut,
   optOutAnchors,
   spansRow,
@@ -48,23 +50,40 @@ export default function EmployerAnswersForm({
   onDone,
   onBack,
   onSkip,
+  preview,
 }: {
   questions: AnswerQuestion[];
   flags?: AnswerFlags;
-  onDone: () => void;
+  // Called after a successful save, with what was saved.
+  onDone: (saved?: Record<string, string | boolean>) => void;
   onBack?: () => void;
+  // /preview only: draw everything, touch nothing — no resume read, no save. The page
+  // is public and the visitor may well be signed in; a click there must not write mock
+  // answers into a real profile.
+  preview?: boolean;
   // Signup only: the way past a save that keeps failing. The Start gate asks again, so
   // an outage on our side must not be what stops someone finishing their account.
   onSkip?: () => void;
 }) {
-  const [asked, setAsked] = useState<AnswerQuestion[]>(questions);
+  const [asked, setAsked] = useState<AnswerQuestion[]>(() => normalizeQuestions(questions));
   const [values, setValues] = useState<AnswerValues>(() => initialValues(questions));
+  // Back (or the modal's ✕) during a save: the answer that comes back belongs to a form
+  // that is gone, and must not walk the wizard forward from wherever the user now is.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const [flags, setFlags] = useState<AnswerFlags>(initialFlags || {});
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   // Blank text questions: ask the resume, in signup and at the Start gate alike — an
   // account older than a question deserves the same "check it" instead of an empty box.
-  const [reading, setReading] = useState(() => questions.some((q) => awaitsHint(q, initialFlags || {})));
+  const [reading, setReading] = useState(
+    () => !preview && questions.some((q) => awaitsHint(q, initialFlags || {})),
+  );
   useEffect(() => {
     if (!reading) return;
     let live = true;
@@ -93,25 +112,29 @@ export default function EmployerAnswersForm({
 
   async function save() {
     if (!complete || saving) return;
+    if (preview) return onDone();
     setSaving(true);
     setErr(null);
     try {
       const { data } = await createClient().auth.getSession();
       const token = data.session?.access_token;
       if (!token) throw new Error("Your session expired — sign in again.");
+      const body = buildBody(asked, values, flags);
       const res = await apiPost<{ missing: AnswerQuestion[] }>(
-        "/profile/employer-answers",
+        answersUi("/profile/employer-answers"),
         token,
-        buildBody(asked, values, flags),
+        body,
       );
-      const left = res?.missing || [];
-      if (left.length === 0) return onDone();
+      if (!mounted.current) return;
+      const left = normalizeQuestions(res?.missing || []);
+      if (left.length === 0) return onDone(body);
       setAsked(left);
       setValues((s) => ({ ...initialValues(left), ...s }));
     } catch (e) {
+      if (!mounted.current) return;
       setErr(e instanceof ApiError ? e.message : e instanceof Error ? e.message : String(e));
     } finally {
-      setSaving(false);
+      if (mounted.current) setSaving(false);
     }
   }
 
