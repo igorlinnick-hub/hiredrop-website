@@ -11,7 +11,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import BuddyOrb from "./BuddyOrb";
+import DropFigure from "./DropFigure";
 
 export type Msg = { role: "user" | "drop"; text: string };
 
@@ -88,7 +88,7 @@ export default function BuddyPanel({
     >
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border">
-        <BuddyOrb size={34} state="idle" />
+        <DropFigure size={34} state="idle" />
         <div className="min-w-0">
           <div className="text-[14px] font-semibold text-text leading-tight">Drop</div>
           <div className="text-[11px] text-text/50 leading-tight">Knows your account</div>

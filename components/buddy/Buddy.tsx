@@ -15,7 +15,8 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import BuddyOrb, { type BuddyState } from "./BuddyOrb";
+import DropFigure from "./DropFigure";
+import { type BuddyState } from "./BuddyOrb";
 import BuddyPanel, { type AskFn } from "./BuddyPanel";
 
 const NUDGE_SEEN_KEY = "hd_drop_nudge_seen";
@@ -26,30 +27,38 @@ export default function Buddy({
   suggestions = ["Why no applications today?", "Which resume am I sending?", "Is this safe for my account?"],
   mood = "idle",
   nudge = null,
+  working = false,
 }: {
   ask: AskFn;
   greeting?: string;
   suggestions?: string[];
   mood?: Extract<BuddyState, "idle" | "success" | "stuck">;
   nudge?: string | null;
+  /** A campaign is actually running (server says so) — Drop sits at the desk. */
+  working?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [chatState, setChatState] = useState<BuddyState | null>(null);
-  const [showNudge, setShowNudge] = useState(false);
+  // Which nudge text is currently armed to show. Holding the TEXT rather than a
+  // boolean means the effect never has to clear it synchronously — changing the
+  // nudge or opening the chat simply makes the value stop matching.
+  const [armed, setArmed] = useState<string | null>(null);
 
   // The nudge appears once per nudge text, after a beat, and never again once
   // it's been dismissed or the chat has been opened.
   useEffect(() => {
-    if (!nudge || open) { setShowNudge(false); return; }
+    if (!nudge || open) return;
     let seen: string | null = null;
     try { seen = localStorage.getItem(NUDGE_SEEN_KEY); } catch { /* private mode */ }
     if (seen === nudge) return;
-    const t = setTimeout(() => setShowNudge(true), 2200);
+    const t = setTimeout(() => setArmed(nudge), 2200);
     return () => clearTimeout(t);
   }, [nudge, open]);
 
+  const showNudge = !open && !!nudge && armed === nudge;
+
   function dismissNudge() {
-    setShowNudge(false);
+    setArmed(null);
     try { if (nudge) localStorage.setItem(NUDGE_SEEN_KEY, nudge); } catch { /* noop */ }
   }
 
@@ -108,7 +117,7 @@ export default function Buddy({
         transition={{ type: "spring", stiffness: 420, damping: 22 }}
         className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
       >
-        <BuddyOrb size={58} state={state} />
+        <DropFigure size={116} state={state} working={working} />
       </motion.button>
     </div>
   );
