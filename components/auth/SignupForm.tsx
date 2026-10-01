@@ -300,17 +300,9 @@ export default function SignupForm({
         {loading ? "Creating account..." : "Create Account"}
       </Button>
 
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-surface px-4 text-text2">or sign up with</span>
-        </div>
-      </div>
-
       <GoogleButton
         intent="signup"
+        divider="or sign up with"
         next={affiliateCode || affiliateIntent ? "/dashboard/affiliate" : null}
       />
 
