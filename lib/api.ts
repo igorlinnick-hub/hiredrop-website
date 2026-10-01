@@ -168,6 +168,20 @@ export interface ApiJob {
   description?: string;
 }
 
+// GET /jobs/deck — today's list (daily-30). fits_today counts only the fit judge's passes;
+// cards also carry unjudged Indeed postings, which the judge decides at apply time.
+export interface DeckResponse {
+  cards: (ApiJob & {
+    fit_score?: number | null;
+    fit_reason?: string | null;
+    fit_current?: boolean;
+    score?: number;
+  })[];
+  fits_today?: number;
+  off_search?: number;
+  keywords?: string[];
+}
+
 export interface ApiApplication {
   id: string;
   job_id?: string;

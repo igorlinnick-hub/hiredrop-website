@@ -62,7 +62,7 @@ export default function PreviewInkDay() {
           title="Stats"
           note="One tile inverts against its siblings — the popup's black/white mix, applied to the metric that matters."
         >
-          <StatsCards totalJobs={1056} totalApplications={43} applicationsToday={7} />
+          <StatsCards fitsToday={14} totalApplications={43} applicationsToday={7} />
         </Section>
 
         <Section title="Actions" note="One recipe for every primary action: ink face, white type, gold only as the hover halo.">

@@ -12,10 +12,6 @@ import { stopCampaignEverywhere } from "@/lib/campaign/stop";
 import { PLATFORMS } from "@/lib/constants";
 import type { Job } from "@/lib/types";
 
-// Ban-safety rail: never queue more than this per platform per day (mirrors the
-// backend MAX_PER_PLATFORM). Keeps a swipe spree from lining up 80 applies.
-const MAX_PER_PLATFORM = 15;
-
 // Platforms the background executor can actually apply to from an approved swipe today.
 // A card you Approve MUST result in a real apply, not a no-op — so this list mirrors what
 // the extension's buildApprovedAtsQueue() will actually walk (ATS_PLATFORMS + verified
@@ -26,9 +22,8 @@ const MAX_PER_PLATFORM = 15;
 // the executor side = a dead swipe; ZR stays auto-only.
 const TAP_APPLY_PLATFORMS = ["greenhouse", "lever", "indeed", "ashby"];
 
-// Brand accent per platform for the monogram chip on each card — the deck mixes platforms
-// (Igor: "не одна платформа, а сразу несколько в рандомном порядке"), so every card must show
-// WHICH platform it's from at a glance. Hex ≈ brand color; matches PlatformConnections.tsx.
+// Brand accent per platform for the monogram chip on each card — one list carries several
+// boards, so every card must show WHICH platform it's from at a glance. Hex ≈ brand color; matches PlatformConnections.tsx.
 const BRAND: Record<string, string> = {
   indeed: "#2557a7",
   greenhouse: "#1f7a54",
@@ -52,13 +47,17 @@ export default function TapView({ token: initialToken }: { token: string }) {
   // pool row on your enabled platforms, so it would keep announcing "145 in queue" over a
   // deck the search narrowed to a dozen. The number has to be the thing you can swipe.
   const [inQueue, setInQueue] = useState(0);
+  // "N fit you today" — only what the fit judge passed. Indeed cards ride in the same list
+  // unjudged (not prejudged yet) and are NOT counted: the number must not claim a fit
+  // nobody checked (Igor, 09-30). No "of 30": the 30 is a ceiling, not a promise.
+  const [fitsToday, setFitsToday] = useState(0);
   const [busy, setBusy] = useState<null | "start" | "stop">(null);
   const [readyOpen, setReadyOpen] = useState(false);
   const [readyChecks, setReadyChecks] = useState<ReadinessCheck[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
-  // The deck: pool jobs (status "new"), best-fit first, capped per platform. deck[0] is
-  // the card on top. Decisions shift the head off instantly (optimistic) — the PATCH to
+  // The deck: today's list (GET /jobs/deck), in the server's order — freshest first, the
+  // same order auto applies in. deck[0] is the card on top. Decisions shift the head off instantly (optimistic) — the PATCH to
   // the backend rides along in the background so tapping never blocks.
   const [deck, setDeck] = useState<Job[]>([]);
   const [deckLoaded, setDeckLoaded] = useState(false);
@@ -133,40 +132,19 @@ export default function TapView({ token: initialToken }: { token: string }) {
     return () => { window.removeEventListener("message", onMsg); clearInterval(iv); clearTimeout(probe); };
   }, []);
 
-  // ── The deck: pool jobs to swipe ──────────────────────────────────────────
-  // status "new" only (untouched). Igor's principle: NOT one platform at a time — the deck
-  // is SEVERAL platforms mixed in random order. So we group by platform (best-fit first
-  // within each), cap per platform, then round-robin interleave across platforms in a
-  // RANDOMISED platform order → consecutive cards come from different boards, sequence feels
-  // random, and no single board dominates the stack. Preserves any card currently on top.
+  // ── The deck: today's list ───────────────────────────────────────────────────
+  // The server owns the order (daily-30, Igor 09-30): freshest first, two per company,
+  // below-bar postings already out — the same list the dashboard shows and auto walks.
+  // Until 09-30 this re-sorted by the pool score and shuffled platforms, so the card on
+  // top here was never the posting auto would open next. Only what the client alone
+  // knows stays here: the applyable filter and the card under the user's thumb.
   const buildDeck = useCallback((jobs: Job[], keepTopId?: string): Job[] => {
-    const fresh = jobs.filter(
+    const out = jobs.filter(
       (j) =>
         (j.status || "new") === "new" &&
         (j.link || (j as { apply_url?: string }).apply_url) &&
         TAP_APPLY_PLATFORMS.includes(j.platform)
     );
-    const shuffle = <T,>(arr: T[]): T[] => {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const k = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[k]] = [arr[k], arr[i]];
-      }
-      return arr;
-    };
-    // Group by platform; best-fit first inside each; cap so one board can't flood the deck.
-    const byPlatform: Record<string, Job[]> = {};
-    for (const j of fresh) (byPlatform[j.platform || "other"] ||= []).push(j);
-    const queues = shuffle(Object.keys(byPlatform)).map((p) =>
-      byPlatform[p].sort((a, b) => (b.score ?? -1) - (a.score ?? -1)).slice(0, MAX_PER_PLATFORM)
-    );
-    // Round-robin interleave → mixed platforms, no long single-platform runs.
-    const out: Job[] = [];
-    for (let round = 0, more = true; more; round++) {
-      more = false;
-      for (const q of queues) {
-        if (round < q.length) { out.push(q[round]); more = true; }
-      }
-    }
     // Don't yank the card out from under the user's thumb mid-swipe.
     if (keepTopId && out[0]?.id !== keepTopId) {
       const top = out.find((j) => j.id === keepTopId);
@@ -200,11 +178,12 @@ export default function TapView({ token: initialToken }: { token: string }) {
   const loadDeck = useCallback(async () => {
     try {
       const t = await getToken();
-      const res = await apiGet<{ cards: Job[]; pool: number; off_search: number; keywords: string[] }>(
-        "/jobs/deck", t
-      );
+      const res = await apiGet<{
+        cards: Job[]; fits_today?: number; pool: number; off_search: number; keywords: string[];
+      }>("/jobs/deck", t);
       const jobs = res.cards || [];
       setInQueue(jobs.length);
+      setFitsToday(res.fits_today ?? jobs.filter((j) => j.fit_current).length);
       setOffSearch(res.off_search || 0);
       setDeckKeywords(res.keywords || []);
       setDeck((prev) => {
@@ -522,7 +501,12 @@ export default function TapView({ token: initialToken }: { token: string }) {
           <div className="text-sm text-text2 ml-1">
             <span className="text-text font-medium">{applied}</span> applied
             <span className="mx-2 text-text2/30">·</span>
-            <span className="text-text font-medium">{inQueue}</span> in queue
+            <span data-testid="fits-today"
+              title={inQueue > fitsToday
+                ? `${inQueue - fitsToday} more in the list are checked for fit when we apply.`
+                : undefined}>
+              <span className="text-text font-medium">{fitsToday}</span> {fitsToday === 1 ? "fits" : "fit"} you today
+            </span>
             {offSearch > 0 && (
               <>
                 <span className="mx-2 text-text2/30">·</span>
@@ -661,17 +645,32 @@ export default function TapView({ token: initialToken }: { token: string }) {
                           </p>
                         </div>
                       </div>
-                      {typeof card.score === "number" && (
+                      {card.fit_current && typeof card.fit_score === "number" ? (
                         <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border"
-                          style={card.score >= 8
+                          title="Fit judge's score for your current resume and preferences"
+                          style={card.fit_score >= 70
                             ? { background: "var(--hdc-pmint-bg)", color: "var(--hdc-pmint-tx)", borderColor: "var(--hdc-pmint-bd)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.15)" }
-                            : card.score >= 5
+                            : card.fit_score >= 55
                             ? { background: "var(--hdc-pvio-bg)", color: "var(--hdc-pvio-tx)", borderColor: "var(--hdc-pvio-bd)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.15)" }
                             : { background: "var(--hdc-pmut-bg)", color: "var(--hdc-pmut-tx)", borderColor: "var(--hdc-pmut-bd)" }}>
-                          {card.score}/10 fit
+                          {card.fit_score} fit
+                        </span>
+                      ) : (
+                        <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border"
+                          title="Not judged ahead of time — the fit judge checks it the moment we apply, and skips it if it doesn't fit."
+                          style={{ background: "var(--hdc-pmut-bg)", color: "var(--hdc-pmut-tx)", borderColor: "var(--hdc-pmut-bd)" }}>
+                          Fit checked when applying
                         </span>
                       )}
                     </div>
+
+                    {/* The judge's one line — reached against today's resume, never a stale one */}
+                    {card.fit_current && card.fit_reason && (
+                      <p className="text-[13px] leading-snug mb-3" style={{ color: "var(--hdc-sub)" }}>
+                        <span className="font-medium" style={{ color: "var(--hdc-title)" }}>Judge&apos;s note: </span>
+                        {card.fit_reason}
+                      </p>
+                    )}
 
                     {/* The job description — what you actually decide on */}
                     {card.description ? (
