@@ -148,7 +148,8 @@ export default function RadiusMap({
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const maplibregl = (await import("maplibre-gl")).default;
+      // v6 is ESM-only with named exports — there is no default export anymore.
+      const maplibregl = await import("maplibre-gl");
       if (cancelled || !containerRef.current || mapRef.current) return;
 
       // Brand accent for the ring — read the CSS var (WebGL paint can't use var()).
