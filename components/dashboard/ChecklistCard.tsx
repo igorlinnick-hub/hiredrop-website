@@ -337,7 +337,7 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
       label: extOff ? "Turn the extension back on" : "Install the extension",
       hint: chromium ? "It sends the applications" : "Finish this in Chrome",
       alert: extOff
-        ? extAddrCopied ? "Copied — paste it in the address bar" : `Chrome turned it off · copy ${EXTENSIONS_PAGE}`
+        ? extAddrCopied ? "Copied — paste it in the address bar" : `Chrome paused it · copy ${EXTENSIONS_PAGE}`
         : undefined,
       done: extDone,
       progress: extDone ? 1 : 0,
