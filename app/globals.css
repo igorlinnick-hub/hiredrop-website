@@ -959,6 +959,14 @@ h1, h2, h3 {
 .hd-gauge-done { font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -.02em; }
 .hd-gauge-total { font-size: 12px; font-weight: 600; color: var(--text2); }
 
+/* Auto run counter: each new send remounts the digit (key = count) and it pops once. */
+.hd-gauge-bump { display: inline-block; animation: hd-gauge-bump .5s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes hd-gauge-bump {
+  0%   { transform: translateY(5px) scale(.82); opacity: .35; }
+  100% { transform: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .hd-gauge-bump { animation: none; } }
+
 /* Live pulse next to the headline — the one moving thing, so "it's working"
    doesn't depend on the number changing (a fill takes 1-2 minutes). */
 .hd-tap-pulse {

@@ -7,6 +7,7 @@ import { apiGet, apiPost, type CampaignStatusResponse } from "@/lib/api";
 import { checkExtensionPresent } from "@/components/dashboard/StartReadiness";
 import { readTapBaseline, markTapSessionStart, clearTapBaseline, startTapRun } from "@/lib/tap-run";
 import { stopCampaignEverywhere } from "@/lib/campaign/stop";
+import { PLATFORMS } from "@/lib/constants";
 
 /**
  * The arch — where a swipe sitting stays visible after you leave the deck.
@@ -28,6 +29,12 @@ import { stopCampaignEverywhere } from "@/lib/campaign/stop";
  *                tells you about a dead end without offering the way out;
  *   caught up  → "all N sent", then it retires itself.
  *
+ * And when there is no swiped batch but an Auto run is live, the same dock carries the
+ * run's live counter (Igor 09-30: "при лайв кампейне счётчик должен идти на главной"):
+ * the arc is today's sends against today's cap, the number bumps on every new send, the
+ * line under it splits today by platform. Both numbers are /campaign/status — the dock
+ * never counts on its own. A swiped batch outranks it: that is the more specific news.
+ *
  * Every number is the server's (GET /campaign/queue, GET /campaign/status) — the phone
  * swipes the same pool, so the dock is right on a device that has no extension at all.
  * `done` is a difference between two server numbers against a stamp the deck writes (see
@@ -36,6 +43,12 @@ import { stopCampaignEverywhere } from "@/lib/campaign/stop";
 
 const POLL_MS = 8000;
 const DISMISS_KEY = "hd_tap_dock_dismissed";
+// Hiding the live counter holds for that run only — keyed by its started_at, so the
+// next Start brings it back.
+const LIVE_DISMISS_KEY = "hd_live_dock_dismissed";
+// The backend's admin "unlimited" sentinel is 10M; anything that large is not a cap
+// worth drawing an arc against.
+const UNLIMITED_AT = 1_000_000;
 // A finished batch says so, then gets out of the way. Long enough to read, short
 // enough that it isn't furniture.
 const DONE_LINGER_MS = 30_000;
@@ -54,6 +67,10 @@ type Snapshot = {
   running: boolean;
   doneToday: number;
   next: { title: string; company: string; platform: string } | null;
+  // Auto-run counter. Optional so the tap-batch demos stay as they were.
+  dailyLimit?: number | null;
+  platformCounts?: Record<string, number>;
+  startedAt?: string | null;
 };
 
 export type DockDemo = Snapshot & { done: number };
@@ -72,6 +89,7 @@ export default function TapProgressDock(
   const [busy, setBusy] = useState<null | "start" | "stop">(null);
   const [note, setNote] = useState<string | null>(null);
   const [dismissedAt, setDismissedAt] = useState<number | null>(null);
+  const [liveDismissed, setLiveDismissed] = useState<string | null>(null);
   const doneSinceRef = useRef<number | null>(null);
   const [retired, setRetired] = useState(false);
 
@@ -97,6 +115,8 @@ export default function TapProgressDock(
       const raw = sessionStorage.getItem(DISMISS_KEY);
       // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time read of an external store; see above
       if (raw) setDismissedAt(Number(raw) || null);
+      const live = sessionStorage.getItem(LIVE_DISMISS_KEY);
+      if (live) setLiveDismissed(live);
     } catch { /* private mode */ }
   }, []);
 
@@ -117,6 +137,9 @@ export default function TapProgressDock(
         running: !!st.running,
         doneToday: st.today_applications ?? q.done_today ?? 0,
         next,
+        dailyLimit: st.daily_limit ?? null,
+        platformCounts: st.platform_counts ?? {},
+        startedAt: st.started_at ?? null,
       });
       // Baseline the sitting if the deck never got to (dock opened mid-run, or a reload
       // wiped the stamp): from here on, "done" counts forward from now — under-claiming,
@@ -195,11 +218,29 @@ export default function TapProgressDock(
     try { sessionStorage.setItem(DISMISS_KEY, String(waiting)); } catch { /* noop */ }
   }
 
+  function dismissLive() {
+    const key = snap?.startedAt ?? "run";
+    setLiveDismissed(key);
+    try { sessionStorage.setItem(LIVE_DISMISS_KEY, key); } catch { /* noop */ }
+  }
+
   // ── Should it be on screen at all? ──────────────────────────────────────────
-  if (retired || !snap) return null;
-  if (total === 0) return null;
-  // Dismissed stays dismissed until the batch GROWS — new swipes are new news.
-  if (!demo && dismissedAt !== null && waiting <= dismissedAt) return null;
+  if (!snap) return null;
+  // No swiped batch on screen (none, retired, or hidden) + a live run → the run's counter.
+  const batchHidden = retired || total === 0
+    || (!demo && dismissedAt !== null && waiting <= dismissedAt);
+  if (batchHidden) {
+    if (!snap.running) return null;
+    if (!demo && liveDismissed !== null && liveDismissed === (snap.startedAt ?? "run")) return null;
+    return (
+      <LiveRunDock
+        snap={snap} shape={shape} busy={busy} note={note}
+        onStop={stop} onHide={dismissLive}
+      />
+    );
+  }
+  // (Dismissed stays dismissed until the batch GROWS — new swipes are new news; folded
+  // into batchHidden above.)
 
   const finished = waiting === 0 && done > 0;
   const applying = snap.running && waiting > 0;
@@ -290,6 +331,98 @@ export default function TapProgressDock(
             Deck
           </Link>
           <button onClick={dismiss} aria-label="Hide" title="Hide"
+            className="w-7 h-7 rounded-full text-text2 hover:text-text transition active:scale-90
+              flex items-center justify-center">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.2}
+              strokeLinecap="round" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const platformName = (id: string) => PLATFORMS.find((p) => p.id === id)?.name ?? id;
+
+/** The Auto run's live counter, in the same dock body as the tap batch. */
+function LiveRunDock({ snap, shape, busy, note, onStop, onHide }: {
+  snap: Snapshot;
+  shape: DockShape;
+  busy: null | "start" | "stop";
+  note: string | null;
+  onStop: () => void;
+  onHide: () => void;
+}) {
+  const today = snap.doneToday;
+  const limit = snap.dailyLimit && snap.dailyLimit < UNLIMITED_AT ? snap.dailyLimit : null;
+  const pct = limit ? Math.min(1, today / limit) : 0;
+  const capped = limit !== null && today >= limit;
+
+  const byPlatform = Object.entries(snap.platformCounts ?? {})
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([id, n]) => `${platformName(id)} ${n}`)
+    .join(" · ");
+
+  const headline = capped ? `Today's cap reached — ${today} sent` : "Applying for you — live";
+  const sub = capped
+    ? "The run picks up again tomorrow."
+    : [
+        byPlatform || "Searching for the next match…",
+        limit !== null ? `${limit - today} left today` : null,
+      ].filter(Boolean).join("  ·  ");
+
+  const gauge = (
+    <>
+      <svg viewBox="0 0 120 70" className="hd-gauge-svg">
+        <path className="hd-gauge-track" d="M14 58 A46 46 0 0 1 106 58" />
+        {limit !== null && (
+          <path
+            className="hd-gauge-fill"
+            d="M14 58 A46 46 0 0 1 106 58"
+            style={{ strokeDasharray: 144.5, strokeDashoffset: 144.5 * (1 - pct) }}
+          />
+        )}
+      </svg>
+      <div className="hd-tap-gauge-num">
+        {/* key = the count: every new send remounts the digit and replays the bump. */}
+        <span key={today} className="hd-gauge-done hd-gauge-bump" data-testid="live-dock-count">{today}</span>
+        <span className="hd-gauge-total">{limit !== null ? `/${limit}` : " today"}</span>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="hd-tap-dock-wrap" role="status" aria-live="polite"
+      aria-label={limit !== null ? `${today} of ${limit} applications sent today` : `${today} applications sent today`}>
+      <div className={["hd-tap-dock", `shape-${shape}`, capped ? "is-done" : "is-live"].join(" ")}>
+        <div className={shape === "dome" ? "hd-tap-dome" : "hd-tap-gauge"} aria-hidden>
+          {gauge}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-2 text-[14px] font-semibold leading-tight text-text">
+            {!capped && <span className="hd-tap-pulse" aria-hidden />}
+            {headline}
+          </p>
+          <p className="mt-0.5 text-[12.5px] text-text2 leading-snug line-clamp-2">{sub}</p>
+          {note && <p className="mt-0.5 text-[11.5px] text-red">{note}</p>}
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {!capped && (
+            <button onClick={onStop} disabled={busy !== null} data-testid="live-dock-stop"
+              className="px-3 py-2 rounded-xl border border-border text-[13px] font-medium text-text2
+                hover:text-text transition active:scale-[.97] disabled:opacity-50">
+              {busy === "stop" ? "Stopping…" : "Stop"}
+            </button>
+          )}
+          <Link href="/dashboard/history" prefetch
+            className="px-3 py-2 rounded-xl border border-border text-[13px] font-medium text-text2
+              hover:text-text transition active:scale-[.97]">
+            History
+          </Link>
+          <button onClick={onHide} aria-label="Hide" title="Hide"
             className="w-7 h-7 rounded-full text-text2 hover:text-text transition active:scale-90
               flex items-center justify-center">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.2}
