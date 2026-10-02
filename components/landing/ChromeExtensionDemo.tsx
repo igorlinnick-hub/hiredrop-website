@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import DropCameo from "./DropCameo";
 
 /* ─── Job listings ─── */
 const JOBS = [
@@ -142,6 +143,9 @@ export default function ChromeExtensionDemo() {
 
         {/* ═══ MAIN DEMO FRAME ═══ */}
         <div className="relative">
+          {/* Drop hangs from the bottom edge of the browser frame — first child, so the
+              frame paints over its hands and it reads as gripping from behind */}
+          <DropCameo pose="hang" width={104} enter="swing" delay={0.6} className="hidden lg:block absolute left-14 top-full -mt-[26px]" />
           {/* Glow behind frame */}
           <div
             className="absolute -inset-3 rounded-[24px] opacity-60 blur-2xl pointer-events-none"

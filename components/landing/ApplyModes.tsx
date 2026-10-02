@@ -1,5 +1,6 @@
 import ScrollReveal from "./ScrollReveal";
 import DecorMarks from "./DecorMarks";
+import DropCameo from "./DropCameo";
 
 const MODES = [
   {
@@ -25,6 +26,8 @@ export default function ApplyModes() {
     <section id="modes" className="relative overflow-hidden py-20 px-4 sm:px-6 lg:px-8">
       <div className="glow-purple" style={{ width: 460, height: 460, top: -140, left: "50%", transform: "translateX(-50%)" }} />
       <DecorMarks />
+      {/* Drop peeks in from behind the right edge of the page */}
+      <DropCameo pose="peek" width={180} enter="right" className="hidden lg:block absolute right-0 bottom-10 z-20" />
       <div className="relative z-10 max-w-5xl mx-auto">
         <ScrollReveal className="text-center mb-14">
           <span className="inline-block mb-4 px-3.5 py-1.5 rounded-full bg-[#EEE9FF] text-[#6C5CE7] text-xs font-semibold">

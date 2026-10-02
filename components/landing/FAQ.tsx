@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { PRICE_SENTENCE } from "@/lib/pricing";
+import DropCameo from "./DropCameo";
 
 const QUESTIONS = [
   {
@@ -86,6 +87,8 @@ export default function FAQ() {
             <p className="mt-4 text-[#6B6B8A]">
               Everything you need to know about HireDrop.
             </p>
+            {/* mirrored so it points right, at the questions */}
+            <DropCameo pose="point" width={140} flip enter="left" className="hidden lg:block mt-10" />
           </div>
 
           {/* Right — accordion */}

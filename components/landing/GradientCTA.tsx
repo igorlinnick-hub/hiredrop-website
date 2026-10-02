@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { PRICE_SENTENCE } from "@/lib/pricing";
 
 import DecorMarks from "./DecorMarks";
+import DropCameo from "./DropCameo";
 
 export default function GradientCTA() {
   return (
@@ -53,6 +54,8 @@ export default function GradientCTA() {
         viewport={{ once: true, amount: 0.3 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       >
+        {/* Drop rises from behind the card and waves; the clip makes the card edge its floor */}
+        <DropCameo pose="wave" width={112} enter="up" delay={0.5} className="absolute bottom-full left-12 overflow-hidden" />
         <h2
           className="text-3xl sm:text-4xl font-bold text-[#1A1A2E] mb-4"
           style={{ fontFamily: "'Space Grotesk', sans-serif" }}
