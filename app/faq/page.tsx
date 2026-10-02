@@ -24,7 +24,7 @@ const FAQS = [
   },
   {
     q: "How many applications can I send per day?",
-    a: "There's a human-paced daily limit that protects your account — up to 30 applications a day (20 per platform). It's about applying to the right roles, not blasting hundreds.",
+    a: "There's a human-paced daily limit that protects your account — up to 30 applications a day (15 per platform). It's about applying to the right roles, not blasting hundreds.",
   },
   {
     q: "Which job platforms are supported?",
