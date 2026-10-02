@@ -578,6 +578,11 @@ export default function CampaignView({ token: initialToken }: Props) {
         data-found={String(stats.found)}
         data-activity={String(activity.length)}
         data-run-started={runStartedAt ?? ""}
+        /* How THIS run ended, from the extension's terminal line (runEndOutcome) — empty
+           while it runs. The driver ends its watch on it: server-stopped stayed "false"
+           for 15 minutes after a run completed on 2026-10-02 (a hidden tab polls late),
+           so a watcher reading only that reported a finished run as STALLED. */
+        data-outcome={runEndOutcome ?? ""}
         /* The COUNT of activity entries is not observation — it was 50 for the whole of
            the 2026-09-15 run while the run sat dead on an Indeed login wall, and the
            message naming secure.indeed.com/auth was on screen the entire time. What a
