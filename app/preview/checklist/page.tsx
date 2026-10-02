@@ -66,7 +66,7 @@ export default async function ChecklistPreview(
               </div>
             </div>
 
-            <StatsCards fitsToday={9} totalApplications={128} applicationsToday={0} />
+            <StatsCards fitsToday={9} totalApplications={128} applicationsLast24h={0} />
 
             <div className="hd-glass rounded-2xl p-5">
               <p className="text-sm font-semibold text-text mb-3">Your jobs</p>
