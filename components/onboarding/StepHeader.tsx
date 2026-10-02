@@ -3,6 +3,8 @@
 // (Platforms) is glass cubes carrying the REAL platform logos on the same
 // deep-space ground — icons IN the cubes, so "where should we apply" reads at a glance.
 
+import { STEPS } from "@/lib/onboarding/steps";
+
 const PLATFORMS = ["indeed", "linkedin", "ziprecruiter", "greenhouse", "lever", "ashby"];
 const OFFSET = [10, -8, 6, -10, 8, -4];
 const ROT = [-6, 4, -3, 5, -4, 6];
@@ -44,13 +46,14 @@ function PlatformsHeader() {
 }
 
 export default function StepHeader({ step }: { step: number }) {
-  if (step < 1 || step > 10) return null;
-  if (step === 4) return <PlatformsHeader />;
+  const art = STEPS[step - 1]?.art;
+  if (!art) return null;
+  if (art === 4) return <PlatformsHeader />;
   return (
     <div className="relative w-full h-40 sm:h-48 overflow-hidden">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={`/onboarding/step-${step}.jpg`}
+        src={`/onboarding/step-${art}.jpg`}
         alt=""
         aria-hidden
         className="absolute inset-0 w-full h-full object-cover"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import PosterPanel from "@/components/dashboard/PosterPanel";
@@ -44,6 +44,9 @@ const emptyProfile: UserProfile = {
   postal_code: "",
   current_employer: "",
   current_title: "",
+  school: "",
+  degree: "",
+  salary_expectation: "",
   work_authorized_us: null,
   needs_sponsorship: null,
   notice_period: "",
@@ -55,6 +58,8 @@ const emptyProfile: UserProfile = {
 export default function SettingsPage() {
   const supabase = createClient();
   const [profile, setProfile] = useState<UserProfile>(emptyProfile);
+  // What the two opt-out-able answers were when the page loaded (see the save).
+  const loaded = useRef({ school: "", salary_expectation: "" });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false); // unsaved changes → the Save button lights up
@@ -126,6 +131,9 @@ export default function SettingsPage() {
           postal_code: data.postal_code || "",
           current_employer: data.current_employer || "",
           current_title: data.current_title || "",
+          school: data.school || "",
+          degree: data.degree || "",
+          salary_expectation: data.salary_expectation || "",
           work_authorized_us: data.work_authorized_us ?? null,
           needs_sponsorship: data.needs_sponsorship ?? null,
           notice_period: data.notice_period || "",
@@ -133,6 +141,10 @@ export default function SettingsPage() {
           resume_url: data.resume_url || null,
           onboarding_completed: data.onboarding_completed || false,
         });
+        loaded.current = {
+          school: data.school || "",
+          salary_expectation: data.salary_expectation || "",
+        };
       }
       setLoading(false);
     }
@@ -171,12 +183,29 @@ export default function SettingsPage() {
         postal_code: profile.postal_code,
         current_employer: profile.current_employer,
         current_title: profile.current_title,
+        school: profile.school,
+        degree: profile.degree,
+        salary_expectation: profile.salary_expectation,
+        // Typing an answer here takes back an earlier "I don't have one" — but only
+        // TYPING it: a value that was merely loaded and saved back untouched (any other
+        // field on this page changed) must not quietly undo the person's opt-out.
+        ...(profile.school?.trim() && profile.school !== loaded.current.school && { no_degree: false }),
+        ...(profile.salary_expectation?.trim() &&
+          profile.salary_expectation !== loaded.current.salary_expectation && {
+            no_salary_expectation: false,
+          }),
         work_authorized_us: profile.work_authorized_us,
         needs_sponsorship: profile.needs_sponsorship,
         notice_period: profile.notice_period,
         english_level: profile.english_level,
       })
       .eq("user_id", user.id);
+    if (!error) {
+      loaded.current = {
+        school: profile.school || "",
+        salary_expectation: profile.salary_expectation || "",
+      };
+    }
 
     setSaving(false);
 

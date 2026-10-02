@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import EmployerAnswersForm, { type MissingAnswer } from "@/components/dashboard/EmployerAnswersForm";
+import { answersUi } from "@/lib/employerAnswers";
 import { apiGet } from "@/lib/api";
 
 // One server-side start precondition (GET /campaign/readiness). `fix` is a machine id
@@ -27,7 +28,7 @@ export interface Readiness {
 // remain the real backstop.
 export async function fetchReadiness(token: string): Promise<Readiness> {
   return Promise.race([
-    apiGet<Readiness>("/campaign/readiness", token),
+    apiGet<Readiness>(answersUi("/campaign/readiness"), token),
     new Promise<Readiness>((resolve) => setTimeout(() => resolve({ ready: true, checks: [] }), 6000)),
   ]);
 }
@@ -294,7 +295,7 @@ export default function StartReadinessModal({
           {failed.map((c) => c.fix === "answers" && c.missing?.length ? (
             <EmployerAnswersForm
               key={c.id}
-              missing={c.missing}
+              questions={c.missing}
               onDone={() => {
                 setAnsweredFor(checks);
                 if (failed.length === 1) onRecheck?.();
