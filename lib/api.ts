@@ -123,6 +123,9 @@ export interface StatsResponse {
   total_jobs: number;
   total_applications: number;
   applications_today: number;
+  /** Rolling window ending now (dashboard "Last 24 hours" tile). applications_today
+   *  is the cap's local-day count. Absent on a backend deployed before it. */
+  applications_last_24h?: number;
   new_today: number;
   tier: "free" | "pro" | "premium" | "elite" | "admin";
   daily_limit: number;

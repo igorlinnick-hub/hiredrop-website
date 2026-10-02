@@ -59,7 +59,8 @@ interface StatsCardsProps {
    *  Replaced "Jobs Found" (the pool size) 09-30 — Igor: the big pool number goes. */
   fitsToday: number | null;
   totalApplications: number;
-  applicationsToday: number;
+  /** null = the backend didn't send it — the tile shows a dash, not a zero. */
+  applicationsLast24h: number | null;
 }
 
 // Response Rate was removed on purpose: HireDrop does not track replies/interviews
@@ -68,7 +69,7 @@ interface StatsCardsProps {
 export default function StatsCards({
   fitsToday,
   totalApplications,
-  applicationsToday,
+  applicationsLast24h,
 }: StatsCardsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -97,11 +98,11 @@ export default function StatsCards({
         }
       />
       <StatCard
-        label="Applied Today"
-        value={applicationsToday}
+        label="Last 24 Hours"
+        value={applicationsLast24h ?? "—"}
         ink
         href="/dashboard/history"
-        hint="View today's applications →"
+        hint="Hour by hour on History →"
         icon={
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}

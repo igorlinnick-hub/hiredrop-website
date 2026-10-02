@@ -123,7 +123,7 @@ export default async function DashboardPage() {
         <StatsCards
           fitsToday={fitsToday}
           totalApplications={statsData?.total_applications ?? 0}
-          applicationsToday={statsData?.applications_today ?? 0}
+          applicationsLast24h={statsData?.applications_last_24h ?? null}
         />
 
         <div id="jobs">
