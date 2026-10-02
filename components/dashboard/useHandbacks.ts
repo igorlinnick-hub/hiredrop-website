@@ -24,6 +24,10 @@ export type Handback = {
   job_id?: string | null;
   /** Set once the answers went in and the job went back to `approved`. */
   requeued_at?: string | null;
+  /** The extension updated since this form stopped, and the queue can take it back:
+   *  offer "Try again". Never retried by itself — the person may have finished it by
+   *  hand (Igor, 10-02). */
+  newer_build?: boolean;
 };
 
 /**

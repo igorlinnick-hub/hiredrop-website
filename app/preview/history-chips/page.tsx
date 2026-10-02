@@ -53,6 +53,8 @@ const HANDBACKS: Handback[] = [
     steps_done: 5,
     job_id: null,
     questions: [],
+    // The extension updated since this one stopped — offers "Try again", never retries alone.
+    newer_build: true,
   },
 ];
 
