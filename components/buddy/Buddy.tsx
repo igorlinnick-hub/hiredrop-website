@@ -39,6 +39,8 @@ export default function Buddy({
 }) {
   const [open, setOpen] = useState(false);
   const [chatState, setChatState] = useState<BuddyState | null>(null);
+  // The backend is reading the account right now — Drop works at the desk meanwhile.
+  const [checking, setChecking] = useState(false);
   // Which nudge text is currently armed to show. Holding the TEXT rather than a
   // boolean means the effect never has to clear it synchronously — changing the
   // nudge or opening the chat simply makes the value stop matching.
@@ -78,8 +80,11 @@ export default function Buddy({
             greeting={greeting}
             suggestions={suggestions}
             ask={ask}
-            onClose={() => { setOpen(false); setChatState(null); }}
-            onStateChange={(s) => setChatState(s as BuddyState)}
+            onClose={() => { setOpen(false); setChatState(null); setChecking(false); }}
+            onStateChange={(s) => {
+              setChecking(s === "checking");
+              setChatState((s === "checking" ? "thinking" : s) as BuddyState);
+            }}
           />
         ) : showNudge ? (
           <motion.div
@@ -117,7 +122,7 @@ export default function Buddy({
         transition={{ type: "spring", stiffness: 420, damping: 22 }}
         className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
       >
-        <DropFigure size={116} state={state} working={working} />
+        <DropFigure size={116} state={state} working={working || (open && checking)} />
       </motion.button>
     </div>
   );
