@@ -162,6 +162,25 @@ export default function HistoryView({
     } catch { loadHandbacks(); } // put it back if the server disagreed
   };
 
+  // "The extension updated — try this one again." The person's call, never automatic:
+  // they may already have submitted it by hand, and a second submit is worse than a
+  // form left waiting. Same stamp as answering, so the next run picks it up.
+  const retryHandback = async (id: string) => {
+    setRequeued((prev) => new Set(prev).add(id)); // optimistic: it's their click
+    try {
+      const { data: { session } } = await createClient().auth.getSession();
+      if (!session?.access_token) throw new Error("Not signed in");
+      await apiPost(`/handbacks/${id}/retry`, session.access_token, {});
+    } catch {
+      setRequeued((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+    loadHandbacks();
+  };
+
   // Pull receipts from the extension (bridge). Non-fatal if absent.
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
@@ -275,6 +294,12 @@ export default function HistoryView({
                   <p className="hd-hist-sub mt-1.5 text-[12px] leading-snug" title={h.reason}>
                     {userReason(h.reason)}
                   </p>
+                  {h.newer_build && !h.requeued_at && !requeued.has(h.id) && (
+                    <p className="hd-hist-sub mt-1.5 text-[12px] leading-snug">
+                      HireDrop has updated since — Try again sends it back to your next run.
+                      Already sent it yourself? Press Done.
+                    </p>
+                  )}
                   {pct !== null && (
                     <>
                       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface2">
@@ -337,6 +362,16 @@ export default function HistoryView({
                         text-[11px] font-medium text-accent transition hover:bg-accent/15"
                     >
                       {answering === h.id ? "Close" : `Answer ${questionsFor(h).length}`}
+                    </button>
+                  )}
+                  {h.newer_build && !requeued.has(h.id) && !h.requeued_at && (
+                    <button
+                      onClick={() => retryHandback(h.id)}
+                      data-testid="handback-retry"
+                      className="hd-answer-cta shrink-0 rounded-md border border-accent/40 bg-accent/8 px-2 py-0.5
+                        text-[11px] font-medium text-accent transition hover:bg-accent/15"
+                    >
+                      Try again
                     </button>
                   )}
                   {/* Appears on hover: a list that never drains stops being read. */}
