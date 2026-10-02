@@ -36,6 +36,9 @@ interface Props {
 
 const RADIUS_STEPS = [10, 25, 50, 100];
 
+// How long Start waits for the extension's yes/no before rolling the server back.
+const START_VERDICT_WAIT_MS = 30_000;
+
 type Busy = "find" | "start" | "stop" | null;
 
 export default function QuickActions({
@@ -502,29 +505,41 @@ export default function QuickActions({
       // Ask the extension to launch, and WAIT for its verdict: it can refuse (e.g.
       // pre-flight found the target platform logged out). Ignoring that left a
       // zombie state — backend "running", extension idle. Silence is a verdict
-      // too: 5s without an answer = extension absent/orphaned ping.js, and the
-      // backend already got /campaign/start — proceeding would be the same
-      // zombie (#98 class: absence is not consent). Fail CLOSED: roll back.
+      // too: no answer = extension absent/orphaned ping.js, and the backend
+      // already got /campaign/start — proceeding would be the same zombie (#98
+      // class: absence is not consent). Fail CLOSED: roll back.
+      //
+      // 30 s, not 5: the extension answers only after its pre-flight — profile,
+      // platform session check, the server's ATS queue, opening the run window —
+      // and that took 6 s on 2026-10-01. A 5 s wait rolled back a start the
+      // extension was about to accept ("Stopped by the server" 36 s later).
       const verdict = await new Promise<{ ok: boolean; message?: string } | null>((resolve) => {
         let done = false;
         const finish = (v: { ok: boolean; message?: string } | null) => {
           if (done) return;
           done = true;
-          window.removeEventListener("message", onMsg);
           resolve(v);
         };
         function onMsg(e: MessageEvent) {
           if (e.source !== window || !e.data || typeof e.data !== "object") return;
-          if (e.data.type === "HIREDROP_CAMPAIGN_STARTED") {
-            finish({ ok: !!e.data.ok, message: e.data.message || e.data.error });
+          if (e.data.type !== "HIREDROP_CAMPAIGN_STARTED") return;
+          window.removeEventListener("message", onMsg);
+          if (done && e.data.ok) {
+            // The answer came after we rolled the server back: the extension is now
+            // walking a run the server calls stopped. Stop it too, so both agree.
+            window.postMessage({ type: "HIREDROP_STOP_CAMPAIGN" }, "*");
+            return;
           }
+          finish({ ok: !!e.data.ok, message: e.data.message || e.data.error });
         }
         window.addEventListener("message", onMsg);
         window.postMessage({
           type: "HIREDROP_START_CAMPAIGN",
           filters: { keywords: runKeywords, platforms: runPlatforms, location, job_type: jobType, work_setting: workSetting, search_radius_miles: radius, platform_mode: allMode ? "all" : "single" },
         }, "*");
-        setTimeout(() => finish(null), 5000);
+        setTimeout(() => finish(null), START_VERDICT_WAIT_MS);
+        // Keep listening a while past the deadline only to catch a late "ok" above.
+        setTimeout(() => window.removeEventListener("message", onMsg), START_VERDICT_WAIT_MS + 60_000);
       });
 
       if (!verdict || !verdict.ok) {
