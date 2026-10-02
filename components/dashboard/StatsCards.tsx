@@ -77,7 +77,6 @@ export default function StatsCards({
         label="Fit you today"
         value={fitsToday ?? "—"}
         href="#jobs"
-        hint="See today's list →"
         icon={
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -89,7 +88,6 @@ export default function StatsCards({
         label="Total Applied"
         value={totalApplications}
         href="/dashboard/history"
-        hint="All-time submissions — view application history →"
         icon={
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -102,7 +100,6 @@ export default function StatsCards({
         value={applicationsLast24h ?? "—"}
         ink
         href="/dashboard/history"
-        hint="Hour by hour on History →"
         icon={
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}

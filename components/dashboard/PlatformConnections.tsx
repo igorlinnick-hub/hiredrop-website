@@ -23,12 +23,6 @@ const CONNECTABLE = CONNECTABLE_PLATFORMS;
 // Auto-apply platforms that need NO account (Greenhouse today) — full-auto and
 // ready to run out of the box. They earn a real card, not a footnote.
 const READY_AUTO = PLATFORMS.filter((p) => !p.connectable && p.autoApply);
-// Everything else with no account = discovery-only public boards (RemoteOK today).
-const PUBLIC = PLATFORMS.filter((p) => !p.connectable && !p.autoApply && !p.unavailable);
-// Sources we've had to switch off. Named with the reason rather than quietly dropped:
-// the user deserves to know why a board they've heard of isn't in the list (Google Jobs
-// — see jobflow/docs/handoff/google-jobs.md).
-const PAUSED = PLATFORMS.filter((p) => p.unavailable);
 
 // Brand accent per platform for the monogram chip — keeps every row visually
 // identical in structure while still instantly recognizable. Hex ≈ brand color.
@@ -116,9 +110,6 @@ export default function PlatformConnections() {
           </span>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-text">Connect your job platforms</p>
-            <p className="text-xs text-text2/70 truncate">
-              Log in (or create a free account) so HireDrop can apply as you.
-            </p>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -139,15 +130,6 @@ export default function PlatformConnections() {
               Install & connect the HireDrop extension to see live connection status. You can still open each platform below to log in or register.
             </p>
           )}
-          {/* Kill the "I connected these before, where did it go?!" confusion:
-              statuses are VERIFIED on each visit to the platform's site, so a
-              platform you're logged into simply hasn't been re-checked yet. */}
-          {connReady && CONNECTABLE.some((p) => !liveStatus(connections[p.id])) && (
-            <p className="px-4 py-2.5 text-xs text-text2/60 bg-accent/5 border-b border-border">
-              Already have an account on a platform? Just open it — if you&apos;re logged in there, the status flips to Connected within a few seconds. No passwords needed.
-            </p>
-          )}
-
           {/* Type A — log-in platforms (we apply AS you via your session). See
               PLATFORM_STATUS_MODEL.md: this group uses Connect/Connected, not Ready. */}
           <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-text2/50">
@@ -165,8 +147,7 @@ export default function PlatformConnections() {
               // Rows where auto-apply isn't live yet are dimmed with a single
               // "coming soon" chip — Igor's call (2026-07-13): the three-stage
               // badges (auto / semi·captcha / connect-only) were too much
-              // information for a user; the honest-expectations footer line
-              // still covers the "you finish captcha + submit" reality.
+              // information for a user.
               const comingSoon = p.stage !== "auto";
               return (
                 <li key={p.id} className={`flex items-center justify-between gap-3 px-4 py-3 ${comingSoon ? "opacity-60" : ""}`}>
@@ -188,7 +169,6 @@ export default function PlatformConnections() {
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-text2/60 truncate">{p.description}</p>
                     </div>
                   </div>
 
@@ -265,7 +245,6 @@ export default function PlatformConnections() {
                         bg-accent/12 text-accent leading-none">beta</span>
                     )}
                   </div>
-                  <p className="text-xs text-text2/60 truncate">{p.description}</p>
                 </div>
               </div>
               <span className="flex items-center gap-1 text-xs font-semibold text-green shrink-0"
@@ -278,21 +257,6 @@ export default function PlatformConnections() {
             </div>
           ))}
 
-          {/* Honest expectations line — the one-sentence deal we make with the
-              user. Matches the stage badges above; don't soften it. */}
-          <p className="px-4 py-2.5 text-[11px] text-text2/60 border-t border-border bg-surface2/20">
-            We do the filling; the final human step — captcha + submit on the employer&apos;s site — is yours. That last click keeps your applications real and your accounts safe.
-          </p>
-          {PUBLIC.length > 0 && (
-            <p className="px-4 py-2.5 text-[11px] text-text2/50 border-t border-border bg-surface2/20">
-              No account needed: {PUBLIC.map((p) => p.name).join(", ")} — public listings you apply to directly.
-            </p>
-          )}
-          {PAUSED.map((p) => (
-            <p key={p.id} className="px-4 py-2.5 text-[11px] text-text2/50 border-t border-border bg-surface2/20">
-              <span className="font-medium text-text2/70">{p.name} — paused.</span> {p.unavailable}
-            </p>
-          ))}
         </div>
       )}
     </div>

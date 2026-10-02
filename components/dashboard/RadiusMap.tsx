@@ -71,7 +71,6 @@ export default function RadiusMap({
 
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
-  const [pickedLabel, setPickedLabel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function fitToRadius() {
@@ -124,7 +123,6 @@ export default function RadiusMap({
     markerRef.current?.setLngLat([p.lng, p.lat]);
     drawRadius();
     fitToRadius();
-    setPickedLabel(label);
     if (report) onPick?.(label, p.lat, p.lng);
   }
 
@@ -165,6 +163,20 @@ export default function RadiusMap({
         attributionControl: { compact: true },
       });
       mapRef.current = map;
+      // OSM's licence (ODbL) requires the credit to stay reachable, so it stays — folded to
+      // its ⓘ button. maplibre opens a compact credit once the style's sources report in and
+      // folds it itself only on the first drag; fold it right away the same way, once
+      // (Igor 10-02: the open credit box was noise under a 220px map). Our listener is
+      // added after the control's own, so it runs after the control has opened the credit.
+      const foldCredit = () => {
+        const attrib = containerRef.current?.querySelector(".maplibregl-ctrl-attrib.maplibregl-compact-show");
+        if (!attrib) return;
+        attrib.classList.remove("maplibregl-compact-show");
+        map.off("styledata", foldCredit);
+        map.off("sourcedata", foldCredit);
+      };
+      map.on("styledata", foldCredit);
+      map.on("sourcedata", foldCredit);
       map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
       map.scrollZoom.disable(); // don't hijack page scroll
 
@@ -180,7 +192,6 @@ export default function RadiusMap({
         centerRef.current = { lat: ll.lat, lng: ll.lng };
         drawRadius();
         const label = await reverseGeocode({ lat: ll.lat, lng: ll.lng });
-        setPickedLabel(label);
         onPick?.(label, ll.lat, ll.lng);
       });
 
@@ -261,9 +272,6 @@ export default function RadiusMap({
       <div className="mt-3">
         <div className="flex items-baseline justify-between gap-2">
           <p className="text-xs font-semibold text-text">Search radius</p>
-          <p className="text-[11px] text-text2/60 truncate">
-            {active} mi{pickedLabel ? ` · around ${pickedLabel}` : areaLabel ? ` · around ${areaLabel}` : ""}
-          </p>
         </div>
         <div className="mt-2 flex gap-1.5">
           {STEPS.map((m) => {
