@@ -59,7 +59,6 @@ export default function TodayList({
   /** null = the list could not be read; never shown as a 0. */
   fitsToday: number | null;
 }) {
-  const unjudged = jobs.length - (fitsToday ?? 0);
   return (
     <section className="hd-sheet overflow-hidden" data-testid="today-list">
       <header className="p-4 sm:p-5 border-b border-border flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -72,10 +71,6 @@ export default function TodayList({
             </>
           )}
         </h3>
-        <p className="text-xs text-text2">
-          Freshest first — the order Auto and Tap apply in.
-          {unjudged > 0 && ` ${unjudged} more get checked for fit as we apply.`}
-        </p>
         {jobs.length > 0 && (
           <Link href="/dashboard/tap" className="sm:ml-auto text-xs font-medium text-accent hover:text-accent2">
             Swipe through them →
