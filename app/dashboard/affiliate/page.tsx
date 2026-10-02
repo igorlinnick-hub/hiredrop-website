@@ -7,6 +7,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import AffiliateView, {
   type AffiliateStats,
   type AffiliateCommission,
+  type AffiliatePayout,
 } from "@/components/dashboard/AffiliateView";
 import ApplyForm from "@/components/affiliate/ApplyForm";
 import AffiliateHero from "@/components/affiliate/AffiliateHero";
@@ -109,11 +110,21 @@ export default async function AffiliatePage() {
     .order("created_at", { ascending: false })
     .limit(100);
 
+  // Covered by payouts_select_own (migrations/add_affiliate_connect.sql) —
+  // same RLS pattern as commissions, same reasoning: the user's own session,
+  // never service_role.
+  const { data: payouts } = await supabase
+    .from("payouts")
+    .select("amount_cents, method, status, paid_at")
+    .order("paid_at", { ascending: false })
+    .limit(50);
+
   return (
     <DashboardLayout>
       <AffiliateView
         stats={stats}
         commissions={(commissions ?? []) as AffiliateCommission[]}
+        payouts={(payouts ?? []) as AffiliatePayout[]}
       />
     </DashboardLayout>
   );

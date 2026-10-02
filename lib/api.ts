@@ -70,6 +70,13 @@ export function openBillingPortal(token: string): Promise<BillingUrlResponse> {
   return apiPost<BillingUrlResponse>("/billing/portal", token, {});
 }
 
+// ── Affiliate payouts (Stripe Connect) ──────────────────────────────────────
+
+/** Start (or resume) Stripe Connect onboarding for the caller's OWN payout account. */
+export function createAffiliateConnect(token: string): Promise<BillingUrlResponse> {
+  return apiPost<BillingUrlResponse>("/affiliate/payouts/connect", token, {});
+}
+
 // ── Interview kit ────────────────────────────────────────────────────────────
 
 export interface InterviewQuestion {

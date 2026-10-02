@@ -3,12 +3,15 @@
 import { useState } from "react";
 
 import AffiliateHero from "@/components/affiliate/AffiliateHero";
+import { ApiError, createAffiliateConnect } from "@/lib/api";
+import { createClient } from "@/lib/supabase/client";
 
 export interface AffiliateStats {
   code: string;
   status: string;
   commission_pct: number;
   paypal_email: string | null;
+  connect_status: "none" | "pending" | "enabled";
   clicks: number;
   signups: number;
   paying: number;
@@ -24,7 +27,16 @@ export interface AffiliateCommission {
   status: string;
 }
 
-const MIN_PAYOUT_CENTS = 2500; // matches scripts/affiliate_admin.py
+export interface AffiliatePayout {
+  amount_cents: number;
+  method: string;
+  status: string;
+  // null while a Connect transfer is still `pending` — only set once Stripe
+  // actually confirms the money moved (scripts/run_affiliate_payouts.py).
+  paid_at: string | null;
+}
+
+const MIN_PAYOUT_CENTS = 2500; // matches scripts/affiliate_admin.py, scripts/run_affiliate_payouts.py
 
 function money(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
@@ -75,12 +87,79 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
   );
 }
 
+/** Connect (or finish connecting) the Stripe Express account payouts land in.
+ *
+ * One button, three states (`stats.connect_status`, set server-side off
+ * `affiliate_stats()` — never trust a client flag for this). The click asks
+ * our OWN backend for a fresh onboarding link and does a full-page redirect:
+ * unlike the billing portal, Stripe's own return_url brings them straight
+ * back here, so there's no second tab to manage.
+ */
+function ConnectPayoutsCard({ status }: { status: AffiliateStats["connect_status"] }) {
+  const supabase = createClient();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function connect() {
+    setBusy(true);
+    setError("");
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new ApiError(401, "Session expired — please log in again.");
+      const { url } = await createAffiliateConnect(session.access_token);
+      window.location.assign(url); // Stripe-hosted onboarding; return_url comes back here
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not start onboarding. Please try again.");
+      setBusy(false);
+    }
+  }
+
+  if (status === "enabled") {
+    return (
+      <div className="hd-glass hd-glass-bloom rounded-2xl p-5 flex items-center gap-3">
+        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0" />
+        <div>
+          <p className="font-semibold text-text">Payouts connected</p>
+          <p className="text-[13px] text-text2">
+            Stripe pays commissions automatically once they&apos;re 30 days old.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="hd-glass hd-glass-bloom rounded-2xl p-5">
+      <p className="font-semibold text-text">
+        {status === "pending" ? "Finish connecting your payout account" : "Connect a payout account"}
+      </p>
+      <p className="mt-1 text-[13px] text-text2">
+        {status === "pending"
+          ? "Stripe needs a couple more details before it can pay you — this takes two minutes."
+          : "Set up a free Stripe account so commissions pay out automatically, no PayPal address to send us."}
+      </p>
+      <button
+        onClick={connect}
+        disabled={busy}
+        className="mt-3 bg-accent hover:bg-accent/90 disabled:opacity-60 text-white font-semibold px-5 py-2.5 rounded-xl transition text-sm"
+      >
+        {busy ? "Opening Stripe…" : status === "pending" ? "Continue setup" : "Connect payouts"}
+      </button>
+      {error && <p className="mt-2 text-[13px] text-red-500">{error}</p>}
+    </div>
+  );
+}
+
 export default function AffiliateView({
   stats,
   commissions,
+  payouts,
 }: {
   stats: AffiliateStats;
   commissions: AffiliateCommission[];
+  payouts: AffiliatePayout[];
 }) {
   const pct = Math.round(Number(stats.commission_pct));
   const belowMinimum = stats.pending_cents > 0 && stats.pending_cents < MIN_PAYOUT_CENTS;
@@ -98,7 +177,7 @@ export default function AffiliateView({
             You earn <em className="italic">{pct}%</em> of every payment they make.
           </>
         }
-        body="For as long as they stay subscribed — not just the first month. Paid monthly by PayPal."
+        body="For as long as they stay subscribed — not just the first month. Paid automatically once a commission is 30 days old."
       />
 
       {stats.status !== "active" && (
@@ -121,9 +200,11 @@ export default function AffiliateView({
         <Stat
           label="Next payout"
           value={money(stats.pending_cents)}
-          hint={belowMinimum ? `rolls over under ${money(MIN_PAYOUT_CENTS)}` : "paid monthly"}
+          hint={belowMinimum ? `rolls over under ${money(MIN_PAYOUT_CENTS)}` : "pays out automatically"}
         />
       </div>
+
+      <ConnectPayoutsCard status={stats.connect_status} />
 
       <div className="hd-glass hd-glass-bloom rounded-2xl p-5">
         <h2 className="font-semibold text-text mb-3">Commissions</h2>
@@ -175,19 +256,53 @@ export default function AffiliateView({
         )}
       </div>
 
+      {payouts.length > 0 && (
+        <div className="hd-glass hd-glass-bloom rounded-2xl p-5">
+          <h2 className="font-semibold text-text mb-3">Payouts</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-text2 text-left">
+                  <th className="pb-2 font-medium">Date</th>
+                  <th className="pb-2 font-medium">Amount</th>
+                  <th className="pb-2 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody className="text-text">
+                {payouts.map((p, i) => (
+                  <tr key={i} className="border-t border-border/60">
+                    <td className="py-2.5 tabular-nums">{p.paid_at ? p.paid_at.slice(0, 10) : "—"}</td>
+                    <td className="py-2.5 tabular-nums font-medium">{money(p.amount_cents)}</td>
+                    <td className="py-2.5">
+                      <span
+                        className={[
+                          "px-2 py-0.5 rounded-full text-[11px] font-medium",
+                          p.status === "completed"
+                            ? "bg-accent/10 text-accent"
+                            : p.status === "failed"
+                              ? "bg-red-500/10 text-red-500"
+                              : "bg-surface2 text-text2",
+                        ].join(" ")}
+                      >
+                        {p.status === "pending" ? "processing" : p.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       <div className="hd-glass rounded-2xl p-5 text-sm text-text2 space-y-2">
         <h2 className="font-semibold text-text">How you get paid</h2>
         <p>
-          PayPal{stats.paypal_email ? ` to ${stats.paypal_email}` : ""}, once a month. A commission
-          becomes payable 30 days after it accrues — that&apos;s the window in which a customer can
-          still get a refund, which would take the commission back with it. Anything under{" "}
-          {money(MIN_PAYOUT_CENTS)} rolls into next month.
+          A commission becomes payable 30 days after it accrues — that&apos;s the window in which a
+          customer can still get a refund, which would take the commission back with it. Anything
+          under {money(MIN_PAYOUT_CENTS)} rolls into next month. Once you&apos;re connected (above),
+          Stripe pays out automatically — nothing to ask us for.
         </p>
-        {!stats.paypal_email && (
-          <p className="text-text">
-            We don&apos;t have a PayPal address for you yet — send us one before your first payout.
-          </p>
-        )}
         <p>
           One rule worth repeating: say you earn a commission when you share the link. &ldquo;I get
           a cut if you sign up&rdquo; or <code>#ad</code> is the FTC&apos;s requirement, not ours.
