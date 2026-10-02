@@ -88,7 +88,7 @@ export default function FAQ() {
               Everything you need to know about HireDrop.
             </p>
             {/* mirrored so it points right, at the questions */}
-            <DropCameo pose="point" width={140} flip enter="left" className="hidden lg:block mt-10" />
+            <DropCameo pose="point" width={230} flip enter="left" className="hidden lg:block mt-10" />
           </div>
 
           {/* Right — accordion */}
