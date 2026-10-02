@@ -41,7 +41,7 @@ const ROWS = [
   },
   {
     dimension: "Applications per day",
-    hiredrop: "Up to 30, spread at a human pace (20 per platform).",
+    hiredrop: "Up to 30, spread at a human pace (15 per platform).",
     rival: "15 on Basic, 150 on Premium, 1,500 on Ultimate.",
   },
   {
@@ -167,7 +167,7 @@ export default function Page() {
 
         <Callout label="Why our cap is 30, not 1,500">
           <p>
-            30 a day (20 per platform) is not a technical limit we failed to raise — it is the
+            30 a day (15 per platform) is not a technical limit we failed to raise — it is the
             point we stopped at deliberately. It keeps a day of activity inside what a motivated
             human does, and it is small enough that every application can be individually written
             and still finish in the background while you do something else.

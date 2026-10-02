@@ -137,7 +137,7 @@ const FAQS = [
   },
   {
     q: "How many applications a day is reasonable?",
-    a: "We cap at 30, with 20 per platform, and that is a deliberate ceiling rather than a technical one. It fits inside normal human activity and leaves room for every application to be individually written, which is the part that actually converts.",
+    a: "We cap at 30, with 15 per platform, and that is a deliberate ceiling rather than a technical one. It fits inside normal human activity and leaves room for every application to be individually written, which is the part that actually converts.",
   },
 ];
 
