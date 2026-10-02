@@ -344,6 +344,18 @@ export default function TapProgressDock(
 
 const platformName = (id: string) => PLATFORMS.find((p) => p.id === id)?.name ?? id;
 
+// One hue per platform, so the chip under the headline is the legend for the rail along
+// the bottom edge. Tuned for the ink/violet dock ground; unknown ids fall back to gold.
+const PLATFORM_HUE: Record<string, string> = {
+  indeed: "#8FB4FF",
+  ziprecruiter: "#FF9F7A",
+  greenhouse: "#5AD6B0",
+  lever: "#F0C874",
+  ashby: "#C9A8FF",
+  linkedin: "#6FC3FF",
+};
+const hueOf = (id: string) => PLATFORM_HUE[id] ?? "#F0C874";
+
 /** The Auto run's live counter, in the same dock body as the tap batch. */
 function LiveRunDock({ snap, shape, busy, note, onStop, onHide }: {
   snap: Snapshot;
@@ -358,30 +370,31 @@ function LiveRunDock({ snap, shape, busy, note, onStop, onHide }: {
   const pct = limit ? Math.min(1, today / limit) : 0;
   const capped = limit !== null && today >= limit;
 
-  const byPlatform = Object.entries(snap.platformCounts ?? {})
+  const platforms = Object.entries(snap.platformCounts ?? {})
     .filter(([, n]) => n > 0)
-    .sort((a, b) => b[1] - a[1])
-    .map(([id, n]) => `${platformName(id)} ${n}`)
-    .join(" · ");
+    .sort((a, b) => b[1] - a[1]);
+  const counted = platforms.reduce((sum, [, n]) => sum + n, 0);
 
   const headline = capped ? `Today's cap reached — ${today} sent` : "Applying for you — live";
-  const sub = capped
-    ? "The run picks up again tomorrow."
-    : [
-        byPlatform || "Searching for the next match…",
-        limit !== null ? `${limit - today} left today` : null,
-      ].filter(Boolean).join("  ·  ");
+  // The rail along the bottom edge: today's sends split by platform. Against the cap when
+  // there is one (the unfilled rest is what's left today); with no cap, the split of what
+  // went out — a composition, never a fake fraction of nothing.
+  const railBase = limit ?? Math.max(counted, 1);
+  const left = limit !== null ? Math.max(0, limit - today) : null;
 
   const gauge = (
     <>
       <svg viewBox="0 0 120 70" className="hd-gauge-svg">
         <path className="hd-gauge-track" d="M14 58 A46 46 0 0 1 106 58" />
-        {limit !== null && (
+        {limit !== null ? (
           <path
             className="hd-gauge-fill"
             d="M14 58 A46 46 0 0 1 106 58"
             style={{ strokeDasharray: 144.5, strokeDashoffset: 144.5 * (1 - pct) }}
           />
+        ) : !capped && (
+          // No cap to fill against: a light runs the track instead — "working", not a quantity.
+          <path className="hd-gauge-sweep" d="M14 58 A46 46 0 0 1 106 58" pathLength={100} />
         )}
       </svg>
       <div className="hd-tap-gauge-num">
@@ -395,7 +408,7 @@ function LiveRunDock({ snap, shape, busy, note, onStop, onHide }: {
   return (
     <div className="hd-tap-dock-wrap" role="status" aria-live="polite"
       aria-label={limit !== null ? `${today} of ${limit} applications sent today` : `${today} applications sent today`}>
-      <div className={["hd-tap-dock", `shape-${shape}`, capped ? "is-done" : "is-live"].join(" ")}>
+      <div className={["hd-tap-dock", `shape-${shape}`, "has-rail", capped ? "is-done" : "is-live"].join(" ")}>
         <div className={shape === "dome" ? "hd-tap-dome" : "hd-tap-gauge"} aria-hidden>
           {gauge}
         </div>
@@ -405,7 +418,24 @@ function LiveRunDock({ snap, shape, busy, note, onStop, onHide }: {
             {!capped && <span className="hd-tap-pulse" aria-hidden />}
             {headline}
           </p>
-          <p className="mt-0.5 text-[12.5px] text-text2 leading-snug line-clamp-2">{sub}</p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {capped ? (
+              <span className="text-[12.5px] text-text2">The run picks up again tomorrow.</span>
+            ) : platforms.length === 0 ? (
+              <span className="text-[12.5px] text-text2">Searching for the next match…</span>
+            ) : (
+              platforms.map(([id, n]) => (
+                <span key={id} className="hd-dock-chip">
+                  <i style={{ background: hueOf(id) }} aria-hidden />
+                  {platformName(id)}
+                  <b>{n}</b>
+                </span>
+              ))
+            )}
+            {left !== null && !capped && (
+              <span className="text-[12px] text-text2 ml-0.5">{left} left today</span>
+            )}
+          </div>
           {note && <p className="mt-0.5 text-[11.5px] text-red">{note}</p>}
         </div>
 
@@ -428,6 +458,12 @@ function LiveRunDock({ snap, shape, busy, note, onStop, onHide }: {
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.2}
               strokeLinecap="round" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
+        </div>
+
+        <div className="hd-dock-rail" aria-hidden>
+          {platforms.map(([id, n]) => (
+            <span key={id} style={{ width: `${(n / railBase) * 100}%`, background: hueOf(id) }} />
+          ))}
         </div>
       </div>
     </div>

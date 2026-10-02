@@ -1050,6 +1050,57 @@ h1, h2, h3 {
     0 0 28px -14px rgba(124, 108, 255, .55);
 }
 
+/* Auto run counter — the bar's bottom edge is a progress rail: today's sends split by
+   platform, each segment the hue of its chip above (chip = legend). Against the cap when
+   there is one; the unfilled track is what's left today. */
+.hd-tap-dock.has-rail { padding-bottom: 22px; }
+.hd-dock-rail {
+  position: absolute;
+  left: 18px; right: 18px; bottom: 9px;
+  height: 4px;
+  display: flex;
+  gap: 2px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--border);
+}
+.hd-dock-rail > span {
+  height: 100%;
+  border-radius: 999px;
+  flex-shrink: 0;
+  transition: width .6s cubic-bezier(.3, .9, .4, 1);
+}
+.hd-dock-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+  line-height: 1.2;
+}
+.hd-dock-chip > i { width: 6px; height: 6px; border-radius: 999px; flex-shrink: 0; }
+.hd-dock-chip > b { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+/* No cap to fill against: a short light runs the arc while the run is live. */
+.hd-gauge-sweep {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 9;
+  stroke-linecap: round;
+  stroke-dasharray: 14 120;
+  animation: hd-gauge-sweep 2.4s cubic-bezier(.45, 0, .55, 1) infinite;
+}
+@keyframes hd-gauge-sweep {
+  0%   { stroke-dashoffset: 14;   opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { stroke-dashoffset: -100; opacity: 0; }
+}
+
 /* Finished batch: the arc goes green — done is not the same value as in-progress. */
 .hd-tap-dock.is-done .hd-gauge-fill { stroke: var(--green); }
 .hd-dash-root:not(.dark) .hd-tap-dock.is-done .hd-gauge-fill { stroke: #5AD6B0; }
@@ -1065,12 +1116,16 @@ h1, h2, h3 {
   .hd-tap-dome .hd-gauge-svg { width: 64px; height: 38px; margin-top: 10px; }
   .hd-tap-dome .hd-tap-gauge-num { top: 26px; }
   .hd-gauge-done { font-size: 17px; }
+  .hd-tap-dock.has-rail { padding-bottom: 20px; }
+  .hd-dock-rail { left: 14px; right: 14px; bottom: 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hd-tap-dock-wrap { animation: none; }
   .hd-tap-pulse { animation: none; }
   .hd-gauge-fill { transition: none; }
+  .hd-gauge-sweep { animation: none; opacity: 0; }
+  .hd-dock-rail > span { transition: none; }
 }
 
 /* Preview-only: lift the dock out of its fixed slot so several states can be
