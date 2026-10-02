@@ -1,29 +1,36 @@
 "use client";
 
 /*
-  Drop on the dashboard.
+  Drop on the dashboard — the support chat that can see the account.
 
-  The character is real and shipping; the ANSWERS are not wired yet — there is no
-  /buddy/ask endpoint behind this. Rather than fake a helpful reply (which would be
-  worse than no chat at all — see the honest-metrics rule), the ask function says
-  plainly that it can't answer yet and points at the surfaces that do have the data.
+  Answers come from POST /buddy/ask (jobflow modules/buddy.py): Claude with read-only
+  tools over THIS user's campaign, run report, activity, applications and employer
+  questions, and a fixed product-facts sheet — it explains what broke and what to click,
+  and says "not sure" rather than inventing.
 
-  When the backend lands, only `ask` changes; the character, moods and panel stay.
-
-  Drop sits down at the desk ONLY when the server says a campaign is running — the same
-  /campaign/status the dashboard polls. No timer, no guess: a character that "works"
-  while nothing runs is exactly the lie the honest-metrics rule forbids. Until the
-  first answer arrives (or if it fails) Drop stands — resting is the claim-free state.
+  Drop sits down at the desk in two honest cases only: the server says a campaign is
+  running (/campaign/status, polled), or the chat backend is reading the account right
+  now (the stream's `checking` state). Never on a timer.
 */
 
 import { useEffect, useState } from "react";
 import Buddy from "@/components/buddy/Buddy";
 import { apiGet } from "@/lib/api";
+import { askDrop } from "@/lib/buddy";
+import type { AskFn } from "@/components/buddy/BuddyPanel";
 import { createClient } from "@/lib/supabase/client";
 
-const NOT_WIRED =
-  "I'm not connected to your account yet, so I can't really answer — and I won't make things up. " +
-  "Your campaign and why it stopped are on the Dashboard; replies and employer questions are in History.";
+const ask: AskFn = async (question, history, on) => {
+  const { data: { session } } = await createClient().auth.getSession();
+  const token = session?.access_token;
+  if (!token) return "Your session expired — refresh the page and ask me again.";
+  return askDrop(
+    token,
+    question,
+    history.map((m) => ({ role: m.role === "drop" ? "assistant" : "user", text: m.text })),
+    on,
+  );
+};
 
 const POLL_MS = 10_000;
 
@@ -54,9 +61,9 @@ export default function DashboardBuddy() {
 
   return (
     <Buddy
-      ask={async () => NOT_WIRED}
-      greeting="Hi, I'm Drop. Soon I'll answer questions about your campaign — for now I just live here."
-      suggestions={[]}
+      ask={ask}
+      greeting="Hi, I'm Drop. I can see your campaign, applications and settings — ask me why something stopped, or anything about HireDrop."
+      suggestions={["Why did my campaign stop?", "Why so few applications today?", "What's waiting on me?"]}
       working={working}
     />
   );

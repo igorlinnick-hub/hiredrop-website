@@ -15,7 +15,28 @@ import DropFigure from "./DropFigure";
 
 export type Msg = { role: "user" | "drop"; text: string };
 
-export type AskFn = (question: string, history: Msg[]) => Promise<string>;
+export type PanelState = "listening" | "thinking" | "checking" | "speaking" | "idle";
+/** Streams when it can: `onState`/`onText` arrive while the answer is being written.
+    An ask that just resolves with a string still works (the answer is revealed locally). */
+export type AskFn = (
+  question: string,
+  history: Msg[],
+  on: { onState: (s: "thinking" | "checking" | "speaking") => void; onText: (delta: string) => void },
+) => Promise<string>;
+
+/** Drop writes plain text, but models slip into **bold** — render that, drop stray markers. */
+function DropText({ text }: { text: string }) {
+  const parts = text.replace(/^#+\s*/gm, "").split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.startsWith("**") && p.endsWith("**") && p.length > 4
+          ? <strong key={i} className="font-semibold text-text">{p.slice(2, -2)}</strong>
+          : <span key={i}>{p}</span>
+      )}
+    </>
+  );
+}
 
 export default function BuddyPanel({
   greeting,
@@ -28,12 +49,13 @@ export default function BuddyPanel({
   suggestions: string[];
   ask: AskFn;
   onClose: () => void;
-  onStateChange?: (s: "listening" | "thinking" | "speaking" | "idle") => void;
+  onStateChange?: (s: PanelState) => void;
 }) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [typed, setTyped] = useState<string | null>(null); // answer being revealed
+  const [checking, setChecking] = useState(false);          // a lookup is running server-side
   const scroller = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
 
@@ -52,18 +74,26 @@ export default function BuddyPanel({
     onStateChange?.("thinking");
 
     let answer: string;
+    let streamed = "";
     try {
-      answer = await ask(question, msgs);
+      answer = await ask(question, msgs, {
+        onState: (st) => { setChecking(st === "checking"); onStateChange?.(st); },
+        onText: (d) => { streamed += d; setChecking(false); setTyped(streamed.trimStart()); },
+      });
     } catch (e) {
       answer = e instanceof Error ? e.message : "I couldn't reach the server just now.";
     }
+    setChecking(false);
 
-    // Reveal the answer word by word — this is what drives Drop's "speaking" mood.
-    onStateChange?.("speaking");
-    const words = answer.split(" ");
-    for (let i = 1; i <= words.length; i++) {
-      setTyped(words.slice(0, i).join(" "));
-      await new Promise((r) => setTimeout(r, 18));
+    // A non-streaming ask (or an error) is revealed word by word here — that is what
+    // drives Drop's "speaking" mood when no stream did.
+    if (!streamed) {
+      onStateChange?.("speaking");
+      const words = answer.split(" ");
+      for (let i = 1; i <= words.length; i++) {
+        setTyped(words.slice(0, i).join(" "));
+        await new Promise((r) => setTimeout(r, 18));
+      }
     }
     setTyped(null);
     setMsgs((m) => [...m, { role: "drop", text: answer }]);
@@ -134,14 +164,14 @@ export default function BuddyPanel({
             </div>
           ) : (
             <p key={i} className="text-[13.5px] leading-relaxed text-text/85 whitespace-pre-wrap">
-              {m.text}
+              <DropText text={m.text} />
             </p>
           )
         )}
 
         {typed !== null && (
           <p className="text-[13.5px] leading-relaxed text-text/85 whitespace-pre-wrap">
-            {typed}
+            <DropText text={typed} />
             <span className="inline-block w-[2px] h-[1em] align-[-2px] ml-0.5 bg-accent animate-pulse" />
           </p>
         )}
@@ -150,8 +180,11 @@ export default function BuddyPanel({
           {busy && typed === null && (
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="flex gap-1 items-center h-4"
+              className="flex gap-1.5 items-center h-4"
             >
+              {checking && (
+                <span className="text-[12px] text-text/50 mr-1">Looking at your account</span>
+              )}
               {[0, 1, 2].map((i) => (
                 <motion.span
                   key={i}
