@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TapProgressDock, { type DockDemo, type DockShape } from "@/components/dashboard/TapProgressDock";
 
 /**
@@ -41,7 +41,7 @@ const STATES: { label: string; note: string; demo: DockDemo }[] = [
   },
   {
     label: "Auto run — live counter",
-    note: "No swiped batch, an Auto run is live. The arc is today against today's cap, the number pops on every new send, the line splits today by platform.",
+    note: "No swiped batch, an Auto run is live. The arc is today against today's cap, the number pops on every new send. Chips split today by platform; the rail along the bottom edge is the same split against the cap — the empty rest is what's left today.",
     demo: {
       done: 0, waiting: 0, held: 0, running: true, doneToday: 5, next: null,
       dailyLimit: 30, platformCounts: { indeed: 3, ziprecruiter: 2 },
@@ -49,10 +49,18 @@ const STATES: { label: string; note: string; demo: DockDemo }[] = [
   },
   {
     label: "Auto run — no cap (admin)",
-    note: "An unlimited tier has nothing to fill against, so the arc stays a track and the number reads as today's count.",
+    note: "An unlimited tier has nothing to fill against: a light runs the arc while the run is live, and the rail shows only the platform split of what went out.",
     demo: {
       done: 0, waiting: 0, held: 0, running: true, doneToday: 78, next: null,
       dailyLimit: 10_000_000, platformCounts: { indeed: 51, greenhouse: 27 },
+    },
+  },
+  {
+    label: "Auto run — first sends, one platform",
+    note: "Early in a run: one chip, a short rail. Still reads as a full block, not an empty bar.",
+    demo: {
+      done: 0, waiting: 0, held: 0, running: true, doneToday: 3, next: null,
+      dailyLimit: 30, platformCounts: { greenhouse: 3 },
     },
   },
 ];
@@ -66,6 +74,14 @@ export default function TapDockPreview() {
   const [dark, setDark] = useState(false);
   const [shape, setShape] = useState<DockShape>("dome");
   const [view, setView] = useState<"states" | "context">("context");
+
+  // ?view=states&dark=1&shape=arch — so a headless screenshot can land on any combination.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("view") === "states") setView("states");
+    if (q.get("dark") === "1") setDark(true);
+    if (q.get("shape") === "arch") setShape("arch");
+  }, []);
 
   return (
     <div className={["min-h-screen bg-background hd-dash-root", dark ? "dark" : ""].join(" ")}>
