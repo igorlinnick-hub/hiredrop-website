@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Agent worktrees (gitignored) — full checkouts with their own .next builds;
+    // linting them buried the real 25 findings under ~15,000 from copies.
+    ".claude/**",
   ]),
 ]);
 
