@@ -9,15 +9,22 @@ interface Props {
   priority?: boolean;
 }
 
+// welcome / setup / tailored are Drop (the HireDrop character) from brand/drop-kit;
+// the rest are still the older monoline scenes until they're moved over too.
+const DROP_SCENES: Partial<Record<SceneName, string>> = {
+  welcome: "/illustrations/drop/welcome.webp",
+  setup: "/illustrations/drop/setup.webp",
+  tailored: "/illustrations/drop/tailor.webp",
+};
+
 /**
- * Human scene illustration (generated via Replicate/Recraft — see
- * scripts/gen_illustrations.py). Monoline, brand purple, white background so it
- * sits seamlessly on white surfaces/cards.
+ * Scene illustration on a white background so it sits seamlessly on white
+ * surfaces/cards. Drop scenes come from brand/drop-kit (white, 720px).
  */
 export function Scene({ name, size = 200, className, priority }: Props) {
   return (
     <Image
-      src={`/illustrations/scenes/${name}.png`}
+      src={DROP_SCENES[name] ?? `/illustrations/scenes/${name}.png`}
       alt=""
       width={size}
       height={size}
