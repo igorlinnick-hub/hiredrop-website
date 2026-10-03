@@ -4,6 +4,7 @@
 // deep-space ground — icons IN the cubes, so "where should we apply" reads at a glance.
 
 import { STEPS } from "@/lib/onboarding/steps";
+import DropCameo, { type CameoPose } from "@/components/landing/DropCameo";
 
 const PLATFORMS = ["indeed", "linkedin", "ziprecruiter", "greenhouse", "lever", "ashby"];
 const OFFSET = [10, -8, 6, -10, 8, -4];
@@ -45,10 +46,33 @@ function PlatformsHeader() {
   );
 }
 
+// Every other step (the questions) carries Drop on the header's bottom-right edge —
+// one pose per step, so the wizard reads as a little quiz with Drop as the host.
+// Step 4's header is a row of platform cubes across the middle, so its Drop is smaller and
+// pinned to the far edge, clear of the last cube.
+const DROP_POSE: Partial<Record<number, { pose: CameoPose; width: number; className: string }>> = {
+  2: { pose: "point", width: 112, className: "right-6" },
+  4: { pose: "peek", width: 92, className: "right-0" },
+  6: { pose: "standing", width: 112, className: "right-6" },
+  8: { pose: "waving", width: 112, className: "right-6" },
+  10: { pose: "sit", width: 112, className: "right-6" },
+};
+
 export default function StepHeader({ step }: { step: number }) {
   const art = STEPS[step - 1]?.art;
   if (!art) return null;
-  if (art === 4) return <PlatformsHeader />;
+  const header = art === 4 ? <PlatformsHeader /> : <PhotoHeader art={art} />;
+  const drop = DROP_POSE[step];
+  if (!drop) return header;
+  return (
+    <div className="relative">
+      {header}
+      <DropCameo pose={drop.pose} width={drop.width} enter="up" className={`hidden sm:block absolute bottom-0 ${drop.className}`} />
+    </div>
+  );
+}
+
+function PhotoHeader({ art }: { art: number }) {
   return (
     <div className="relative w-full h-40 sm:h-48 overflow-hidden">
       {/* eslint-disable-next-line @next/next/no-img-element */}

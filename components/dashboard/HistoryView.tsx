@@ -30,6 +30,7 @@ import { useHandbacks, handbackProgress, type Handback } from "@/components/dash
 import HandbackAnswers from "@/components/dashboard/HandbackAnswers";
 import HistoryInsights from "@/components/dashboard/HistoryInsights";
 import PosterPanel from "@/components/dashboard/PosterPanel";
+import DropCameo from "@/components/landing/DropCameo";
 
 type Receipt = {
   at: string; job_title: string; company: string; platform: string;
@@ -225,7 +226,7 @@ export default function HistoryView({
        "HISTORY — PAPER & INK" in globals.css. Nothing here is styled locally,
        so /preview/history-chips shows exactly what the dashboard ships. */
     <div className="hd-history space-y-7">
-      <div>
+      <div className="relative">
         <p className="hd-eyebrow">The record</p>
         <h1 className="hd-hist-display mt-2">
           Every application, <em className="italic">kept</em>.
@@ -233,6 +234,8 @@ export default function HistoryView({
         <p className="hd-hist-sub mt-2.5 max-w-xl leading-relaxed">
           Links, status and proof of submission — what we sent, and when we sent it.
         </p>
+        {/* Drop at the desk, header right edge — desktop only */}
+        <DropCameo pose="at-desk" width={132} enter="up" className="hidden md:block absolute right-2 -top-4" />
       </div>
 
       {/* The banner: a poster panel whose plate is one of OUR onboarding renders
@@ -411,6 +414,7 @@ export default function HistoryView({
       {/* Applications by day */}
       {byDay.length === 0 ? (
         <div className="hd-sheet p-10 text-center">
+          <DropCameo pose="waving" width={120} enter="up" className="mx-auto mb-4" />
           <p className="hd-eyebrow hd-eyebrow-ink">Nothing here yet</p>
           <p className="hd-hist-sub mt-2">
             Start a campaign and every application lands here, grouped by day.
