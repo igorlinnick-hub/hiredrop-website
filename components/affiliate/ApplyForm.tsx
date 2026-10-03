@@ -33,7 +33,6 @@ export default function ApplyForm({ source }: Props) {
     audience: "",
     audience_size: "",
     promo_plan: "",
-    paypal_email: "",
     website: "", // honeypot — hidden from people, filled by bots
   });
   const [sending, setSending] = useState(false);
@@ -183,13 +182,6 @@ export default function ApplyForm({ source }: Props) {
         <textarea id="plan" rows={3} maxLength={2000} className={field} value={form.promo_plan}
                   onChange={(e) => set("promo_plan", e.target.value)}
                   placeholder="A short video about how long applying takes, with the link in bio." />
-      </div>
-
-      <div>
-        <label className={label} htmlFor="paypal">PayPal email for payouts</label>
-        <input id="paypal" type="email" maxLength={254} className={field} value={form.paypal_email}
-               onChange={(e) => set("paypal_email", e.target.value)} placeholder="you@gmail.com" />
-        <p className={hint}>Optional now — but we can&apos;t pay you without it later.</p>
       </div>
 
       {/* Honeypot. Hidden from people; bots fill every input they find. */}

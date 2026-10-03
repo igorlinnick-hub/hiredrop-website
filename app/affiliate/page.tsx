@@ -25,14 +25,14 @@ const STEPS = [
   {
     n: "3",
     title: "Get paid monthly",
-    body: "30% of every payment they make, every month they stay subscribed. Sent by PayPal once you're over $25.",
+    body: "30% of every payment they make, every month they stay subscribed. Paid out automatically through Stripe once you're over $25.",
   },
 ];
 
 const FACTS = [
   ["30%", "Of every payment, not just the first"],
   ["60 days", "Your link keeps counting after the click"],
-  ["$25", "Minimum payout, sent monthly by PayPal"],
+  ["$25", "Minimum payout, paid automatically through Stripe"],
 ];
 
 export default function AffiliatePage() {
@@ -48,7 +48,7 @@ export default function AffiliatePage() {
                 Everyone you know is <em className="italic">job hunting</em>. Get paid for the tip.
               </>
             }
-            body="30% of every payment the people you refer make — every month they stay, not just the first one. Paid by PayPal."
+            body="30% of every payment the people you refer make — every month they stay, not just the first one. Paid automatically through Stripe."
             // One action, not two. A stranger cannot choose between "create a
             // profile" and "send an application" — they don't yet know what
             // either means. Account first, then the questions, inside it. The
