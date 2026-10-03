@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { PRICE_SENTENCE } from "@/lib/pricing";
 
 import DecorMarks from "./DecorMarks";
+import DropCameo from "./DropCameo";
 
 export default function GradientCTA() {
   return (
@@ -46,15 +47,17 @@ export default function GradientCTA() {
 
       {/* Card */}
       <motion.div
-        className="relative z-10 bg-white rounded-3xl p-12 max-w-[600px] w-full mx-4 text-center"
+        className="relative z-10 bg-white rounded-3xl px-8 py-14 sm:px-16 sm:py-20 max-w-[920px] w-full mx-4 text-center"
         style={{ boxShadow: "0 24px 80px rgba(108,92,231,0.15)" }}
         initial={{ opacity: 0, y: 30, scale: 0.97 }}
         whileInView={{ opacity: 1, y: 0, scale: 1 }}
         viewport={{ once: true, amount: 0.3 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       >
+        {/* Drop sits on the top edge of the card, legs over the front (seat ≈ 75% down the cut-out) */}
+        <DropCameo pose="sit" width={136} enter="down" delay={0.5} className="absolute bottom-[calc(100%-48px)] left-10 sm:left-16 z-20" />
         <h2
-          className="text-3xl sm:text-4xl font-bold text-[#1A1A2E] mb-4"
+          className="text-3xl sm:text-5xl font-bold text-[#1A1A2E] mb-5"
           style={{ fontFamily: "'Space Grotesk', sans-serif" }}
         >
           Ready to land your<br />next job?

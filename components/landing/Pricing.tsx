@@ -8,6 +8,7 @@ import {
 } from "@/lib/pricing";
 
 import ScrollReveal from "./ScrollReveal";
+import DropCameo from "./DropCameo";
 
 const INCLUDED = [
   "Ban-safe auto-apply — Indeed, ZipRecruiter & company ATS",
@@ -57,7 +58,7 @@ export default function Pricing() {
 
         {/* Free taste — the top of the funnel, deliberately NOT styled as a third plan */}
         <ScrollReveal>
-          <div className="max-w-2xl mx-auto mb-8 rounded-2xl border-2 border-dashed border-accent/40 bg-white p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center gap-5">
+          <div className="max-w-2xl mx-auto mb-8 sm:mb-24 rounded-2xl border-2 border-dashed border-accent/40 bg-white p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center gap-5">
             <div className="flex-1">
               <p className="text-sm font-semibold text-accent uppercase tracking-wide">Start here — free</p>
               <p className="mt-1.5 text-2xl font-bold text-[#1A1A2E]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
@@ -89,6 +90,10 @@ export default function Pricing() {
                     : "border border-[#E8E8F0]",
                 ].join(" ")}
               >
+                {/* Drop sits on the edge of the monthly card, legs over the front */}
+                {plan.highlighted && (
+                  <DropCameo pose="sit" width={96} enter="down" delay={0.3} className="hidden sm:block absolute -top-[100px] right-6 z-20" />
+                )}
                 {plan.badge && (
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-semibold px-3 py-1 rounded-full">
                     {plan.badge}
