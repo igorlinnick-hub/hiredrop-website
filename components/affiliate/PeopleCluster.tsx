@@ -6,10 +6,11 @@
  * DIFFERENT sizes, and STATIC — no float, no parallax, no entrance. Motion here
  * would read as a widget; stillness reads as a photograph.
  *
- * Faces are ours: brand-visuals/gen_affiliate_people.py generates them through
- * Replicate Flux with one lighting recipe, so nine separate generations sit in
- * one cluster instead of looking like a stock grid. Never vector heads — a
- * drawn face in a product that pays real people reads as a placeholder.
+ * Faces are licensed Envato photography, cropped by
+ * brand-visuals/crop_affiliate_people.py (2026-10-03 — Igor found the earlier
+ * Flux faces unreal). Sharp single portraits take the big circles; faces cut
+ * from the group shot go small. Never vector heads — a drawn face in a product
+ * that pays real people reads as a placeholder.
  *
  * Positions are percentages of the box, so the whole cluster scales with its
  * container rather than breaking into a new layout at each width.
@@ -18,7 +19,7 @@
 import Image from "next/image";
 
 interface Circle {
-  /** public/people file index */
+  /** public/people/face-<n>.jpg */
   n: number;
   /** diameter, % of container width */
   size: number;
@@ -61,7 +62,7 @@ export default function PeopleCluster({ className = "" }: { className?: string }
           }}
         >
           <Image
-            src={`/people/p${c.n}.jpg`}
+            src={`/people/face-${c.n}.jpg`}
             alt=""
             fill
             sizes="160px"
