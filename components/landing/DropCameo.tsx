@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export type CameoPose = "peek" | "sit" | "point";
+export type CameoPose = "peek" | "sit" | "point" | "standing" | "waving" | "at-desk";
 
 // Where Drop comes from when the spot scrolls into view. The pose sets the story
 // (peeking from the page edge, hanging under a block…), the entrance sells it.
@@ -61,6 +61,7 @@ export default function DropCameo({ pose, width, className = "", enter = "up", f
       className={`pointer-events-none select-none ${className}`}
       style={{ width, transform: flip ? "scaleX(-1)" : undefined }}
     >
+      <div className="relative">
       {/* eslint-disable-next-line @next/next/no-img-element -- transparent WebP, fixed size, no optimizer needed */}
       <img
         src={`/character/cameos/${pose}.webp`}
@@ -77,6 +78,20 @@ export default function DropCameo({ pose, width, className = "", enter = "up", f
           filter: "drop-shadow(0 14px 18px rgba(26,26,46,0.14))",
         }}
       />
+      {/* Contact shadow: Drop stands on a surface, so it gets a floor under its feet.
+          Peek hangs off an edge, so it has no floor and no shadow. */}
+      {pose !== "peek" && (
+        <div
+          aria-hidden
+          className="absolute left-[14%] right-[14%] bottom-[-2%] h-[9%] rounded-[50%] motion-reduce:!transition-none"
+          style={{
+            background: "radial-gradient(closest-side, rgba(26,26,46,0.28), rgba(26,26,46,0))",
+            opacity: shown ? 1 : 0,
+            transition: `opacity 0.9s ease ${delay + 0.3}s`,
+          }}
+        />
+      )}
+      </div>
     </div>
   );
 }

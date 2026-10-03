@@ -30,6 +30,7 @@ import { useHandbacks, handbackProgress, type Handback } from "@/components/dash
 import HandbackAnswers from "@/components/dashboard/HandbackAnswers";
 import HistoryInsights from "@/components/dashboard/HistoryInsights";
 import PosterPanel from "@/components/dashboard/PosterPanel";
+import DropCameo from "@/components/landing/DropCameo";
 
 type Receipt = {
   at: string; job_title: string; company: string; platform: string;
@@ -241,6 +242,10 @@ export default function HistoryView({
           asked for, in our own art. It earns its place by explaining the one
           thing about this screen that isn't obvious: a row opens into the exact
           documents we sent. */}
+      <div className="relative">
+        {/* Drop stands behind the panel's top edge: the panel is painted over his feet, so he
+            reads as standing behind the block. Desktop only; phones keep the plain panel. */}
+        <DropCameo pose="at-desk" width={150} enter="up" className="hidden md:block absolute right-10 bottom-[calc(100%-44px)]" />
       <PosterPanel
         title={<>We kept <em className="italic">everything</em> we sent.</>}
         body="Open any row and the record is right there — no digging through your sent folder."
@@ -265,6 +270,7 @@ export default function HistoryView({
           ))}
         </div>
       </PosterPanel>
+      </div>
 
       {/* How much · when · what came back · where they went. Four blocks, four
           questions, every number computed from the record we already store. */}
@@ -411,6 +417,7 @@ export default function HistoryView({
       {/* Applications by day */}
       {byDay.length === 0 ? (
         <div className="hd-sheet p-10 text-center">
+          <DropCameo pose="waving" width={120} enter="up" className="mx-auto mb-4" />
           <p className="hd-eyebrow hd-eyebrow-ink">Nothing here yet</p>
           <p className="hd-hist-sub mt-2">
             Start a campaign and every application lands here, grouped by day.
