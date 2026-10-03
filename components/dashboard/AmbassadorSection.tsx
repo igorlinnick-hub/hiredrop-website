@@ -16,7 +16,7 @@ import PosterPanel from "@/components/dashboard/PosterPanel";
 const FACTS: [string, string][] = [
   ["30%", "of every payment they make, every month they stay"],
   ["60 days", "your link keeps counting after the click"],
-  ["$25", "minimum payout, sent monthly by PayPal"],
+  ["$25", "minimum payout, paid automatically through Stripe"],
 ];
 
 export default function AmbassadorSection() {
