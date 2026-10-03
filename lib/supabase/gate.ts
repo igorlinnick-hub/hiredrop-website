@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
@@ -20,7 +21,10 @@ export type Gate =
   | { user: null; unreachable: true; signedOut?: false }
   | { user: null; unreachable?: false; signedOut: true };
 
-export async function gateUser(): Promise<Gate> {
+// cache(): the dashboard layout and the page both ask, in series, on every
+// render — two Supabase round-trips (~0.2–0.3 s each) for one answer. React's
+// cache is per request, so a new request always asks again.
+export const gateUser = cache(async (): Promise<Gate> => {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
 
@@ -37,4 +41,4 @@ export async function gateUser(): Promise<Gate> {
       error.status >= 500);
 
   return unreachable ? { user: null, unreachable: true } : { user: null, signedOut: true };
-}
+});
