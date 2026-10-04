@@ -8,7 +8,7 @@ const STEPS = [
   {
     number: "01",
     title: "Upload your resume",
-    description: "Drag & drop your PDF resume. Our AI reads it to understand your experience, skills, and writing style.",
+    description: "Drag & drop your PDF resume. HireDrop reads it to understand your experience, skills, and writing style.",
     badge: "Profile",
     badgeColor: "from-[#6C5CE7] to-[#a78bfa]",
   },
@@ -21,9 +21,9 @@ const STEPS = [
   },
   {
     number: "03",
-    title: "AI writes cover letters",
-    description: "Claude AI generates personalized cover letters for each job — matching your tone, not generic templates.",
-    badge: "AI Engine",
+    title: "A cover letter for every job",
+    description: "Our algorithm writes a personalized cover letter for each job — matching your tone, not a generic template.",
+    badge: "Writing",
     badgeColor: "from-[#6C5CE7] to-[#fd79a8]",
   },
   {
@@ -111,9 +111,9 @@ function Panel3() {
   const text = "Dear Hiring Manager,\n\nI'm excited to apply for the Marketing Manager role. With 5+ years driving data-driven campaigns that grew pipeline by 340%...";
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-white/60 p-6 sm:p-10 max-w-[440px] w-full" style={{ boxShadow: "0 12px 40px rgba(108,92,231,0.1)" }}>
-      <StepBadge label="AI Engine" gradient="from-[#6C5CE7] to-[#fd79a8]" />
+      <StepBadge label="Writing" gradient="from-[#6C5CE7] to-[#fd79a8]" />
       <div className="flex items-center justify-between mb-5">
-        <p className="text-base font-semibold text-[#1A1A2E]">AI Cover Letter</p>
+        <p className="text-base font-semibold text-[#1A1A2E]">Cover Letter</p>
         <span className="flex items-center gap-1.5 text-[10px] text-[#6C5CE7]">
           <span className="w-1.5 h-1.5 rounded-full bg-[#6C5CE7] animate-pulse" />
           Writing...
@@ -268,11 +268,13 @@ export default function HowItWorks() {
             {/* Left — sticky info */}
             <div className="flex flex-col justify-center">
               <p className="text-sm font-medium text-[#6C5CE7] mb-4 tracking-wider">HOW IT WORKS</p>
-              <div className="relative">
+              {/* All steps share one grid cell, so the column is as tall as the
+                  LONGEST step — a spacer sized to step 01 let 03/04 run into the dots. */}
+              <div className="grid">
                 {STEPS.map((step, i) => (
                   <div
                     key={step.number}
-                    className="absolute top-0 left-0 w-full transition-all duration-500"
+                    className="col-start-1 row-start-1 w-full transition-all duration-500"
                     style={{
                       opacity: activeStep === i ? 1 : 0,
                       transform: activeStep === i ? "translateX(0)" : activeStep > i ? "translateX(-20px)" : "translateX(20px)",
@@ -287,12 +289,6 @@ export default function HowItWorks() {
                     <motion.p className="text-lg max-w-md leading-relaxed" style={{ color: descColor }}>{step.description}</motion.p>
                   </div>
                 ))}
-                {/* Spacer for layout */}
-                <div className="invisible">
-                  <p className="text-7xl font-bold mb-2">00 <span className="text-3xl">/ 04</span></p>
-                  <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-bold mb-4">{STEPS[0].title}</h2>
-                  <p className="text-lg max-w-md">{STEPS[0].description}</p>
-                </div>
               </div>
               {/* Step dots */}
               <div className="flex gap-2 mt-8">

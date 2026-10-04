@@ -27,6 +27,10 @@ interface Props {
   note?: React.ReactNode;
   /** Dashboard variant: shorter, no button — the link itself sits below it. */
   compact?: boolean;
+  /** h2 where the page already has its own h1 (the landing band). */
+  headingAs?: "h1" | "h2";
+  /** Drawn over the people, e.g. Drop greeting the visitor from the landing. */
+  cameo?: React.ReactNode;
 }
 
 export default function AffiliateHero({
@@ -37,6 +41,8 @@ export default function AffiliateHero({
   smartCta,
   note,
   compact,
+  headingAs: Heading = "h1",
+  cameo,
 }: Props) {
   return (
     <section
@@ -78,7 +84,7 @@ export default function AffiliateHero({
               {eyebrow}
             </p>
           )}
-          <h1
+          <Heading
             className={`max-w-[13ch] text-white ${
               compact
                 ? "text-[30px] leading-[1.08] sm:text-[34px]"
@@ -87,7 +93,7 @@ export default function AffiliateHero({
             style={{ fontFamily: SERIF, letterSpacing: "-0.015em" }}
           >
             {title}
-          </h1>
+          </Heading>
           <p className="mt-4 max-w-md text-[15px] leading-relaxed text-white/70">{body}</p>
 
           {smartCta && <AffiliateCta label={smartCta.label} />}
@@ -107,6 +113,7 @@ export default function AffiliateHero({
             in rather than photographed. */}
         <div className="relative -mr-2 sm:-mr-4 md:-mr-6 lg:-mr-8">
           <PeopleCluster />
+          {cameo}
         </div>
       </div>
     </section>

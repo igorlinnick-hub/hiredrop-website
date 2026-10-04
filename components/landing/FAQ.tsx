@@ -20,7 +20,7 @@ const QUESTIONS = [
   },
   {
     q: "What are Apply Modes?",
-    a: "You choose how selective the AI is: Broad (explore widely), Standard (focused by specialty), or Precise (only the best-matched roles). It's quality over volume — apply where you actually fit.",
+    a: "You choose how selective HireDrop is: Broad (explore widely), Standard (focused by specialty), or Precise (only the best-matched roles). It's quality over volume — apply where you actually fit.",
   },
   {
     q: "Will my applications look spammy?",
@@ -36,7 +36,7 @@ const QUESTIONS = [
   },
   {
     q: "Is the free version really free?",
-    a: "Yes — your first 40 applications cost nothing and there's no credit card at signup. That's real auto-apply with AI cover letters, not a demo. The only paid-only feature is ATS resume tailoring. When the 40 are used, you subscribe to keep applying — so you only ever pay after you've watched it work.",
+    a: "Yes — your first 40 applications cost nothing and there's no credit card at signup. That's real auto-apply with tailored cover letters, not a demo. The only paid-only feature is ATS resume tailoring. When the 40 are used, you subscribe to keep applying — so you only ever pay after you've watched it work.",
   },
 ];
 

@@ -28,7 +28,7 @@ const features = [
     ),
   },
   {
-    title: "AI cover letters",
+    title: "Tailored cover letters",
     subtitle: "In your voice",
     description: "A cover letter written for each role — matched to your tone and the job, not a generic template recruiters ignore.",
     icon: (

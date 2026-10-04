@@ -12,7 +12,7 @@ import DropCameo from "./DropCameo";
 
 const INCLUDED = [
   "Ban-safe auto-apply — Indeed, ZipRecruiter & company ATS",
-  "AI cover letters written in your voice, per role",
+  "Cover letters written in your voice, per role",
   "ATS resume tailored to each job",
   "Handles complex ATS — Greenhouse, Lever & Ashby",
   "Up to 30 applications a day, human-paced",
@@ -65,7 +65,7 @@ export default function Pricing() {
                 Your first 40 applications, on us
               </p>
               <p className="mt-2 text-sm text-[#6B6B8A]">
-                Full auto-apply + AI cover letters. No credit card. See real applications go
+                Full auto-apply + tailored cover letters. No credit card. See real applications go
                 out before you spend a dollar. (ATS resume tailoring stays a paid feature.)
               </p>
             </div>

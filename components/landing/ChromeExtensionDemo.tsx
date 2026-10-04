@@ -357,7 +357,7 @@ export default function ChromeExtensionDemo() {
                       <label className="text-[10px] font-medium text-[#999] mb-1 block">
                         Cover Letter
                         {showCover && !isDone && (
-                          <span className="ml-2 text-[#6C5CE7] font-normal">AI generating...</span>
+                          <span className="ml-2 text-[#6C5CE7] font-normal">Writing...</span>
                         )}
                       </label>
                       <div

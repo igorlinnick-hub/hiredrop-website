@@ -35,13 +35,6 @@ export default function Hero() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left — text with staggered load animation */}
           <motion.div variants={container} initial="hidden" animate="show">
-            <motion.div
-              variants={fadeUp}
-              className="inline-block mb-6 px-4 py-1.5 bg-[#EEE9FF] text-[#6C5CE7] text-sm font-medium rounded-full"
-            >
-              Human-in-the-loop AI · Your account stays yours
-            </motion.div>
-
             <motion.h1
               variants={fadeUp}
               className="text-4xl sm:text-5xl lg:text-[52px] font-bold text-[#1A1A2E] leading-[1.15] pb-1 mb-6"
