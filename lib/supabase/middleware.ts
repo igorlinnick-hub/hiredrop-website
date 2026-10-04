@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import type { AuthError } from "@supabase/supabase-js";
 
 /** Set by middleware.ts so server components can see which route is rendering. */
 export const PATHNAME_HEADER = "x-hd-pathname";
@@ -39,10 +40,22 @@ export async function updateSession(request: NextRequest, requestHeaders?: Heade
     }
   );
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  // Middleware runs on Vercel's edge next to the visitor (pdx1 for Igor), the
+  // auth service sits in Ohio: getUser() was a cross-country round trip on every
+  // /dashboard and /onboarding request, ~0.25–0.3 s of blank screen before the
+  // first byte (10-03). The project signs JWTs with an asymmetric key (ES256),
+  // so getClaims() verifies the signature locally against the cached JWKS and
+  // still refreshes an expiring session through getSession(). Revocation is
+  // not checked here — the dashboard layout and every page re-ask getUser()
+  // from the server, next to the database.
+  //
+  // /login and /signup keep getUser(): their redirect goes TO /dashboard, and a
+  // revoked session with a still-valid JWT (signed out everywhere, user deleted)
+  // would bounce /login → /dashboard → gate → /login forever.
+  const isAuthPage = ["/login", "/signup"].includes(request.nextUrl.pathname);
+  const { user, authError } = isAuthPage
+    ? await readUser(supabase)
+    : await readClaims(supabase);
 
   // "No session" and "couldn't ask" are different answers, and this used to treat
   // them the same (Igor 09-24: came back from the Stripe tab and landed on /login).
@@ -89,9 +102,6 @@ export async function updateSession(request: NextRequest, requestHeaders?: Heade
   }
 
   // Redirect authenticated users away from auth pages
-  const authPaths = ["/login", "/signup"];
-  const isAuthPage = authPaths.includes(request.nextUrl.pathname);
-
   if (user && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
@@ -99,4 +109,24 @@ export async function updateSession(request: NextRequest, requestHeaders?: Heade
   }
 
   return supabaseResponse;
+}
+
+type AuthRead = { user: object | null; authError: AuthError | null };
+type Client = ReturnType<typeof createServerClient>;
+
+async function readUser(supabase: Client): Promise<AuthRead> {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  return { user, authError: error };
+}
+
+async function readClaims(supabase: Client): Promise<AuthRead> {
+  try {
+    const { data, error } = await supabase.auth.getClaims();
+    return { user: data?.claims ?? null, authError: error };
+  } catch {
+    // getClaims() rethrows anything that is not an AuthError — an expired or
+    // exp-less token in a tampered cookie throws a plain Error. That is a bad
+    // token, not an outage: signed out, not a 500 from the middleware.
+    return { user: null, authError: null };
+  }
 }
