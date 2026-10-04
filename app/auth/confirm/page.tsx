@@ -6,7 +6,7 @@ export const metadata = {
 
 export default function ConfirmPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-background">
+    <div className="hd-auth min-h-screen flex items-center justify-center px-4 bg-background">
       <div className="max-w-md text-center">
         <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-accent/10 flex items-center justify-center">
           <svg className="w-8 h-8 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">

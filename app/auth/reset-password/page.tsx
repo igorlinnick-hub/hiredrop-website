@@ -39,11 +39,11 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-background">
+    <div className="hd-auth min-h-screen flex items-center justify-center px-4 bg-background">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-bold text-text">
-            <span className="text-accent">Hire</span>Drop
+            <span className="text-[#6C5CE7]">Hire</span>Drop
           </Link>
           <h1 className="mt-6 text-2xl font-bold text-text">Reset your password</h1>
           <p className="mt-2 text-sm text-text2">
