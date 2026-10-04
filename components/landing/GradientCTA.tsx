@@ -11,7 +11,7 @@ export default function GradientCTA() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0f0f17]">
       {/* descend into night — long soft fade from the light section above */}
-      <div className="absolute top-0 inset-x-0 h-60 z-[1] pointer-events-none" style={{ background: "linear-gradient(180deg, #F7F7FB 0%, rgba(247,247,251,0.5) 28%, rgba(30,26,45,0.2) 64%, rgba(15,15,23,0) 100%)" }} />
+      <div className="absolute top-0 inset-x-0 h-60 z-[1] pointer-events-none" style={{ background: "linear-gradient(180deg, #F6F1E7 0%, rgba(246,241,231,0.5) 28%, rgba(30,26,45,0.2) 64%, rgba(15,15,23,0) 100%)" }} />
       {/* Animated gradient blobs */}
       <div
         className="absolute w-[600px] h-[600px] rounded-full opacity-40"
@@ -48,7 +48,7 @@ export default function GradientCTA() {
       {/* Card */}
       <motion.div
         className="relative z-10 bg-white rounded-3xl px-8 py-14 sm:px-16 sm:py-20 max-w-[920px] w-full mx-4 text-center"
-        style={{ boxShadow: "0 24px 80px rgba(108,92,231,0.15)" }}
+        style={{ boxShadow: "0 24px 80px rgba(58,44,18,0.15)" }}
         initial={{ opacity: 0, y: 30, scale: 0.97 }}
         whileInView={{ opacity: 1, y: 0, scale: 1 }}
         viewport={{ once: true, amount: 0.3 }}
@@ -57,19 +57,19 @@ export default function GradientCTA() {
         {/* Drop sits on the top edge of the card, legs over the front (seat ≈ 75% down the cut-out) */}
         <DropCameo pose="sit" width={136} enter="down" delay={0.5} className="absolute bottom-[calc(100%-48px)] left-10 sm:left-16 z-20" />
         <h2
-          className="text-3xl sm:text-5xl font-bold text-[#1A1A2E] mb-5"
+          className="text-3xl sm:text-5xl font-bold text-[#101014] mb-5"
           style={{ fontFamily: "'Space Grotesk', sans-serif" }}
         >
           Ready to land your<br />next job?
         </h2>
-        <p className="text-[#6B6B8A] mb-8">
+        <p className="text-[#5C574F] mb-8">
           Your first 40 applications are free — no card required.
           <br />
           Then {PRICE_SENTENCE}. Cancel anytime.
         </p>
         <Link
           href="/signup"
-          className="inline-flex items-center gap-2 bg-[#1A1A2E] text-white font-medium px-8 py-3.5 rounded-full text-lg"
+          className="inline-flex items-center gap-2 bg-[#101014] text-white font-medium px-8 py-3.5 rounded-full text-lg"
           style={{ transition: "transform 0.15s, box-shadow 0.15s" }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = "scale(1.02)";

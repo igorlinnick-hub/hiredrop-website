@@ -99,7 +99,7 @@ export default function Features() {
       {/* soft fade back to daylight, into the next section */}
       <div
         className="absolute bottom-0 inset-x-0 h-32 pointer-events-none"
-        style={{ background: "linear-gradient(0deg, #F7F7FB 0%, rgba(247,247,251,0.35) 45%, transparent 100%)" }}
+        style={{ background: "linear-gradient(0deg, #F6F1E7 0%, rgba(246,241,231,0.35) 45%, transparent 100%)" }}
       />
 
       <div className="relative z-10 max-w-6xl mx-auto">
@@ -116,17 +116,17 @@ export default function Features() {
           {features.map((feature, i) => (
             <ScrollReveal key={feature.title} delay={i * 0.12}>
               <motion.div
-                className="bg-white rounded-2xl p-6 border border-[#E8E8F0] h-full"
+                className="bg-white rounded-2xl p-6 border border-[#E7E0D2] h-full"
                 style={{ boxShadow: "0 8px 30px rgba(20,18,31,0.12)" }}
-                whileHover={{ y: -4, borderColor: "#6C5CE7", boxShadow: "0 16px 40px rgba(108,92,231,0.25)" }}
+                whileHover={{ y: -4, borderColor: "#101014", boxShadow: "0 16px 40px rgba(58,44,18,0.25)" }}
                 transition={{ duration: 0.2 }}
               >
-                <div className="w-12 h-12 bg-[#EEE9FF] rounded-lg flex items-center justify-center text-[#6C5CE7] mb-4">
+                <div className="w-12 h-12 bg-[#EFE8D8] rounded-lg flex items-center justify-center text-[#101014] mb-4">
                   {feature.icon}
                 </div>
-                <h3 className="text-lg font-semibold text-[#1A1A2E] mb-1">{feature.title}</h3>
-                <div className="text-xs font-medium text-[#6C5CE7] mb-3">{feature.subtitle}</div>
-                <p className="text-sm text-[#6B6B8A]">{feature.description}</p>
+                <h3 className="text-lg font-semibold text-[#101014] mb-1">{feature.title}</h3>
+                <div className="text-xs font-medium text-[#5C574F] mb-3">{feature.subtitle}</div>
+                <p className="text-sm text-[#5C574F]">{feature.description}</p>
               </motion.div>
             </ScrollReveal>
           ))}

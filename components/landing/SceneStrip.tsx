@@ -39,7 +39,7 @@ export default function SceneStrip() {
         {PILLARS.map((p, i) => (
           <ScrollReveal key={p.img} delay={i * 0.1}>
             <div className="flex flex-col items-center text-center">
-              <div className="rounded-3xl bg-white p-3 mb-5" style={{ boxShadow: "0 12px 36px rgba(108,92,231,0.10)" }}>
+              <div className="rounded-3xl bg-white p-3 mb-5" style={{ boxShadow: "0 12px 36px rgba(58,44,18,0.10)" }}>
                 <Image
                   src={`/illustrations/drop/${p.img}.webp`}
                   alt={p.alt}
@@ -49,8 +49,8 @@ export default function SceneStrip() {
                   unoptimized
                 />
               </div>
-              <h3 className="text-lg font-bold text-[#1A1A2E] mb-1.5">{p.title}</h3>
-              <p className="text-sm text-[#6B6B8A] max-w-[15rem]">{p.body}</p>
+              <h3 className="text-lg font-bold text-[#101014] mb-1.5">{p.title}</h3>
+              <p className="text-sm text-[#5C574F] max-w-[15rem]">{p.body}</p>
             </div>
           </ScrollReveal>
         ))}

@@ -44,16 +44,16 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="border-b border-[#E8E8F0]">
+    <div className="border-b border-[#E7E0D2]">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between py-5 text-left group"
       >
-        <span className="text-base font-medium text-[#1A1A2E] pr-4 group-hover:text-[#6C5CE7] transition-colors">
+        <span className="text-base font-medium text-[#101014] pr-4 group-hover:text-[#5C574F] transition-colors">
           {q}
         </span>
         <span
-          className="shrink-0 w-6 h-6 flex items-center justify-center text-[#6B6B8A] transition-transform duration-300"
+          className="shrink-0 w-6 h-6 flex items-center justify-center text-[#5C574F] transition-transform duration-300"
           style={{ transform: open ? "rotate(45deg)" : "rotate(0deg)" }}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,7 +65,7 @@ function FAQItem({ q, a }: { q: string; a: string }) {
         className="overflow-hidden transition-all duration-300"
         style={{ maxHeight: open ? "200px" : "0px", opacity: open ? 1 : 0 }}
       >
-        <p className="text-sm text-[#6B6B8A] leading-relaxed pb-5">{a}</p>
+        <p className="text-sm text-[#5C574F] leading-relaxed pb-5">{a}</p>
       </div>
     </div>
   );
@@ -79,12 +79,12 @@ export default function FAQ() {
           {/* Left — title */}
           <div className="lg:sticky lg:top-32 lg:self-start">
             <h2
-              className="text-3xl sm:text-4xl font-bold text-[#1A1A2E]"
+              className="text-3xl sm:text-4xl font-bold text-[#101014]"
               style={{ fontFamily: "'Space Grotesk', sans-serif" }}
             >
               Frequently<br />asked<br />questions
             </h2>
-            <p className="mt-4 text-[#6B6B8A]">
+            <p className="mt-4 text-[#5C574F]">
               Everything you need to know about HireDrop.
             </p>
             {/* mirrored so it points right, at the questions */}

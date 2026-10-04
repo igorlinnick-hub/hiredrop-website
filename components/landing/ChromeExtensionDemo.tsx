@@ -125,17 +125,17 @@ export default function ChromeExtensionDemo() {
       <div className="max-w-5xl mx-auto relative">
         {/* Section header */}
         <div className="text-center mb-14">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#EEE9FF] rounded-full mb-5">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#EFE8D8] rounded-full mb-5">
             <div className="w-2 h-2 rounded-full bg-[#6C5CE7] animate-pulse" />
-            <span className="text-sm font-medium text-[#6C5CE7]">Chrome Extension</span>
+            <span className="text-sm font-medium text-[#101014]">Chrome Extension</span>
           </div>
           <h2
-            className="text-3xl sm:text-4xl font-bold text-[#1A1A2E] mb-4"
+            className="text-3xl sm:text-4xl font-bold text-[#101014] mb-4"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             Watch the extension work
           </h2>
-          <p className="text-lg text-[#6B6B8A] max-w-xl mx-auto">
+          <p className="text-lg text-[#5C574F] max-w-xl mx-auto">
             It scans, matches, fills forms, and applies — all while you grab a coffee.
           </p>
         </div>
@@ -146,7 +146,7 @@ export default function ChromeExtensionDemo() {
           <div
             className="absolute -inset-3 rounded-[24px] opacity-60 blur-2xl pointer-events-none"
             style={{
-              background: "linear-gradient(135deg, rgba(108,92,231,0.15), rgba(167,139,250,0.1), rgba(0,184,148,0.08))",
+              background: "linear-gradient(135deg, rgba(58,44,18,0.15), rgba(167,139,250,0.1), rgba(0,184,148,0.08))",
             }}
           />
 
@@ -154,7 +154,7 @@ export default function ChromeExtensionDemo() {
           <div
             className="relative rounded-[18px] overflow-hidden"
             style={{
-              background: "linear-gradient(135deg, rgba(108,92,231,0.12), rgba(167,139,250,0.06))",
+              background: "linear-gradient(135deg, rgba(58,44,18,0.12), rgba(167,139,250,0.06))",
               padding: "1px",
             }}
           >
@@ -180,7 +180,7 @@ export default function ChromeExtensionDemo() {
                   <div
                     className="relative w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-400"
                     style={{
-                      background: phase >= 1 ? "linear-gradient(135deg, #6C5CE7, #a78bfa)" : "#e8e8f0",
+                      background: phase >= 1 ? "linear-gradient(180deg, #26262F, #101014)" : "#E7E0D2",
                       boxShadow: phase >= 1 && phase < 5 ? "0 0 12px rgba(108,92,231,0.4)" : "none",
                     }}
                   >
@@ -213,7 +213,7 @@ export default function ChromeExtensionDemo() {
                   }}
                 >
                   {/* Indeed-style header */}
-                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[#f0f0f5]">
+                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[#EFEAE0]">
                     <div className="w-6 h-6 rounded bg-[#2557a7] flex items-center justify-center">
                       <span className="text-white text-[8px] font-bold">in</span>
                     </div>
@@ -231,9 +231,9 @@ export default function ChromeExtensionDemo() {
                           key={job.title}
                           className="p-3 rounded-lg border transition-all duration-400"
                           style={{
-                            borderColor: isMatched ? "#6C5CE7" : isBeingScanned ? "#a78bfa" : "#f0f0f5",
-                            backgroundColor: isMatched ? "#faf8ff" : isBeingScanned ? "#fdfcff" : "white",
-                            boxShadow: isBeingScanned ? "0 0 0 2px rgba(108,92,231,0.15)" : isMatched ? "0 2px 8px rgba(108,92,231,0.06)" : "none",
+                            borderColor: isMatched ? "#6C5CE7" : isBeingScanned ? "#a78bfa" : "#EFEAE0",
+                            backgroundColor: isMatched ? "#FAF7F0" : isBeingScanned ? "#FDFBF7" : "white",
+                            boxShadow: isBeingScanned ? "0 0 0 2px rgba(108,92,231,0.15)" : isMatched ? "0 2px 8px rgba(58,44,18,0.06)" : "none",
                             transform: isBeingScanned ? "scale(1.01)" : "scale(1)",
                           }}
                         >
@@ -242,7 +242,7 @@ export default function ChromeExtensionDemo() {
                               <div className="flex items-center gap-2">
                                 <p className="text-[13px] font-semibold text-[#2557a7]">{job.title}</p>
                                 {isMatched && (
-                                  <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-[#EEE9FF] text-[#6C5CE7] animate-[fadeInUp_0.3s_ease_both]">
+                                  <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-[#EFE8D8] text-[#101014] animate-[fadeInUp_0.3s_ease_both]">
                                     {job.match}% match
                                   </span>
                                 )}
@@ -258,8 +258,8 @@ export default function ChromeExtensionDemo() {
 
                           {/* Scanning indicator */}
                           {isBeingScanned && (
-                            <div className="mt-2 h-0.5 bg-[#EEE9FF] rounded-full overflow-hidden">
-                              <div className="h-full w-full bg-gradient-to-r from-[#6C5CE7] to-[#a78bfa] animate-[scanPulse_0.8s_ease_infinite]" />
+                            <div className="mt-2 h-0.5 bg-[#EFE8D8] rounded-full overflow-hidden">
+                              <div className="h-full w-full bg-gradient-to-r from-[#26262F] to-[#101014] animate-[scanPulse_0.8s_ease_infinite]" />
                             </div>
                           )}
                         </div>
@@ -278,7 +278,7 @@ export default function ChromeExtensionDemo() {
                   }}
                 >
                   {/* Job header */}
-                  <div className="flex items-center justify-between mb-5 pb-3 border-b border-[#f0f0f5]">
+                  <div className="flex items-center justify-between mb-5 pb-3 border-b border-[#EFEAE0]">
                     <div>
                       <p className="text-sm font-semibold text-[#2d2d2d]">Apply: Marketing Manager</p>
                       <p className="text-[11px] text-[#767676]">Stripe · Remote · $130K</p>
@@ -305,7 +305,7 @@ export default function ChromeExtensionDemo() {
                           <div
                             className="border rounded-lg px-3 py-2 text-[12px] min-h-[34px] transition-all duration-300 flex items-center"
                             style={{
-                              borderColor: isFilling ? "#6C5CE7" : isFilled ? "#00B894" : "#e8e8f0",
+                              borderColor: isFilling ? "#6C5CE7" : isFilled ? "#00B894" : "#E7E0D2",
                               backgroundColor: isFilled ? "#f8fffe" : "white",
                               boxShadow: isFilling ? "0 0 0 3px rgba(108,92,231,0.1)" : "none",
                             }}
@@ -336,7 +336,7 @@ export default function ChromeExtensionDemo() {
                       <div
                         className="border border-dashed rounded-lg px-3 py-2 text-[11px] transition-all duration-300"
                         style={{
-                          borderColor: fillIndex >= 2 ? "#00B894" : "#e8e8f0",
+                          borderColor: fillIndex >= 2 ? "#00B894" : "#E7E0D2",
                           backgroundColor: fillIndex >= 2 ? "#f8fffe" : "white",
                           color: fillIndex >= 2 ? "#00B894" : "#ccc",
                         }}
@@ -363,8 +363,8 @@ export default function ChromeExtensionDemo() {
                       <div
                         className="border rounded-lg px-3 py-2.5 min-h-[72px] transition-all duration-300 text-[11px] leading-relaxed"
                         style={{
-                          borderColor: showCover ? (isDone ? "#00B894" : "#6C5CE7") : "#e8e8f0",
-                          backgroundColor: showCover ? (isDone ? "#f8fffe" : "#faf8ff") : "white",
+                          borderColor: showCover ? (isDone ? "#00B894" : "#6C5CE7") : "#E7E0D2",
+                          backgroundColor: showCover ? (isDone ? "#f8fffe" : "#FAF7F0") : "white",
                           boxShadow: showCover && !isDone ? "0 0 0 3px rgba(108,92,231,0.08)" : "none",
                         }}
                       >
@@ -386,9 +386,9 @@ export default function ChromeExtensionDemo() {
                   <div
                     className="w-full text-center py-2.5 rounded-lg text-[13px] font-semibold transition-all duration-500"
                     style={{
-                      background: isDone ? "linear-gradient(135deg, #00B894, #00d4aa)" : phase >= 3 ? "linear-gradient(135deg, #6C5CE7, #a78bfa)" : "#e8e8f0",
+                      background: isDone ? "linear-gradient(135deg, #00B894, #00d4aa)" : phase >= 3 ? "linear-gradient(180deg, #26262F, #101014)" : "#E7E0D2",
                       color: phase >= 3 ? "white" : "#999",
-                      boxShadow: isDone ? "0 4px 16px rgba(0,184,148,0.3)" : phase >= 3 ? "0 4px 16px rgba(108,92,231,0.25)" : "none",
+                      boxShadow: isDone ? "0 4px 16px rgba(0,184,148,0.3)" : phase >= 3 ? "0 4px 16px rgba(58,44,18,0.25)" : "none",
                       transform: isDone ? "scale(1.02)" : "scale(1)",
                     }}
                   >
@@ -402,11 +402,11 @@ export default function ChromeExtensionDemo() {
                   style={{
                     opacity: phase >= 1 && !showForm ? 1 : 0,
                     transform: phase >= 1 && !showForm ? "translateY(0) scale(1)" : "translateY(-8px) scale(0.95)",
-                    boxShadow: "0 16px 48px rgba(108,92,231,0.25), 0 0 0 1px rgba(108,92,231,0.1)",
+                    boxShadow: "0 16px 48px rgba(58,44,18,0.25), 0 0 0 1px rgba(108,92,231,0.1)",
                     pointerEvents: "none",
                   }}
                 >
-                  <div className="bg-gradient-to-r from-[#6C5CE7] to-[#a78bfa] px-3 py-2 flex items-center justify-between">
+                  <div className="bg-gradient-to-r from-[#26262F] to-[#101014] px-3 py-2 flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center">
                         <span className="text-white text-[6px] font-bold">JF</span>
@@ -427,7 +427,7 @@ export default function ChromeExtensionDemo() {
                         <div key={i} className="flex items-center gap-2" style={{ opacity: item.active ? 1 : 0.3 }}>
                           <div
                             className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
-                            style={{ backgroundColor: item.active && phase > i + 1 ? "#00B894" : item.active ? "#6C5CE7" : "#e8e8f0" }}
+                            style={{ backgroundColor: item.active && phase > i + 1 ? "#00B894" : item.active ? "#6C5CE7" : "#E7E0D2" }}
                           >
                             {item.active && phase > i + 1 ? (
                               <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -439,7 +439,7 @@ export default function ChromeExtensionDemo() {
                               <div className="w-1.5 h-1.5 rounded-full bg-[#ccc]" />
                             )}
                           </div>
-                          <span className="text-[9px] font-medium text-[#1A1A2E]">{item.label}</span>
+                          <span className="text-[9px] font-medium text-[#101014]">{item.label}</span>
                         </div>
                       ))}
                     </div>
@@ -473,10 +473,10 @@ export default function ChromeExtensionDemo() {
                 transitionDelay: `${0.8 + i * 0.15}s`,
               }}
             >
-              <p className="text-xl font-bold text-[#1A1A2E]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              <p className="text-xl font-bold text-[#101014]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                 {stat.value}
               </p>
-              <p className="text-[11px] text-[#6B6B8A] mt-0.5">{stat.label}</p>
+              <p className="text-[11px] text-[#5C574F] mt-0.5">{stat.label}</p>
             </div>
           ))}
         </div>

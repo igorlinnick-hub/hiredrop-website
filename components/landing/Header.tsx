@@ -7,10 +7,10 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#E8E8F0]">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#E7E0D2]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="text-xl font-bold text-[#1A1A2E]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+          <Link href="/" className="text-xl font-bold text-[#101014]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
             <span className="text-[#6C5CE7]">Hire</span>Drop
           </Link>
 
@@ -25,7 +25,7 @@ export default function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="relative text-sm text-[#6B6B8A] hover:text-[#1A1A2E] transition-colors group"
+                className="relative text-sm text-[#5C574F] hover:text-[#101014] transition-colors group"
               >
                 {link.label}
                 <span className="absolute bottom-[-2px] left-0 w-0 h-[1.5px] bg-[#6C5CE7] transition-all duration-200 group-hover:w-full" />
@@ -33,18 +33,18 @@ export default function Header() {
             ))}
             <Link
               href="/login"
-              className="relative text-sm text-[#6B6B8A] hover:text-[#1A1A2E] transition-colors group"
+              className="relative text-sm text-[#5C574F] hover:text-[#101014] transition-colors group"
             >
               Log in
               <span className="absolute bottom-[-2px] left-0 w-0 h-[1.5px] bg-[#6C5CE7] transition-all duration-200 group-hover:w-full" />
             </Link>
             <Link
               href="/signup"
-              className="bg-[#6C5CE7] text-white text-sm font-medium px-4 py-2 rounded-[10px]"
+              className="bg-[#101014] text-white text-sm font-medium px-4 py-2 rounded-[10px]"
               style={{ transition: "transform 0.15s, box-shadow 0.15s" }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "0 8px 24px rgba(108,92,231,0.25)";
+                e.currentTarget.style.boxShadow = "0 8px 24px rgba(58,44,18,0.25)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "translateY(0)";
@@ -60,7 +60,7 @@ export default function Header() {
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
           >
-            <svg className="w-6 h-6 text-[#1A1A2E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-[#101014]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {menuOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               ) : (
@@ -71,26 +71,26 @@ export default function Header() {
         </div>
 
         {menuOpen && (
-          <div className="md:hidden pb-4 border-t border-[#E8E8F0]">
+          <div className="md:hidden pb-4 border-t border-[#E7E0D2]">
             <div className="flex flex-col gap-3 pt-4">
-              <Link href="/#how-it-works" className="text-sm text-[#6B6B8A] hover:text-[#1A1A2E]" onClick={() => setMenuOpen(false)}>
+              <Link href="/#how-it-works" className="text-sm text-[#5C574F] hover:text-[#101014]" onClick={() => setMenuOpen(false)}>
                 How it works
               </Link>
-              <Link href="/#features" className="text-sm text-[#6B6B8A] hover:text-[#1A1A2E]" onClick={() => setMenuOpen(false)}>
+              <Link href="/#features" className="text-sm text-[#5C574F] hover:text-[#101014]" onClick={() => setMenuOpen(false)}>
                 Features
               </Link>
-              <Link href="/#pricing" className="text-sm text-[#6B6B8A] hover:text-[#1A1A2E]" onClick={() => setMenuOpen(false)}>
+              <Link href="/#pricing" className="text-sm text-[#5C574F] hover:text-[#101014]" onClick={() => setMenuOpen(false)}>
                 Pricing
               </Link>
-              <Link href="/guides" className="text-sm text-[#6B6B8A] hover:text-[#1A1A2E]" onClick={() => setMenuOpen(false)}>
+              <Link href="/guides" className="text-sm text-[#5C574F] hover:text-[#101014]" onClick={() => setMenuOpen(false)}>
                 Guides
               </Link>
-              <Link href="/login" className="text-sm text-[#6B6B8A] hover:text-[#1A1A2E]">
+              <Link href="/login" className="text-sm text-[#5C574F] hover:text-[#101014]">
                 Log in
               </Link>
               <Link
                 href="/signup"
-                className="bg-[#6C5CE7] text-white text-sm font-medium px-4 py-2 rounded-[10px] text-center"
+                className="bg-[#101014] text-white text-sm font-medium px-4 py-2 rounded-[10px] text-center"
               >
                 Start applying
               </Link>

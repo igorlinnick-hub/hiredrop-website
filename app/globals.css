@@ -1,13 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #F7F7FB;
-  --foreground: #1A1A2E;
+  /* Marketing palette (Igor 2026-10-03): cream ground, ink type and buttons,
+     white cards, violet only in small marks — the same day language as the
+     app (.hd-dash-root overrides these for the dashboard). */
+  --background: #F6F1E7;
+  --foreground: #101014;
   --surface: #ffffff;
-  --surface2: #F7F7FB;
-  --border: #E8E8F0;
-  --text: #1A1A2E;
-  --text2: #6B6B8A;
+  --surface2: #F1EBDF;
+  --border: #E7E0D2;
+  --text: #101014;
+  --text2: #5C574F;
   --accent: #6C5CE7;
   --accent2: #a78bfa;
   --accent-light: #EEE9FF;
@@ -15,8 +18,8 @@
   --green: #00B894;
   --red: #ef4444;
   --yellow: #f59e0b;
-  --shadow: 0 2px 8px rgba(108,92,231,0.06);
-  --shadow-hover: 0 8px 24px rgba(108,92,231,0.14);
+  --shadow: 0 2px 8px rgba(58,44,18,0.06);
+  --shadow-hover: 0 8px 24px rgba(58,44,18,0.14);
 }
 
 .dark {
@@ -150,8 +153,8 @@ h1, h2, h3 {
 /* ===== SITE-WIDE SUBTLE GRID (light sections show it through transparent bgs) ===== */
 .landing-grid {
   background-image:
-    linear-gradient(rgba(108,92,231,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(108,92,231,0.03) 1px, transparent 1px);
+    linear-gradient(rgba(16,16,20,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16,16,20,0.035) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
@@ -190,7 +193,7 @@ h1, h2, h3 {
   position: absolute;
   border-radius: 9999px;
   filter: blur(90px);
-  background: radial-gradient(circle, rgba(108, 92, 231, 0.16), rgba(167, 139, 250, 0.05) 60%, transparent 72%);
+  background: radial-gradient(circle, rgba(108, 92, 231, 0.07), rgba(167, 139, 250, 0.02) 60%, transparent 72%);
   pointer-events: none;
   z-index: 0;
 }
