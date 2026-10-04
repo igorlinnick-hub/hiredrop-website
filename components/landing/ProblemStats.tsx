@@ -57,8 +57,8 @@ export default function ProblemStats() {
   });
   const dayOpacity = useTransform(scrollYProgress, [0, 0.72], [1, 0]);
   const starOpacity = useTransform(scrollYProgress, [0.5, 0.95], [0, 1]);
-  const titleColor = useTransform(scrollYProgress, [0.42, 0.66], ["#1A1A2E", "#ffffff"]);
-  const subColor = useTransform(scrollYProgress, [0.42, 0.66], ["#6B6B8A", "#9ca3af"]);
+  const titleColor = useTransform(scrollYProgress, [0.42, 0.66], ["#101014", "#ffffff"]);
+  const subColor = useTransform(scrollYProgress, [0.42, 0.66], ["#5C574F", "#9ca3af"]);
 
   useEffect(() => {
     const el = ref.current;
@@ -84,18 +84,18 @@ export default function ProblemStats() {
         className="absolute inset-0 pointer-events-none"
         style={{
           opacity: dayOpacity,
-          background: "linear-gradient(180deg, #F7F7FB 0%, #F4F3F9 55%, #ECEAF4 100%)",
+          background: "linear-gradient(180deg, #F6F1E7 0%, #F2ECDF 55%, #ECE4D4 100%)",
         }}
       />
       {/* Keep the very top edge blended with the light section above at all times. */}
       <div
         className="absolute top-0 inset-x-0 h-40 pointer-events-none"
-        style={{ background: "linear-gradient(180deg, #F7F7FB 0%, rgba(247,247,251,0) 100%)" }}
+        style={{ background: "linear-gradient(180deg, #F6F1E7 0%, rgba(246,241,231,0) 100%)" }}
       />
       {/* Fade back to daylight at the bottom, into the next section. */}
       <div
         className="absolute bottom-0 inset-x-0 h-64 pointer-events-none"
-        style={{ background: "linear-gradient(0deg, #F7F7FB 0%, rgba(247,247,251,0.55) 32%, rgba(38,34,56,0.12) 72%, rgba(20,18,31,0) 100%)" }}
+        style={{ background: "linear-gradient(0deg, #F6F1E7 0%, rgba(246,241,231,0.55) 32%, rgba(38,34,56,0.12) 72%, rgba(20,18,31,0) 100%)" }}
       />
 
       <motion.div
@@ -106,7 +106,7 @@ export default function ProblemStats() {
         transition={{ staggerChildren: 0.12 }}
       >
         <motion.div variants={fadeUp} className="text-center mb-16">
-          <span className="inline-block mb-4 px-3.5 py-1.5 rounded-full bg-[#6C5CE7]/10 text-[#6C5CE7] text-xs font-semibold border border-[#6C5CE7]/20">
+          <span className="inline-block mb-4 px-3.5 py-1.5 rounded-full bg-[#101014]/[0.06] text-[#101014] text-xs font-semibold border border-[#101014]/20">
             The problem
           </span>
           <motion.h2

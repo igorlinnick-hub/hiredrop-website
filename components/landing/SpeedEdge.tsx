@@ -60,16 +60,16 @@ function LiveFeed({ active }: { active: boolean }) {
   const rows = [0, 1, 2, 3].map((i) => FRESH[(start + i) % FRESH.length]);
 
   return (
-    <div className="rounded-2xl bg-white border border-[#E8E8F0] p-5 shadow-[0_20px_60px_rgba(20,18,31,0.10)]">
+    <div className="rounded-2xl bg-white border border-[#E7E0D2] p-5 shadow-[0_20px_60px_rgba(20,18,31,0.10)]">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2 text-sm font-semibold text-[#1A1A2E]">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[#101014]">
           <span className="relative flex h-2.5 w-2.5">
             <span className="absolute inline-flex h-full w-full rounded-full bg-[#22c55e] opacity-60 animate-ping" />
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#22c55e]" />
           </span>
           New matches
         </div>
-        <span className="text-xs text-[#9a97ad]">live</span>
+        <span className="text-xs text-[#8E887D]">live</span>
       </div>
 
       <div className="space-y-2.5">
@@ -82,26 +82,26 @@ function LiveFeed({ active }: { active: boolean }) {
               transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
               className={`flex items-center gap-3 rounded-xl border p-3 ${
                 i === 0
-                  ? "border-[#6C5CE7]/25 bg-[#6C5CE7]/[0.05]"
-                  : "border-[#EEecF4] bg-[#FaFaFc]"
+                  ? "border-[#101014]/25 bg-[#101014]/[0.05]"
+                  : "border-[#ECE6DA] bg-[#FBF9F4]"
               }`}
             >
-              <div className="w-9 h-9 rounded-lg bg-[#EEE9FF] flex items-center justify-center text-[#6C5CE7] shrink-0">
+              <div className="w-9 h-9 rounded-lg bg-[#EFE8D8] flex items-center justify-center text-[#101014] shrink-0">
                 <svg className="w-4.5 h-4.5" width="18" height="18" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                   <rect x="3" y="7" width="18" height="13" rx="2" />
                   <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
                 </svg>
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold text-[#1A1A2E] truncate">{job.role}</div>
+                <div className="text-sm font-semibold text-[#101014] truncate">{job.role}</div>
                 <div className="text-xs text-[#8b88a0]">{job.meta} · {STAMPS[i]}</div>
               </div>
               {i === 0 ? (
-                <span className="shrink-0 text-[11px] font-semibold text-[#6C5CE7] bg-white border border-[#6C5CE7]/20 rounded-full px-2.5 py-1">
+                <span className="shrink-0 text-[11px] font-semibold text-[#101014] bg-white border border-[#101014]/20 rounded-full px-2.5 py-1">
                   Applied · 1st wave
                 </span>
               ) : (
-                <span className="shrink-0 text-[11px] font-medium text-[#9a97ad] bg-white border border-[#EEecF4] rounded-full px-2.5 py-1">
+                <span className="shrink-0 text-[11px] font-medium text-[#8E887D] bg-white border border-[#ECE6DA] rounded-full px-2.5 py-1">
                   matched
                 </span>
               )}
@@ -130,7 +130,7 @@ export default function SpeedEdge() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="inline-block mb-4 px-3.5 py-1.5 rounded-full bg-[#6C5CE7]/10 text-[#6C5CE7] text-xs font-semibold border border-[#6C5CE7]/20"
+            className="inline-block mb-4 px-3.5 py-1.5 rounded-full bg-[#101014]/[0.06] text-[#101014] text-xs font-semibold border border-[#101014]/20"
           >
             Speed is the edge
           </motion.span>
@@ -140,7 +140,7 @@ export default function SpeedEdge() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, ease: easeOut }}
-            className="text-3xl sm:text-4xl font-bold text-[#1A1A2E] leading-[1.15] pb-1"
+            className="text-3xl sm:text-4xl font-bold text-[#101014] leading-[1.15] pb-1"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             New roles open all day.<br className="hidden sm:block" /> Be first in line.
@@ -151,7 +151,7 @@ export default function SpeedEdge() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.08, ease: easeOut }}
-            className="mt-4 text-lg text-[#6B6B8A] max-w-xl"
+            className="mt-4 text-lg text-[#5C574F] max-w-xl"
           >
             By the time a job hits the big boards, hundreds have already applied. HireDrop
             watches Indeed, ZipRecruiter and thousands of company ATS for your match — and
@@ -175,10 +175,10 @@ export default function SpeedEdge() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.12 + i * 0.1, ease: easeOut }}
               >
-                <div className="text-2xl sm:text-[28px] font-bold text-[#6C5CE7]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                <div className="text-2xl sm:text-[28px] font-bold text-[#101014]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                   {s.big}
                 </div>
-                <div className="text-xs text-[#6B6B8A] mt-1.5 leading-snug">{s.label}</div>
+                <div className="text-xs text-[#5C574F] mt-1.5 leading-snug">{s.label}</div>
               </motion.div>
             ))}
           </div>
@@ -192,7 +192,7 @@ export default function SpeedEdge() {
           transition={{ duration: 0.7, ease: easeOut }}
         >
           <LiveFeed active={inView} />
-          <p className="mt-3 text-center text-xs text-[#9a97ad]">
+          <p className="mt-3 text-center text-xs text-[#8E887D]">
             Watching for your match across every connected platform.
           </p>
         </motion.div>
