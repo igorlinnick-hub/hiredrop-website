@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export type CameoPose = "peek" | "sit" | "point";
+export type CameoPose = "peek" | "sit" | "point" | "wave";
 
 // Where Drop comes from when the spot scrolls into view. The pose sets the story
 // (peeking from the page edge, hanging under a block…), the entrance sells it.

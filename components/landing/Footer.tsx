@@ -12,7 +12,7 @@ export default function Footer() {
               <span className="text-accent2">Hire</span>Drop
             </Link>
             <p className="mt-3 text-sm">
-              AI-powered job search automation. Find jobs, generate cover letters, and auto-apply.
+              Job search on autopilot. Find jobs, generate cover letters, and auto-apply.
             </p>
           </div>
 

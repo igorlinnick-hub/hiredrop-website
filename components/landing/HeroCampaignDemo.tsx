@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import AIOrb from "./AIOrb";
+import DropFigure from "@/components/buddy/DropFigure";
 
 /**
  * Hero visual — an animated "campaign running" story:
- *   idle → press Start → the AI orb activates → the agent fills a job
+ *   idle → press Start → Drop sits down at the desk → the agent fills a job
  *   application on the right while its reasoning appears as thoughts on the left
  *   → "Applied" → loops.
- * Replaces the old random-Q&A orb (which read as illogical).
+ * Replaces the old random-Q&A orb (which read as illogical). Drop is the same
+ * figure as the in-app assistant (DropFigure): it types while the form fills and
+ * stands up with the green ring once the application is in (Igor, 2026-10-03).
  */
 
 // step -1 = idle (Start button). 0..6 = running. 7 = done/hold, then reset.
@@ -64,7 +66,7 @@ export default function HeroCampaignDemo() {
             Start campaign
           </motion.button>
         ) : (
-          /* ── running: orb + thoughts (left) · form fill (right) ── */
+          /* ── running: Drop + thoughts (left) · form fill (right) ── */
           <motion.div
             key="run"
             initial={{ opacity: 0, y: 16 }}
@@ -74,10 +76,10 @@ export default function HeroCampaignDemo() {
             className="w-full rounded-3xl bg-white border border-[#EEE9FF] p-5 flex gap-4"
             style={{ boxShadow: "0 20px 50px rgba(108,92,231,0.14)" }}
           >
-            {/* left — orb + reasoning, vertically centred against the form */}
+            {/* left — Drop + reasoning, vertically centred against the form */}
             <div className="w-[128px] shrink-0 flex flex-col items-center justify-center">
               <motion.div initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200, damping: 16 }}>
-                <AIOrb size={72} />
+                <DropFigure size={96} working={!done} state={done ? "success" : "idle"} />
               </motion.div>
               <div className="mt-4 min-h-[64px] w-full">
                 <AnimatePresence mode="wait">

@@ -14,6 +14,7 @@ import SceneStrip from "@/components/landing/SceneStrip";
 import Pricing from "@/components/landing/Pricing";
 import FAQ from "@/components/landing/FAQ";
 import GradientCTA from "@/components/landing/GradientCTA";
+import AffiliateBand from "@/components/landing/AffiliateBand";
 import Footer from "@/components/landing/Footer";
 
 export const metadata = pageMetadata({
@@ -41,6 +42,7 @@ export default function Home() {
         <Pricing />
         <FAQ />
         <GradientCTA />
+        <AffiliateBand />
       </main>
       <Footer />
     </>

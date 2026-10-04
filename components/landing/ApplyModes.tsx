@@ -17,7 +17,7 @@ const MODES = [
   {
     label: "Precise",
     tagline: "Only the best match",
-    body: "Describe your ideal role and the AI compares every listing against it — skipping anything that deviates.",
+    body: "Describe your ideal role and HireDrop compares every listing against it — skipping anything that deviates.",
   },
 ];
 
