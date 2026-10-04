@@ -33,7 +33,7 @@ export default function AutoFillDemo() {
   return (
     <div
       className="h-full w-full flex flex-col items-center justify-center px-10 py-14"
-      style={{ background: "linear-gradient(160deg, #EEE9FF 0%, #F7F7FB 55%, #ffffff 100%)" }}
+      style={{ background: "linear-gradient(160deg, #EFE8D8 0%, #F6F1E7 55%, #FBF9F4 100%)" }}
     >
       <div className="w-full max-w-sm">
         {/* agent status */}
@@ -42,19 +42,19 @@ export default function AutoFillDemo() {
             <span className={`absolute inline-flex h-full w-full rounded-full bg-accent ${done ? "" : "animate-ping opacity-60"}`} />
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent" />
           </span>
-          <span className="text-sm font-medium text-[#1A1A2E]">
+          <span className="text-sm font-medium text-[#101014]">
             {done ? "Application submitted" : "HireDrop is applying…"}
           </span>
         </div>
 
         {/* application card */}
-        <div className="rounded-2xl bg-white border border-[#EEE9FF] p-6" style={{ boxShadow: "0 20px 50px rgba(108,92,231,0.14)" }}>
+        <div className="rounded-2xl bg-white border border-[#EFE8D8] p-6" style={{ boxShadow: "0 20px 50px rgba(58,44,18,0.14)" }}>
           {/* job header */}
-          <div className="flex items-center gap-3 pb-4 mb-4 border-b border-[#F0EEFA]">
+          <div className="flex items-center gap-3 pb-4 mb-4 border-b border-[#EFEAE0]">
             <div className="w-9 h-9 rounded-lg bg-accent-light flex items-center justify-center text-accent font-bold text-sm">S</div>
             <div>
-              <p className="text-sm font-semibold text-[#1A1A2E] leading-tight">Marketing Manager</p>
-              <p className="text-xs text-[#6B6B8A]">Stripe · Remote</p>
+              <p className="text-sm font-semibold text-[#101014] leading-tight">Marketing Manager</p>
+              <p className="text-xs text-[#5C574F]">Stripe · Remote</p>
             </div>
           </div>
 
@@ -66,13 +66,13 @@ export default function AutoFillDemo() {
 
             {/* resume */}
             <div>
-              <p className="text-[11px] text-[#6B6B8A] mb-1">Resume</p>
-              <div className={`flex items-center gap-2 h-9 px-3 rounded-lg border text-sm transition-colors ${step >= 3 ? "border-[#E8E8F0] bg-[#F7F7FB]" : "border-dashed border-[#E8E8F0]"}`}>
+              <p className="text-[11px] text-[#5C574F] mb-1">Resume</p>
+              <div className={`flex items-center gap-2 h-9 px-3 rounded-lg border text-sm transition-colors ${step >= 3 ? "border-[#E7E0D2] bg-[#F6F1E7]" : "border-dashed border-[#E7E0D2]"}`}>
                 <AnimatePresence>
                   {step >= 3 && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
                       <Check />
-                      <span className="text-[#1A1A2E]">alex-resume.pdf</span>
+                      <span className="text-[#101014]">alex-resume.pdf</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -82,10 +82,10 @@ export default function AutoFillDemo() {
             {/* cover letter */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <p className="text-[11px] text-[#6B6B8A]">Cover letter</p>
+                <p className="text-[11px] text-[#5C574F]">Cover letter</p>
                 {step === 4 && <span className="text-[10px] text-accent">writing…</span>}
               </div>
-              <div className="rounded-lg border border-[#E8E8F0] bg-[#F7F7FB] p-2.5 space-y-1.5 min-h-[46px]">
+              <div className="rounded-lg border border-[#E7E0D2] bg-[#F6F1E7] p-2.5 space-y-1.5 min-h-[46px]">
                 {[0, 1, 2].map((r) => (
                   <motion.div
                     key={r}
@@ -100,8 +100,8 @@ export default function AutoFillDemo() {
 
             {/* screener */}
             <div className={`flex items-center justify-between transition-opacity ${step >= 5 ? "opacity-100" : "opacity-40"}`}>
-              <p className="text-xs text-[#1A1A2E]">Authorized to work in the US?</p>
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${step >= 5 ? "bg-green/10 text-green" : "text-[#6B6B8A]"}`}>
+              <p className="text-xs text-[#101014]">Authorized to work in the US?</p>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${step >= 5 ? "bg-green/10 text-green" : "text-[#5C574F]"}`}>
                 {step >= 5 ? "Yes" : "—"}
               </span>
             </div>
@@ -121,7 +121,7 @@ export default function AutoFillDemo() {
           </motion.div>
         </div>
 
-        <p className="text-center text-xs text-[#6B6B8A] mt-4">
+        <p className="text-center text-xs text-[#5C574F] mt-4">
           From your own browser · at a human pace · you review first
         </p>
       </div>
@@ -132,8 +132,8 @@ export default function AutoFillDemo() {
 function Field({ label, value, active, filled }: { label: string; value: string; active: boolean; filled: boolean }) {
   return (
     <div>
-      <p className="text-[11px] text-[#6B6B8A] mb-1">{label}</p>
-      <div className={`h-9 px-3 rounded-lg border flex items-center text-sm text-[#1A1A2E] transition-colors ${active ? "border-accent ring-2 ring-accent/15" : "border-[#E8E8F0]"} ${filled || active ? "bg-white" : "bg-[#F7F7FB]"}`}>
+      <p className="text-[11px] text-[#5C574F] mb-1">{label}</p>
+      <div className={`h-9 px-3 rounded-lg border flex items-center text-sm text-[#101014] transition-colors ${active ? "border-accent ring-2 ring-accent/15" : "border-[#E7E0D2]"} ${filled || active ? "bg-white" : "bg-[#F6F1E7]"}`}>
         <AnimatePresence mode="wait">
           {(filled || active) && (
             <motion.span key="v" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>

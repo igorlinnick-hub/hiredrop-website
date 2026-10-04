@@ -25,7 +25,7 @@ export default function AuthLayout({
     <div className="w-full max-w-md">
       <div className="text-center mb-8">
         <Link href="/" className="text-2xl font-bold text-text">
-          <span className="text-accent">Hire</span>Drop
+          <span className="text-[#6C5CE7]">Hire</span>Drop
         </Link>
         <h1 className="mt-6 text-2xl font-bold text-text">{title}</h1>
         <p className="mt-2 text-sm text-text2">{subtitle}</p>
@@ -44,14 +44,14 @@ export default function AuthLayout({
 
   if (!showcase) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-background">
+      <div className="hd-auth min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-background">
         {form}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 bg-background">
+    <div className="hd-auth min-h-screen grid lg:grid-cols-2 bg-background">
       <div className="flex items-center justify-center px-4 py-12">{form}</div>
       <div className="hidden lg:block">
         <AutoFillDemo />

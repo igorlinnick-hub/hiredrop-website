@@ -2,8 +2,6 @@ import Link from "next/link";
 
 import AffiliateHero from "@/components/affiliate/AffiliateHero";
 
-import DropCameo from "./DropCameo";
-
 /**
  * The affiliate program on the landing (Igor, 2026-10-03: "I don't see it at
  * all, even at the bottom" — the only way in was one grey footer link).
@@ -14,8 +12,8 @@ import DropCameo from "./DropCameo";
  * have heard the whole pitch.
  *
  * Same panel as /affiliate and the dashboard (AffiliateHero) so the three read
- * as one program; Drop waves from in front of the people the visitor would
- * send — the friends, with the helper among them.
+ * as one program. Drop is deliberately absent: standing in front of the
+ * circles it covered faces (Igor 10-03).
  */
 export default function AffiliateBand() {
   return (
@@ -37,14 +35,6 @@ export default function AffiliateBand() {
               <Link href="/affiliate" className="text-white/70 underline underline-offset-4 hover:text-white">
                 How it works
               </Link>
-            </>
-          }
-          // Two sizes, not one scaled: DropCameo pins its width inline, and at
-          // phone width a 150px Drop covers half the faces it stands among.
-          cameo={
-            <>
-              <DropCameo pose="wave" width={96} enter="up" delay={0.2} className="absolute bottom-0 left-[2%] z-10 sm:hidden" />
-              <DropCameo pose="wave" width={150} enter="up" delay={0.2} className="absolute bottom-0 left-[2%] z-10 hidden sm:block" />
             </>
           }
         />

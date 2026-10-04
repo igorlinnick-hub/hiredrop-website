@@ -158,6 +158,23 @@ h1, h2, h3 {
   background-size: 40px 40px;
 }
 
+/* ===== AUTH SCREENS — ink, not violet (Igor 2026-10-03) =====
+   Signup / login / password screens follow the landing's cream-and-ink
+   palette. Scoping the tokens here turns every bg-accent button and
+   text-accent link ink without touching the shared <Button>, which the
+   dashboard also uses. The --color-* aliases are re-derived on this element:
+   @theme inline resolves them on :root, where they would stay violet. */
+.hd-auth {
+  --accent: #101014;
+  --accent2: #3A3A46;
+  --accent-light: #EFE8D8;
+  --accent-hover: #26262F;
+  --color-accent: var(--accent);
+  --color-accent2: var(--accent2);
+  --color-accent-light: var(--accent-light);
+  --color-accent-hover: var(--accent-hover);
+}
+
 /* ===== BUTTON MICRO-INTERACTIONS ===== */
 .btn-primary,
 .btn-secondary {
@@ -165,7 +182,7 @@ h1, h2, h3 {
 }
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(108,92,231,0.25);
+  box-shadow: 0 8px 24px rgba(58,44,18,0.18);
 }
 .btn-primary:active {
   transform: translateY(0px);

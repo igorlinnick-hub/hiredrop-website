@@ -29,8 +29,6 @@ interface Props {
   compact?: boolean;
   /** h2 where the page already has its own h1 (the landing band). */
   headingAs?: "h1" | "h2";
-  /** Drawn over the people, e.g. Drop greeting the visitor from the landing. */
-  cameo?: React.ReactNode;
 }
 
 export default function AffiliateHero({
@@ -42,7 +40,6 @@ export default function AffiliateHero({
   note,
   compact,
   headingAs: Heading = "h1",
-  cameo,
 }: Props) {
   return (
     <section
@@ -113,7 +110,6 @@ export default function AffiliateHero({
             in rather than photographed. */}
         <div className="relative -mr-2 sm:-mr-4 md:-mr-6 lg:-mr-8">
           <PeopleCluster />
-          {cameo}
         </div>
       </div>
     </section>
