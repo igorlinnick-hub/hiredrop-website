@@ -59,7 +59,7 @@ export default function AffiliatePage() {
           />
 
           <section className="mt-16">
-            <h2 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            <h2 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--hd-font-display), sans-serif" }}>
               How it works
             </h2>
             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -84,7 +84,7 @@ export default function AffiliatePage() {
                 key={big}
                 className="bg-white rounded-[14px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.06)] p-7"
               >
-                <p className="text-3xl font-bold text-accent" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                <p className="text-3xl font-bold text-accent" style={{ fontFamily: "var(--hd-font-display), sans-serif" }}>
                   {big}
                 </p>
                 <p className="mt-2 text-sm text-gray-600">{small}</p>

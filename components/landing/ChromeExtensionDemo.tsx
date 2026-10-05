@@ -131,7 +131,7 @@ export default function ChromeExtensionDemo() {
           </div>
           <h2
             className="text-3xl sm:text-4xl font-bold text-[#101014] mb-4"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            style={{ fontFamily: "var(--hd-font-display), sans-serif" }}
           >
             Watch the extension work
           </h2>
@@ -473,7 +473,7 @@ export default function ChromeExtensionDemo() {
                 transitionDelay: `${0.8 + i * 0.15}s`,
               }}
             >
-              <p className="text-xl font-bold text-[#101014]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              <p className="text-xl font-bold text-[#101014]" style={{ fontFamily: "var(--hd-font-display), sans-serif" }}>
                 {stat.value}
               </p>
               <p className="text-[11px] text-[#5C574F] mt-0.5">{stat.label}</p>

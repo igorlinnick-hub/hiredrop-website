@@ -30,7 +30,7 @@ function CountUp({ target, suffix, active }: { target: number; suffix: string; a
     return () => clearInterval(id);
   }, [active, target]);
   return (
-    <span className="text-4xl sm:text-5xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#a78bfa" }}>
+    <span className="text-4xl sm:text-5xl font-bold" style={{ fontFamily: "var(--hd-font-display), sans-serif", color: "#a78bfa" }}>
       {active ? n : 0}
       {suffix}
     </span>
@@ -111,7 +111,7 @@ export default function ProblemStats() {
           </span>
           <motion.h2
             className="text-3xl sm:text-4xl font-bold leading-[1.35] pb-2"
-            style={{ fontFamily: "'Space Grotesk', sans-serif", color: titleColor }}
+            style={{ fontFamily: "var(--hd-font-display), sans-serif", color: titleColor }}
           >
             Job hunting is a numbers game
             <br className="hidden sm:block" /> rigged against you

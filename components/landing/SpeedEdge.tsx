@@ -141,7 +141,7 @@ export default function SpeedEdge() {
             viewport={{ once: true }}
             transition={{ duration: 0.6, ease: easeOut }}
             className="text-3xl sm:text-4xl font-bold text-[#101014] leading-[1.15] pb-1"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            style={{ fontFamily: "var(--hd-font-display), sans-serif" }}
           >
             New roles open all day.<br className="hidden sm:block" /> Be first in line.
           </motion.h2>
@@ -175,7 +175,7 @@ export default function SpeedEdge() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.12 + i * 0.1, ease: easeOut }}
               >
-                <div className="text-2xl sm:text-[28px] font-bold text-[#101014]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                <div className="text-2xl sm:text-[28px] font-bold text-[#101014]" style={{ fontFamily: "var(--hd-font-display), sans-serif" }}>
                   {s.big}
                 </div>
                 <div className="text-xs text-[#5C574F] mt-1.5 leading-snug">{s.label}</div>

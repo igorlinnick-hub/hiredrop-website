@@ -26,7 +26,7 @@ import { useEffect, useState } from "react";
  * on DETECTION_CLEARED / campaign start / stop.
  */
 
-const SERIF = "'Instrument Serif', 'Playfair Display', Georgia, serif";
+const SERIF = "var(--hd-font-serif), Georgia, serif";
 
 export type CaptchaWaiting = {
   url?: string;

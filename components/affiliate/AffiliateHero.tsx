@@ -15,7 +15,7 @@ import PeopleCluster from "./PeopleCluster";
  * affiliate would actually send us.
  */
 
-const SERIF = "'Instrument Serif', 'Playfair Display', Georgia, serif";
+const SERIF = "var(--hd-font-serif), Georgia, serif";
 
 interface Props {
   eyebrow?: string;

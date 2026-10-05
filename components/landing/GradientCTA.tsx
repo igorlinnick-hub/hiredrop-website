@@ -58,7 +58,7 @@ export default function GradientCTA() {
         <DropCameo pose="sit" width={136} enter="down" delay={0.5} className="absolute bottom-[calc(100%-48px)] left-10 sm:left-16 z-20" />
         <h2
           className="text-3xl sm:text-5xl font-bold text-[#101014] mb-5"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+          style={{ fontFamily: "var(--hd-font-display), sans-serif" }}
         >
           Ready to land your<br />next job?
         </h2>

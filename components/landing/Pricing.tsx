@@ -47,7 +47,7 @@ export default function Pricing() {
     <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <ScrollReveal className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold text-[#101014] pb-1" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+          <h2 className="text-3xl sm:text-4xl font-bold text-[#101014] pb-1" style={{ fontFamily: "var(--hd-font-display), sans-serif" }}>
             Try it free. Pay while you search.
           </h2>
           <p className="mt-4 text-lg text-[#5C574F] max-w-xl mx-auto">
@@ -61,7 +61,7 @@ export default function Pricing() {
           <div className="max-w-2xl mx-auto mb-8 sm:mb-24 rounded-2xl border-2 border-dashed border-[#101014]/25 bg-white p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center gap-5">
             <div className="flex-1">
               <p className="text-sm font-semibold text-[#101014] uppercase tracking-wide">Start here — free</p>
-              <p className="mt-1.5 text-2xl font-bold text-[#101014]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              <p className="mt-1.5 text-2xl font-bold text-[#101014]" style={{ fontFamily: "var(--hd-font-display), sans-serif" }}>
                 Your first 40 applications, on us
               </p>
               <p className="mt-2 text-sm text-[#5C574F]">
@@ -101,7 +101,7 @@ export default function Pricing() {
                 )}
                 <p className="text-sm font-semibold text-[#101014]">{plan.name}</p>
                 <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-[#101014]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  <span className="text-4xl font-bold text-[#101014]" style={{ fontFamily: "var(--hd-font-display), sans-serif" }}>
                     {plan.price}
                   </span>
                   <span className="text-[#5C574F]">{plan.period}</span>

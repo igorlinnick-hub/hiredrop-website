@@ -43,7 +43,7 @@ function AnimatedNumber({
   return (
     <span
       className="text-5xl font-bold text-[#6C5CE7] block"
-      style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+      style={{ fontFamily: "var(--hd-font-display), sans-serif" }}
     >
       {active ? current.toLocaleString() : "0"}
       {suffix}
