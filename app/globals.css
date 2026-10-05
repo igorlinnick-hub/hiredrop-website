@@ -1148,17 +1148,6 @@ h1, h2, h3 {
   .hd-dock-rail > span { transition: none; }
 }
 
-/* Preview-only: lift the dock out of its fixed slot so several states can be
-   shown stacked on /preview/tap-dock. Never used by the app. */
-.hd-dock-static .hd-tap-dock-wrap {
-  position: static;
-  transform: none;
-  width: 100%;
-  animation: none;
-}
-/* the crown overhangs its bar, so a stacked preview needs the headroom */
-.hd-dock-static section { padding-top: 26px; }
-
 /* ============================================================
    HISTORY DOC CHIPS — the actions inside a History row's
    expanded record (job posting / résumé PDF / copy a document).
