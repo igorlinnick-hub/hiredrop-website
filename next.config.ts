@@ -1,9 +1,65 @@
 import type { NextConfig } from "next";
 
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "https://web-production-db45.up.railway.app").trim();
+const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || "https://msxjcjzmfruizbgkssxo.supabase.co").trim();
+const SUPABASE_WSS = SUPABASE_URL.replace(/^https:/, "wss:");
+const isDev = process.env.NODE_ENV === "development";
+
+// The full policy, REPORT-ONLY: browsers block nothing, they POST what they
+// would have blocked to the backend, which logs one `[csp] directive=…
+// blocked=… doc=…` line per violation per hour (jobflow app/routers/csp.py).
+// A week with no line that is ours → move it to Content-Security-Policy.
+// Without nonces on purpose: a nonce forces every page to render dynamically,
+// so script-src keeps 'unsafe-inline' (Next's own inline bootstrap needs it).
+// What it still buys: no script, fetch, frame or font from an origin not
+// listed here; no <object>, no <base> hijack, forms post only to us.
+// Stripe Checkout/Portal is a navigation, not a load — CSP doesn't govern it.
+const CSP_REPORT_ONLY = [
+  "default-src 'self'",
+  [
+    "script-src 'self' 'unsafe-inline'",
+    isDev ? "'unsafe-eval'" : "",
+    "https://accounts.google.com/gsi/client", // Google sign-in (GoogleButton)
+    "https://connect.facebook.net", // Meta pixel
+    "https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com", // Google Ads tag
+    "https://va.vercel-scripts.com https://vercel.live", // Vercel analytics debug + preview toolbar
+  ].join(" "),
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  [
+    "img-src 'self' data: blob:",
+    SUPABASE_URL, // signed storage URLs (submission proof)
+    "https://tiles.openfreemap.org",
+    "https://www.facebook.com https://www.google.com https://googleads.g.doubleclick.net https://www.googletagmanager.com",
+  ].join(" "),
+  [
+    "connect-src 'self'",
+    API_URL,
+    SUPABASE_URL,
+    SUPABASE_WSS,
+    "https://accounts.google.com/gsi/",
+    "https://tiles.openfreemap.org https://nominatim.openstreetmap.org", // radius map
+    "https://www.facebook.com https://connect.facebook.net",
+    "https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.googletagmanager.com",
+    "https://vitals.vercel-insights.com https://va.vercel-scripts.com",
+  ].join(" "),
+  [
+    "frame-src 'self' blob:",
+    SUPABASE_URL, // resume preview iframe (signed storage URL)
+    "https://accounts.google.com/gsi/",
+    "https://td.doubleclick.net https://www.googletagmanager.com https://vercel.live",
+  ].join(" "),
+  "worker-src 'self' blob:", // maplibre
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  `report-uri ${API_URL}/api/v1/csp-report`,
+]
+  .map((d) => d.replace(/\s+/g, " ").trim())
+  .join("; ");
+
 // Sent on every response. Deliberately NOT here yet:
-// - a full Content-Security-Policy — GIS sign-in, Stripe, Supabase, Vercel
-//   analytics and the ad pixels each need allow-listing; it ships Report-Only
-//   first, separately, so a missed origin can't break login.
+// - the enforced full CSP — it runs Report-Only above until a clean week.
 // - HSTS includeSubDomains — Vercel already sends max-age=63072000 for the apex;
 //   widening it to every subdomain is a DNS audit, not a config line.
 // - camera/microphone/geolocation are unused; clipboard IS used (copy-link
@@ -14,6 +70,7 @@ const SECURITY_HEADERS = [
   // framing stays allowed; the app itself only frames resume previews.
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+  { key: "Content-Security-Policy-Report-Only", value: CSP_REPORT_ONLY },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
