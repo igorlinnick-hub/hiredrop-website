@@ -12,9 +12,12 @@ export const metadata = pageMetadata({
 
 export default function LoginPage() {
   return (
-    <div className="hd-auth min-h-screen flex">
+    // The page is cream; one white frame holds both halves, split by a hairline.
+    <div className="hd-auth min-h-screen flex items-center justify-center bg-background p-4 sm:p-8 lg:p-10">
+    <div className="w-full max-w-6xl flex min-h-[640px] rounded-3xl bg-white border border-[#E7E0D2] overflow-hidden"
+      style={{ boxShadow: "0 24px 60px -32px rgba(58,44,18,0.22)" }}>
       {/* Left — form */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-12 bg-background">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 sm:px-10">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <Link href="/" className="text-2xl font-bold text-[#101014]" style={{ fontFamily: "var(--hd-font-display), sans-serif" }}>
@@ -38,7 +41,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right — live "campaign running" demo (mirrors the Hero on the landing) */}
-      <div className="hidden lg:flex flex-1 items-center justify-center bg-white relative overflow-hidden px-8">
+      <div className="hidden lg:flex flex-1 items-center justify-center relative overflow-hidden px-8 border-l border-[#E7E0D2]">
         {/* The self-driving apply animation on a clean, flat backdrop */}
         <div className="relative z-10 flex flex-col items-center">
           <HeroCampaignDemo night />
@@ -47,6 +50,7 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+    </div>
     </div>
   );
 }
