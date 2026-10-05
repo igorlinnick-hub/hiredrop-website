@@ -103,7 +103,7 @@ export default function AffiliatePage() {
               </li>
               <li>
                 <span className="font-medium text-gray-900">Refunds come back out.</span> If someone
-                you referred gets refunded inside 30 days, that commission is reversed. It's why
+                you referred gets refunded inside 30 days, that commission is reversed. It&apos;s why
                 payouts wait out the refund window.
               </li>
               <li>

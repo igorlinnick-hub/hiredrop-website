@@ -230,7 +230,10 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
     };
   }, [demo]);
 
+  // localStorage after mount, not in a useState initializer: the server has none,
+  // and seeding state from it would render a different tree than the client.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time read of an external store
     try { setOpen(localStorage.getItem(COLLAPSE_KEY) !== "1"); } catch { /* stays open */ }
     if (demo) return;
     try {
