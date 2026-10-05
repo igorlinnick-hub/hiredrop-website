@@ -8,6 +8,7 @@ import PosterPanel from "@/components/dashboard/PosterPanel";
 import ResumeATSPanel from "@/components/dashboard/ResumeATSPanel";
 import BillingSection from "@/components/dashboard/BillingSection";
 import AmbassadorSection from "@/components/dashboard/AmbassadorSection";
+import DropCameo from "@/components/landing/DropCameo";
 import SettingsRail, {
   IconPerson, IconForm, IconDoc, IconCard, IconShare, type SettingsSection,
 } from "@/components/dashboard/SettingsRail";
@@ -257,11 +258,13 @@ export default function SettingsPage() {
       {/* Same ground as History: the day page carries our regraded wallpaper and
           every block is a white sheet with ink type on it. */}
       <div className="hd-ground space-y-7">
-        <div>
+        <div className="relative">
           <p className="hd-eyebrow">Settings</p>
           <h1 className="hd-hist-display mt-2">
             Everything about <em className="italic">you</em>.
           </h1>
+          {/* Drop sits on the header's right edge — one per page, desktop only */}
+          <DropCameo pose="sit" width={132} enter="up" className="hidden md:block absolute right-2 -top-4" />
         </div>
 
         {error && <div className="hd-sheet p-3 text-sm text-red">{error}</div>}
