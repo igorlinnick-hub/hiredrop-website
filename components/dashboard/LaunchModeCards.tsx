@@ -160,7 +160,7 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
         /* caption band overlaid on the bottom of the scene */
         .lmc-caption{position:absolute;left:0;right:0;bottom:0;padding:0 14px 15px;z-index:3;pointer-events:none;
           display:flex;flex-direction:column;align-items:center}
-        .lmc-title{font-family:'Space Grotesk','Inter',sans-serif;font-weight:700;font-size:20px;color:var(--title);line-height:1;
+        .lmc-title{font-family:var(--hd-font-display),var(--hd-font-sans),sans-serif;font-weight:700;font-size:20px;color:var(--title);line-height:1;
           text-shadow:0 1px 10px rgba(0,0,0,.18)}
         .lmc-sub{font-size:12px;color:var(--sub);margin-top:4px}
 
@@ -197,7 +197,7 @@ export default function LaunchModeCards({ mode, onAuto, onTap }: Props) {
           display:grid;grid-template-columns:34px 1fr;column-gap:10px;row-gap:2px;align-content:center}
         .lmc-mono{grid-row:1 / span 2;align-self:center;width:34px;height:34px;border-radius:10px;
           background:var(--k);color:#fff;font-weight:700;font-size:15px;line-height:1;
-          font-family:'Space Grotesk','Inter',sans-serif;
+          font-family:var(--hd-font-display),var(--hd-font-sans),sans-serif;
           display:flex;align-items:center;justify-content:center}
         .lmc-jr{font-size:12.5px;font-weight:600;color:#2A2418;line-height:1.2;
           white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

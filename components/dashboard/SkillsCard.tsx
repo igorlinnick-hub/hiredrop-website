@@ -13,7 +13,7 @@
  * and a sample otherwise, so an empty state still shows what the output looks like.
  */
 
-const SERIF = "'Instrument Serif', 'Playfair Display', Georgia, serif";
+const SERIF = "var(--hd-font-serif), Georgia, serif";
 
 const SAMPLE_GROUPS = [
   { group: "Customer Support", skills: ["Zendesk", "De-escalation", "Help-center writing"] },

@@ -38,7 +38,7 @@ export default function Hero() {
             <motion.h1
               variants={fadeUp}
               className="text-4xl sm:text-5xl lg:text-[52px] font-bold text-[#101014] leading-[1.15] pb-1 mb-6"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+              style={{ fontFamily: "var(--hd-font-display), sans-serif" }}
             >
               Apply to more jobs.
               <br />

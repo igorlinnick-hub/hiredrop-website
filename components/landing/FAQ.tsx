@@ -80,7 +80,7 @@ export default function FAQ() {
           <div className="lg:sticky lg:top-32 lg:self-start">
             <h2
               className="text-3xl sm:text-4xl font-bold text-[#101014]"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+              style={{ fontFamily: "var(--hd-font-display), sans-serif" }}
             >
               Frequently<br />asked<br />questions
             </h2>

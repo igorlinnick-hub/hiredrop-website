@@ -280,10 +280,10 @@ export default function HowItWorks() {
                       transform: activeStep === i ? "translateX(0)" : activeStep > i ? "translateX(-20px)" : "translateX(20px)",
                     }}
                   >
-                    <motion.p className="text-7xl font-bold mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif", color: numColor }}>
+                    <motion.p className="text-7xl font-bold mb-2" style={{ fontFamily: "var(--hd-font-display), sans-serif", color: numColor }}>
                       {step.number} <span className="text-3xl" style={{ opacity: 0.4 }}>/ 04</span>
                     </motion.p>
-                    <motion.h2 className="text-3xl sm:text-4xl lg:text-[42px] font-bold mb-4 leading-[1.2] pb-1" style={{ fontFamily: "'Space Grotesk', sans-serif", color: titleColor }}>
+                    <motion.h2 className="text-3xl sm:text-4xl lg:text-[42px] font-bold mb-4 leading-[1.2] pb-1" style={{ fontFamily: "var(--hd-font-display), sans-serif", color: titleColor }}>
                       {step.title}
                     </motion.h2>
                     <motion.p className="text-lg max-w-md leading-relaxed" style={{ color: descColor }}>{step.description}</motion.p>
@@ -343,7 +343,7 @@ export default function HowItWorks() {
             <div key={i} className="flex flex-col items-center text-center">
               <StepBadge label={step.badge} gradient={step.badgeColor} />
               <p className="text-xs font-semibold text-[#5C574F] mb-2 tracking-wide">STEP {step.number} / 04</p>
-              <h3 className="text-2xl font-bold text-[#101014] mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{step.title}</h3>
+              <h3 className="text-2xl font-bold text-[#101014] mb-2" style={{ fontFamily: "var(--hd-font-display), sans-serif" }}>{step.title}</h3>
               <p className="text-sm text-[#5C574F] mb-6 max-w-sm">{step.description}</p>
               {panels[i]}
             </div>

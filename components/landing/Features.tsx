@@ -104,7 +104,7 @@ export default function Features() {
 
       <div className="relative z-10 max-w-6xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 pb-2 leading-[1.32]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 pb-2 leading-[1.32]" style={{ fontFamily: "var(--hd-font-display), sans-serif" }}>
             Everything you need to land your next job
           </h2>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto">

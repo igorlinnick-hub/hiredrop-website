@@ -17,10 +17,10 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-12 bg-background">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <Link href="/" className="text-2xl font-bold text-[#101014]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            <Link href="/" className="text-2xl font-bold text-[#101014]" style={{ fontFamily: "var(--hd-font-display), sans-serif" }}>
               <span className="text-[#6C5CE7]">Hire</span>Drop
             </Link>
-            <h1 className="mt-6 text-2xl font-bold text-[#101014]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Welcome back</h1>
+            <h1 className="mt-6 text-2xl font-bold text-[#101014]" style={{ fontFamily: "var(--hd-font-display), sans-serif" }}>Welcome back</h1>
             <p className="mt-2 text-sm text-[#5C574F]">Sign in to your HireDrop account</p>
           </div>
 

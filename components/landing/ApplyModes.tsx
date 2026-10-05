@@ -33,7 +33,7 @@ export default function ApplyModes() {
           <span className="inline-block mb-4 px-3.5 py-1.5 rounded-full bg-[#EFE8D8] text-[#101014] text-xs font-semibold">
             You&apos;re in control
           </span>
-          <h2 className="text-3xl sm:text-4xl font-bold text-[#101014]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+          <h2 className="text-3xl sm:text-4xl font-bold text-[#101014]" style={{ fontFamily: "var(--hd-font-display), sans-serif" }}>
             You choose how selective it is
           </h2>
           <p className="mt-4 text-lg text-[#5C574F] max-w-2xl mx-auto">

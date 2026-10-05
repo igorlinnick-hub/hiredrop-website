@@ -19,7 +19,7 @@
  * plate is used in both themes, exactly as before.
  */
 
-export const POSTER_SERIF = "'Instrument Serif', 'Playfair Display', Georgia, serif";
+export const POSTER_SERIF = "var(--hd-font-serif), Georgia, serif";
 
 export interface PosterPanelProps {
   title: React.ReactNode;

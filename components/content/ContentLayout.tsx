@@ -68,7 +68,7 @@ export default function ContentLayout({
           </p>
           <h1
             className="mt-3 text-3xl sm:text-[40px] font-bold text-[#1A1A2E] leading-[1.15] pb-1"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            style={{ fontFamily: "var(--hd-font-display), sans-serif" }}
           >
             {title}
           </h1>

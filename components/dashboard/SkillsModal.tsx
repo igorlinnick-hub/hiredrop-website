@@ -15,12 +15,12 @@
  * renders blurred and darkened (brand-visuals/skills-photo.py), so nothing in it
  * competes with type and no outside art was introduced.
  *
- * Instrument Serif is loaded in app/layout.tsx. It is used HERE only — globals.css
+ * Instrument Serif is loaded by lib/fonts.ts (var(--hd-font-serif)). It is used HERE only — globals.css
  * reserves Space Grotesk for marketing and keeps app headings on Inter, and this
  * dialog is the one surface that deliberately reads like a poster.
  */
 
-const SERIF = "'Instrument Serif', 'Playfair Display', Georgia, serif";
+const SERIF = "var(--hd-font-serif), Georgia, serif";
 
 // We ask for at least this many skills — the grouping is only as good as what the
 // candidate actually lists. Mirrors MIN_SKILLS in modules/skills_resume.py.

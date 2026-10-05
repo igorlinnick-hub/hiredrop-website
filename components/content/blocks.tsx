@@ -18,7 +18,7 @@ export function Section({
     <section id={id} className="mt-12 first:mt-0">
       <h2
         className="text-2xl font-bold text-[#1A1A2E] pb-1"
-        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+        style={{ fontFamily: "var(--hd-font-display), sans-serif" }}
       >
         {title}
       </h2>
@@ -125,7 +125,7 @@ export function FaqBlock({ faqs }: { faqs: { q: string; a: string }[] }) {
       <JsonLd data={faqPageSchema(faqs)} />
       <h2
         className="text-2xl font-bold text-[#1A1A2E] pb-1"
-        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+        style={{ fontFamily: "var(--hd-font-display), sans-serif" }}
       >
         Questions people ask
       </h2>
@@ -147,7 +147,7 @@ export function CtaBand({ headline }: { headline: string }) {
     <section className="mt-14 rounded-[20px] bg-[#13132B] p-7 sm:p-9 text-center">
       <h2
         className="text-2xl sm:text-3xl font-bold text-white pb-1"
-        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+        style={{ fontFamily: "var(--hd-font-display), sans-serif" }}
       >
         {headline}
       </h2>
@@ -181,7 +181,7 @@ export function RelatedLinks({
       {headingHidden ? null : (
         <h2
           className="text-2xl font-bold text-[#1A1A2E] pb-1"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+          style={{ fontFamily: "var(--hd-font-display), sans-serif" }}
         >
           {title}
         </h2>

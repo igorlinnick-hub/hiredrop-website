@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { MONTHLY_PRICE, WEEKLY_PRICE } from "@/lib/pricing";
+import { display, sans } from "@/lib/fonts";
 
 interface FreeTastePaywallProps {
   freeUsed: number;
@@ -128,7 +129,7 @@ export default function FreeTastePaywall({ freeUsed, freeLimit }: FreeTastePaywa
       ctx.restore();
 
       const grotesk = (weight: number, size: number) =>
-        `${weight} ${size}px "Space Grotesk", "Inter", sans-serif`;
+        `${weight} ${size}px ${display.style.fontFamily}, ${sans.style.fontFamily}, sans-serif`;
 
       // Wordmark — "Hire" purple + "Drop" white, same as the site header
       ctx.textBaseline = "alphabetic";
@@ -179,8 +180,9 @@ export default function FreeTastePaywall({ freeUsed, freeLimit }: FreeTastePaywa
     // Repaint once the display face is actually loaded (fonts.load is async).
     if (typeof document !== "undefined" && document.fonts?.load) {
       Promise.all([
-        document.fonts.load('700 430px "Space Grotesk"'),
-        document.fonts.load('500 34px "Space Grotesk"'),
+        // next/font serves the face under a generated name — ask by that name.
+        document.fonts.load(`700 430px ${display.style.fontFamily}`),
+        document.fonts.load(`500 34px ${display.style.fontFamily}`),
       ])
         .then(draw)
         .catch(() => {});
@@ -227,7 +229,7 @@ export default function FreeTastePaywall({ freeUsed, freeLimit }: FreeTastePaywa
           <span className="inline-flex self-start items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-accent/10 text-accent mb-4">
             Free taste complete 🎉
           </span>
-          <h2 className="text-2xl font-bold text-text" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+          <h2 className="text-2xl font-bold text-text" style={{ fontFamily: "var(--hd-font-display), sans-serif" }}>
             {freeLimit} applications went out for you — free.
           </h2>
           <p className="mt-3 text-sm text-text2">
