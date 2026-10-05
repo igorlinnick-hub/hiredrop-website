@@ -41,13 +41,13 @@ export default function LoginPage() {
       </div>
 
       {/* Right — live "campaign running" demo (mirrors the Hero on the landing) */}
-      <div className="hidden lg:flex flex-1 items-center justify-center relative overflow-hidden px-8 border-l border-[#E7E0D2]">
+      <div
+        className="hidden lg:flex flex-1 items-center justify-center relative overflow-hidden px-8 border-l border-[#E7E0D2]"
+        style={{ background: "radial-gradient(120% 90% at 30% 20%, #8A6248 0%, #5B3E2B 45%, #2E1F16 100%)" }}
+      >
         {/* The self-driving apply animation on a clean, flat backdrop */}
         <div className="relative z-10 flex flex-col items-center">
-          <HeroCampaignDemo night />
-          <p className="mt-6 text-sm text-[#5C574F] text-center max-w-sm">
-            Applies from your own browser — your account stays safe
-          </p>
+          <HeroCampaignDemo />
         </div>
       </div>
     </div>
