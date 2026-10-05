@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { sessionUser } from "@/lib/supabase/session-user";
 
 /**
  * Starting a Tap run, in ONE place.
@@ -32,7 +33,7 @@ export type TapRunFilters = {
 /** Read the search filters the run should use from the user's profile. */
 export async function loadTapFilters(): Promise<TapRunFilters> {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await sessionUser();
   if (!user) return { keywords: [], platforms: [], location: "", job_type: "" };
   const { data } = await supabase
     .from("profiles")
@@ -56,7 +57,7 @@ export async function startTapRun(): Promise<TapRunFilters> {
   const filters = await loadTapFilters();
   try {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await sessionUser();
     if (user) await supabase.from("profiles").update({ submit_mode: "tap" }).eq("user_id", user.id);
   } catch { /* non-fatal — see the doc comment above */ }
   window.postMessage({ type: "HIREDROP_SET_REVIEW", on: false }, "*");

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { forgetResumeHints } from "@/lib/employerAnswersHints";
 import { createClient } from "@/lib/supabase/client";
+import { sessionUser } from "@/lib/supabase/session-user";
 import Button from "@/components/ui/Button";
 import ResumeEditor, { EMPTY_STRUCTURE, type ResumeStructure } from "./ResumeEditor";
 import ResumeFileRow from "./ResumeFileRow";
@@ -138,7 +139,7 @@ export default function ResumeATSPanel() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await sessionUser();
       if (!user) return;
       const { data: p } = await supabase.from("profiles").select("*").eq("user_id", user.id).single();
       if (p) {
@@ -177,7 +178,7 @@ export default function ResumeATSPanel() {
     setUploading(true);
     setError(null);
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await sessionUser();
     if (!user) { setUploading(false); return; }
 
     const { error: uploadError } = await supabase.storage

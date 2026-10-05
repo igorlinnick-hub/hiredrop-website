@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { sessionUser } from "@/lib/supabase/session-user";
 import { apiGet, type StatsResponse } from "@/lib/api";
 
 import { LIVE_CONNECTABLE_PLATFORMS } from "@/lib/constants";
@@ -151,7 +152,7 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
     (async () => {
       try {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await sessionUser();
         if (!user || cancelled) return;
         const { data } = await supabase
           .from("profiles")
@@ -254,7 +255,7 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
     const next = letterDraft.trim();
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await sessionUser();
       if (user) {
         await supabase.from("profiles").update({ writing_style: next }).eq("user_id", user.id);
         setLetterStyle(next);

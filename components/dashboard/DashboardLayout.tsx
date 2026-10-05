@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { sessionUser } from "@/lib/supabase/session-user";
 import { isAffiliateOnly } from "@/lib/gate/landing";
 import ExtensionTokenSync from "@/components/dashboard/ExtensionTokenSync";
 import ExtensionBridgeBanner from "@/components/dashboard/ExtensionBridgeBanner";
@@ -116,7 +117,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     async function loadUser() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await sessionUser();
       if (user) setEmail(user.email || "");
       const { data: affiliate } = await supabase
         .from("affiliates")
