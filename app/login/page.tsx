@@ -38,10 +38,10 @@ export default function LoginPage() {
       </div>
 
       {/* Right — live "campaign running" demo (mirrors the Hero on the landing) */}
-      <div className="hidden lg:flex flex-1 items-center justify-center bg-[#EFE8D8] relative overflow-hidden px-8">
+      <div className="hidden lg:flex flex-1 items-center justify-center bg-white relative overflow-hidden px-8">
         {/* The self-driving apply animation on a clean, flat backdrop */}
         <div className="relative z-10 flex flex-col items-center">
-          <HeroCampaignDemo />
+          <HeroCampaignDemo night />
           <p className="mt-6 text-sm text-[#5C574F] text-center max-w-sm">
             Applies from your own browser — your account stays safe
           </p>
