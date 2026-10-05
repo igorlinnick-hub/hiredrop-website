@@ -41,6 +41,7 @@ const CSP_REPORT_ONLY = [
     "https://tiles.openfreemap.org https://nominatim.openstreetmap.org", // radius map
     "https://www.facebook.com https://connect.facebook.net",
     "https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.googletagmanager.com",
+    "https://ad.doubleclick.net", // gtag posts /ccm/s/collect here on page view (caught by a test build, 10-05)
     "https://vitals.vercel-insights.com https://va.vercel-scripts.com",
   ].join(" "),
   [
