@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
+import { sessionUser } from "@/lib/supabase/session-user";
 import { redeemPromoCode } from "@/lib/promo";
 import StepHeader from "./StepHeader";
 import StepPersonalInfo from "./StepPersonalInfo";
@@ -76,7 +77,7 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
   // Pre-fill email from auth user + redeem any promo code carried from signup.
   useEffect(() => {
     async function loadUser() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await sessionUser();
       if (!user) return;
       // first_name/last_name = our signup form; given_name/family_name/full_name
       // = Google OAuth metadata (OAuth users never filled our form).
@@ -130,7 +131,7 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
     setSaving(true);
     setSaveError(null);
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await sessionUser();
     if (!user) {
       router.push("/login");
       return;
@@ -165,7 +166,7 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
     setSaving(true);
     setSaveError(null);
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await sessionUser();
     if (!user) {
       router.push("/login");
       return;

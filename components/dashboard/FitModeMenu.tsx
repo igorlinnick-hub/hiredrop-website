@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { sessionUser } from "@/lib/supabase/session-user";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "https://web-production-db45.up.railway.app";
@@ -29,7 +30,7 @@ export default function FitModeMenu() {
     (async () => {
       try {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await sessionUser();
         if (!user) return;
         const { data } = await supabase
           .from("profiles").select("apply_mode").eq("user_id", user.id).single();

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { sessionUser } from "@/lib/supabase/session-user";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import PosterPanel from "@/components/dashboard/PosterPanel";
 import ResumeATSPanel from "@/components/dashboard/ResumeATSPanel";
@@ -98,7 +99,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function loadProfile() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await sessionUser();
       if (!user) return;
 
       const { data } = await supabase
@@ -163,7 +164,7 @@ export default function SettingsPage() {
     setSaving(true);
     setError("");
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await sessionUser();
     if (!user) return;
 
     const { error: saveError } = await supabase

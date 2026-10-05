@@ -4,6 +4,7 @@ import { KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
+import { sessionUser } from "@/lib/supabase/session-user";
 import { answersUi } from "@/lib/employerAnswers";
 import { stopCampaignEverywhere } from "@/lib/campaign/stop";
 import { PLATFORMS, LOCATIONS, JOB_TYPES, WORK_SETTINGS } from "@/lib/constants";
@@ -141,7 +142,7 @@ export default function QuickActions({
     (async () => {
       try {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await sessionUser();
         if (!user) return;
         const { data } = await supabase.from("profiles").select("submit_mode").eq("user_id", user.id).single();
         if (data?.submit_mode === "tap") setMode("tap");
@@ -162,7 +163,7 @@ export default function QuickActions({
     window.postMessage({ type: "HIREDROP_SET_REVIEW", on: next === "tap" }, "*");
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await sessionUser();
       if (!user) { setMode(prev); return; }
       const { error } = await supabase.from("profiles").update({ submit_mode: next }).eq("user_id", user.id);
       if (error) setMode(prev);
@@ -179,7 +180,7 @@ export default function QuickActions({
     setMode("tap");
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await sessionUser();
       if (user) await supabase.from("profiles").update({ submit_mode: "tap" }).eq("user_id", user.id);
     } catch { /* non-blocking */ }
     try { await savePrefs(); } catch { /* keep going — tap page falls back to profile */ }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { sessionUser } from "@/lib/supabase/session-user";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "https://web-production-db45.up.railway.app";
@@ -63,7 +64,7 @@ export default function ApplyModePanel() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await sessionUser();
       if (!user) return;
       const { data: p } = await supabase
         .from("profiles")

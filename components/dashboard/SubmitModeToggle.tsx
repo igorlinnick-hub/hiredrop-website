@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { sessionUser } from "@/lib/supabase/session-user";
 
 // Compact Auto/Tap segmented toggle. Persists profile.submit_mode AND flips the
 // extension's live reviewMode (HIREDROP_SET_REVIEW via ping.js) so the choice takes
@@ -16,7 +17,7 @@ export default function SubmitModeToggle({ className = "" }: { className?: strin
     (async () => {
       try {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await sessionUser();
         if (!user) return;
         const { data } = await supabase
           .from("profiles")
@@ -48,7 +49,7 @@ export default function SubmitModeToggle({ className = "" }: { className?: strin
     }
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await sessionUser();
       if (!user) { setMode(prev); return; }
       const { error } = await supabase
         .from("profiles")

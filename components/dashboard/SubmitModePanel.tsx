@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { sessionUser } from "@/lib/supabase/session-user";
 
 // submit_mode is orthogonal to apply_mode (broad/standard/precise = fit threshold).
 // "auto" = HireDrop fills + submits for you (default, capped for cost/ban-safety).
@@ -38,7 +39,7 @@ export default function SubmitModePanel() {
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await sessionUser();
       if (!user) { setLoading(false); return; }
       const { data } = await supabase
         .from("profiles")
@@ -57,7 +58,7 @@ export default function SubmitModePanel() {
       setSaving(true);
       setSaved(false);
       setError(null);
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await sessionUser();
       if (!user) { setSaving(false); return; }
       const { error: saveError } = await supabase
         .from("profiles")
