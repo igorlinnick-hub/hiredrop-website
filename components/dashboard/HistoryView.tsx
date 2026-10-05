@@ -244,8 +244,8 @@ export default function HistoryView({
           documents we sent. */}
       <div className="relative">
         {/* Drop stands behind the panel's top edge: the panel is painted over his feet, so he
-            reads as standing behind the block. Desktop only; phones keep the plain panel. */}
-        <DropCameo pose="at-desk" width={150} enter="up" className="hidden md:block absolute right-10 bottom-[calc(100%-44px)]" />
+            reads as standing behind the block. Desktop only; phones keep the plain panel. The bottom 72px of him sit behind the block, so the desk legs are hidden and only the desk top shows above it. */}
+        <DropCameo pose="at-desk" width={150} enter="up" className="hidden md:block absolute right-10 bottom-[calc(100%-72px)]" />
       <PosterPanel
         title={<>We kept <em className="italic">everything</em> we sent.</>}
         body="Open any row and the record is right there — no digging through your sent folder."
