@@ -6,6 +6,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import ReviewPanel, { ReviewPending } from "@/components/dashboard/ReviewPanel";
 import { apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
+import { pollMaxAge, readCampaignStatus } from "@/lib/campaign/status";
 import { stopCampaignEverywhere } from "@/lib/campaign/stop";
 import { PLATFORMS } from "@/lib/constants";
 
@@ -406,7 +407,7 @@ export default function CampaignView({ token: initialToken }: Props) {
       try {
         const t = await getToken();
         if (!t) return;
-        const s = await apiGet<{ running: boolean }>("/campaign/status", t);
+        const s = await readCampaignStatus(t, pollMaxAge(20000));
         if (!dead) setServerStopped(!s.running);
       } catch {
         /* network blip — the bridge signal still covers us */

@@ -2,8 +2,9 @@
 
 import { KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ApiError, apiGet, apiPost } from "@/lib/api";
+import { ApiError, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
+import { pollMaxAge, readCampaignStatus } from "@/lib/campaign/status";
 import { sessionUser } from "@/lib/supabase/session-user";
 import { answersUi } from "@/lib/employerAnswers";
 import { stopCampaignEverywhere } from "@/lib/campaign/stop";
@@ -122,7 +123,8 @@ export default function QuickActions({
     initialRadius != null && RADIUS_STEPS.includes(initialRadius) ? (initialRadius as RadiusMiles) : null
   );
 
-  // Poll /campaign/status every 5s so extension-started campaigns reflect in the UI
+  // Poll /campaign/status every 5s so extension-started campaigns reflect in the UI.
+  // Shared read: the dock and Drop poll the same answer on this screen.
   useEffect(() => {
     const poll = setInterval(async () => {
       try {
@@ -130,7 +132,7 @@ export default function QuickActions({
         const { data: { session } } = await supabase.auth.getSession();
         const t = session?.access_token;
         if (!t) return;
-        const status = await apiGet<{ running: boolean }>("/campaign/status", t);
+        const status = await readCampaignStatus(t, pollMaxAge(5000));
         setCampaignRunning(status.running);
       } catch { /* ignore */ }
     }, 5000);

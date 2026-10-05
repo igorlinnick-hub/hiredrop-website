@@ -15,10 +15,10 @@
 
 import { useEffect, useState } from "react";
 import Buddy from "@/components/buddy/Buddy";
-import { apiGet } from "@/lib/api";
 import { askDrop } from "@/lib/buddy";
 import type { AskFn } from "@/components/buddy/BuddyPanel";
 import { createClient } from "@/lib/supabase/client";
+import { pollMaxAge, readCampaignStatus } from "@/lib/campaign/status";
 
 const ask: AskFn = async (question, history, on) => {
   const { data: { session } } = await createClient().auth.getSession();
@@ -45,7 +45,7 @@ export default function DashboardBuddy() {
         const { data: { session } } = await createClient().auth.getSession();
         const t = session?.access_token;
         if (!t) return;
-        const s = await apiGet<{ running: boolean }>("/campaign/status", t);
+        const s = await readCampaignStatus(t, pollMaxAge(POLL_MS));
         if (alive) setWorking(!!s.running);
       } catch { /* keep the last known state */ }
     }
