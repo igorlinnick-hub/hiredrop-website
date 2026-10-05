@@ -62,7 +62,7 @@ export default function HeroCampaignDemo({ night = false }: { night?: boolean } 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className={`flex items-center gap-2.5 font-semibold px-7 py-4 rounded-2xl shadow-lg ${night ? "bg-accent text-white" : "bg-[#101014] text-white"}`}
+            className={`flex items-center gap-2.5 font-semibold px-7 py-4 rounded-2xl shadow-lg ${night ? "bg-[#6C5CE7] text-white" : "bg-[#101014] text-white"}`}
             style={{ boxShadow: "0 12px 32px rgba(58,44,18,0.3)" }}
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -106,8 +106,8 @@ export default function HeroCampaignDemo({ night = false }: { night?: boolean } 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 mb-3">
                 <span className="relative flex h-2 w-2">
-                  {!done && <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-60 animate-ping" />}
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
+                  {!done && <span className="absolute inline-flex h-full w-full rounded-full bg-[#6C5CE7] opacity-60 animate-ping" />}
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#6C5CE7]" />
                 </span>
                 <span className={`text-xs font-medium ${night ? "text-white" : "text-[#101014]"}`}>Marketing Manager · Stripe</span>
               </div>
@@ -125,7 +125,7 @@ export default function HeroCampaignDemo({ night = false }: { night?: boolean } 
                   done
                     ? "bg-green text-white"
                     : night
-                      ? step >= 5 ? "bg-accent text-white" : "bg-white/15 text-white/60"
+                      ? step >= 5 ? "bg-[#6C5CE7] text-white" : "bg-white/15 text-white/60"
                       : step >= 5 ? "bg-[#101014] text-white" : "bg-[#101014]/25 text-white"
                 }`}
                 animate={step === 5 && !done ? { scale: [1, 0.97, 1] } : {}}
@@ -144,7 +144,7 @@ function Row({ label, value, show, active, night }: { label: string; value: stri
   return (
     <div>
       <p className={`text-[10px] mb-0.5 ${night ? "text-white/60" : "text-[#5C574F]"}`}>{label}</p>
-      <div className={`h-8 px-2.5 rounded-lg border flex items-center text-xs text-[#101014] transition-all duration-500 ${active ? "border-accent ring-2 ring-accent/15" : night ? "border-transparent" : "border-[#E7E0D2]"} ${show || night ? "bg-white" : "bg-[#F6F1E7]"}`}>
+      <div className={`h-8 px-2.5 rounded-lg border flex items-center text-xs text-[#101014] transition-all duration-500 ${active ? "border-[#6C5CE7] ring-2 ring-[#6C5CE7]/15" : night ? "border-transparent" : "border-[#E7E0D2]"} ${show || night ? "bg-white" : "bg-[#F6F1E7]"}`}>
         {show && (
           <motion.span
             initial={{ opacity: 0, x: -4 }}
@@ -155,7 +155,7 @@ function Row({ label, value, show, active, night }: { label: string; value: stri
             {value}
           </motion.span>
         )}
-        {active && <span className="inline-block w-[2px] h-3.5 bg-accent ml-0.5 animate-pulse" />}
+        {active && <span className="inline-block w-[2px] h-3.5 bg-[#6C5CE7] ml-0.5 animate-pulse" />}
       </div>
     </div>
   );
@@ -165,7 +165,7 @@ function FileRow({ show, active, night }: { show: boolean; active: boolean; nigh
   return (
     <div>
       <p className={`text-[10px] mb-0.5 ${night ? "text-white/60" : "text-[#5C574F]"}`}>Resume</p>
-      <div className={`h-8 px-2.5 rounded-lg border flex items-center gap-1.5 text-xs transition-all duration-500 ${active ? "border-accent" : night ? "border-transparent" : "border-[#E7E0D2]"} ${show || night ? "bg-white" : "bg-[#F6F1E7]"}`}>
+      <div className={`h-8 px-2.5 rounded-lg border flex items-center gap-1.5 text-xs transition-all duration-500 ${active ? "border-[#6C5CE7]" : night ? "border-transparent" : "border-[#E7E0D2]"} ${show || night ? "bg-white" : "bg-[#F6F1E7]"}`}>
         {show && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="flex items-center gap-1.5">
             <svg className="w-3.5 h-3.5 text-green" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -182,7 +182,7 @@ function CoverRow({ show, active, night }: { show: boolean; active: boolean; nig
     <div>
       <div className="flex items-center justify-between mb-0.5">
         <p className={`text-[10px] ${night ? "text-white/60" : "text-[#5C574F]"}`}>Cover letter</p>
-        {active && <span className="text-[9px] text-accent">writing…</span>}
+        {active && <span className={`text-[9px] ${night ? "text-[#A78BFA]" : "text-[#6C5CE7]"}`}>writing…</span>}
       </div>
       <div className={`rounded-lg border p-2 space-y-1 ${night ? "border-transparent bg-white" : "border-[#E7E0D2] bg-[#F6F1E7]"}`}>
         {[0, 1, 2].map((r) => (
@@ -191,7 +191,7 @@ function CoverRow({ show, active, night }: { show: boolean; active: boolean; nig
             initial={{ width: 0, opacity: 0 }}
             animate={show ? { width: r === 2 ? "55%" : "100%", opacity: 1 } : { width: 0, opacity: 0 }}
             transition={{ delay: show ? r * 0.3 : 0, duration: 0.6, ease: "easeOut" }}
-            className={`h-1.5 rounded-full ${night ? "bg-accent/30" : "bg-[#E2DACB]"}`}
+            className={`h-1.5 rounded-full ${night ? "bg-[#6C5CE7]/30" : "bg-[#E2DACB]"}`}
           />
         ))}
       </div>
