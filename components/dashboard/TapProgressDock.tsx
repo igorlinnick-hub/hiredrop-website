@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { apiGet, apiPost, type CampaignStatusResponse } from "@/lib/api";
+import { apiGet, apiPost } from "@/lib/api";
+import { pollMaxAge, readCampaignStatus } from "@/lib/campaign/status";
 import { checkExtensionPresent } from "@/components/dashboard/StartReadiness";
 import { readTapBaseline, markTapSessionStart, clearTapBaseline, startTapRun } from "@/lib/tap-run";
 import { stopCampaignEverywhere } from "@/lib/campaign/stop";
@@ -120,14 +121,15 @@ export default function TapProgressDock(
     } catch { /* private mode */ }
   }, []);
 
-  const refresh = useCallback(async () => {
+  // fresh = true right after Start: the shared answer may predate the click.
+  const refresh = useCallback(async (fresh = false) => {
     try {
       const { data: { session } } = await createClient().auth.getSession();
       const token = session?.access_token;
       if (!token) return;
       const [q, st] = await Promise.all([
         apiGet<QueueResponse>("/campaign/queue", token),
-        apiGet<CampaignStatusResponse>("/campaign/status", token),
+        readCampaignStatus(token, fresh ? 0 : pollMaxAge(POLL_MS)),
       ]);
       const head = q.queue?.[0];
       const next = head ? { title: head.title, company: head.company, platform: head.platform } : null;
@@ -187,7 +189,7 @@ export default function TapProgressDock(
     setBusy("start"); setNote(null);
     try {
       await startTapRun();
-      setTimeout(() => { setBusy((b) => (b === "start" ? null : b)); refresh(); }, 4000);
+      setTimeout(() => { setBusy((b) => (b === "start" ? null : b)); refresh(true); }, 4000);
     } catch (e) {
       setNote(e instanceof Error ? e.message : String(e));
       setBusy(null);
