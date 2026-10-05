@@ -12,9 +12,11 @@ export const metadata = pageMetadata({
 
 export default function LoginPage() {
   return (
-    // The page is cream. The form sits on it directly; the demo is its own framed panel.
-    <div className="hd-auth min-h-screen bg-background flex items-center justify-center p-4 sm:p-8 lg:p-10">
-      <div className="w-full max-w-6xl grid gap-8 lg:grid-cols-2 lg:gap-10 items-center">
+    // The page is cream. The form sits on it directly. The demo is a panel pressed into
+    // the page from the bottom-right corner: it bleeds off the screen edge, and its
+    // shadow falls inward so it reads as sunk into the background, not lying on top.
+    <div className="hd-auth relative min-h-screen overflow-hidden bg-background">
+      <div className="relative z-10 mx-auto grid min-h-screen w-full max-w-6xl items-center gap-8 p-4 sm:p-8 lg:grid-cols-2 lg:gap-10 lg:p-10">
         {/* Left — form, straight on the cream page */}
         <div className="flex flex-col items-center justify-center px-2 py-8 sm:px-6">
           <div className="w-full max-w-md">
@@ -38,19 +40,20 @@ export default function LoginPage() {
             </p>
           </div>
         </div>
+      </div>
 
-        {/* Right — live "campaign running" demo, its own rounded panel on the cream page */}
-        <div
-          className="hidden lg:flex min-h-[640px] items-center justify-center relative overflow-hidden rounded-3xl px-8"
-          style={{
-            background: "radial-gradient(120% 90% at 30% 20%, #8A6248 0%, #5B3E2B 45%, #2E1F16 100%)",
-            boxShadow: "0 24px 60px -32px rgba(58,44,18,0.35)",
-          }}
-        >
-          {/* The self-driving apply animation on a clean, flat backdrop */}
-          <div className="relative z-10 flex flex-col items-center">
-            <HeroCampaignDemo />
-          </div>
+      {/* Right — live demo, pressed into the page from the bottom-right corner */}
+      <div
+        className="pointer-events-none absolute bottom-0 right-0 hidden h-[78%] w-[52%] items-center justify-center overflow-hidden rounded-tl-[56px] lg:flex"
+        style={{
+          background: "radial-gradient(120% 90% at 30% 20%, #8A6248 0%, #5B3E2B 45%, #2E1F16 100%)",
+          boxShadow:
+            "inset 18px 18px 40px -12px rgba(20,12,6,0.55), inset 0 0 0 1px rgba(46,31,22,0.35), inset 0 0 60px rgba(0,0,0,0.25)",
+        }}
+      >
+        {/* The self-driving apply animation on a clean, flat backdrop */}
+        <div className="pointer-events-auto relative z-10 flex flex-col items-center -translate-x-[8%] -translate-y-[6%]">
+          <HeroCampaignDemo />
         </div>
       </div>
     </div>
