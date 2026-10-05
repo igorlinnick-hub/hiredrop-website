@@ -147,6 +147,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
     }
     loadUser();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time read of the saved theme; see the comment on `dark`
     try { setDark(localStorage.getItem("hd_theme") === "dark"); } catch { /* noop */ }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

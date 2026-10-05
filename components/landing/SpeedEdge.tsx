@@ -155,7 +155,7 @@ export default function SpeedEdge() {
           >
             By the time a job hits the big boards, hundreds have already applied. HireDrop
             watches Indeed, ZipRecruiter and thousands of company ATS for your match — and
-            applies the moment one opens, while you'd still be scrolling.
+            applies the moment one opens, while you&apos;d still be scrolling.
           </motion.p>
 
           {/* honest stat trio: one market fact + two directional truths */}

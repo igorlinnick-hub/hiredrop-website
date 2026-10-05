@@ -24,6 +24,7 @@ export default function CheckoutSuccessBanner({ tier }: { tier: string }) {
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("checkout") !== "success") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time read of the URL (house pattern above)
     setShow(true);
     // Strip the flag once shown — bookmarks/reloads stay clean.
     const t = setTimeout(() => {

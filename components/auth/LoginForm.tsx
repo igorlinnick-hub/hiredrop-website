@@ -31,6 +31,7 @@ export default function LoginForm() {
   // boundary on the whole login page).
   useEffect(() => {
     const urlError = new URLSearchParams(window.location.search).get("error");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time read of the URL; see above
     if (urlError) setError(humanizeAuthError(urlError));
   }, []);
 

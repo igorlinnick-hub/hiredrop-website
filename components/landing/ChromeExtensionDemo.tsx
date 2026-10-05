@@ -92,7 +92,7 @@ export default function ChromeExtensionDemo() {
   // Typewriter for cover letter
   useEffect(() => {
     if (phase !== 4) return;
-    setTypedChars(0);
+    // typedChars is already 0 here: reset() zeroes it before every cycle.
     const interval = setInterval(() => {
       setTypedChars((c) => {
         if (c >= COVER_TEXT.length) { clearInterval(interval); return COVER_TEXT.length; }
