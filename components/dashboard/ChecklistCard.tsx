@@ -8,7 +8,7 @@ import { apiGet, type StatsResponse } from "@/lib/api";
 
 import { LIVE_CONNECTABLE_PLATFORMS } from "@/lib/constants";
 import {
-  checkExtensionPresent, detectBrowser, extensionSeenHere, EXTENSIONS_PAGE, type BrowserKind,
+  checkExtensionSettled, detectBrowser, extensionSeenHere, EXTENSIONS_PAGE, type BrowserKind,
 } from "./StartReadiness";
 import { isLiveConnected, liveStatus, type Conn } from "./PlatformsIndicator";
 
@@ -200,18 +200,9 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
       if (probing) return;
       probing = true;
       try {
-        let v = await checkExtensionPresent();
-        // Answered in this browser before and silent now is, almost always, the
-        // extension mid-reload (store update, OFF/ON, a test run's reload): its bridge
-        // is back in ~5 s. Calling it "off" on the first miss flashed "Turn the
-        // extension back on" for those seconds (Igor, 10-06). Re-ask for ~10 s first;
-        // the row keeps its last state meanwhile. A real disable is still reported.
-        if (!v && detectBrowser() === "chromium" && extensionSeenHere()) {
-          for (let i = 0; i < 2 && !v && !cancelled; i++) {
-            await new Promise((r) => setTimeout(r, 3000));
-            if (!cancelled) v = await checkExtensionPresent();
-          }
-        }
+        // Patient on a seen-before extension (mid-reload, not off); the row keeps its
+        // last state meanwhile.
+        const v = await checkExtensionSettled(() => cancelled);
         if (cancelled) return;
         lastSeen = v;
         setExtPresent(v);

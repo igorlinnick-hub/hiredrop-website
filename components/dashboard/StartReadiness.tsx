@@ -80,6 +80,23 @@ export function extensionSeenHere(): boolean {
   }
 }
 
+// One probe, but patient where silence is most likely a reload. Answered in this browser
+// before and silent now is, almost always, the extension mid-reload (store update,
+// OFF/ON, a test run's DEV_RELOAD): its bridge is back in ~5 s. Calling it "off" on the
+// first miss flashed "Turn the extension back on" on the checklist and sent Start to the
+// wrong fix (Igor, 10-06). So re-ask twice, 3 s apart — a real disable is still reported,
+// ~10 s later. Never-installed and non-Chrome stay a single 1.5 s probe.
+export async function checkExtensionSettled(isCancelled: () => boolean = () => false): Promise<boolean> {
+  let v = await checkExtensionPresent();
+  if (!v && detectBrowser() === "chromium" && extensionSeenHere()) {
+    for (let i = 0; i < 2 && !v && !isCancelled(); i++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      if (!isCancelled()) v = await checkExtensionPresent();
+    }
+  }
+  return v;
+}
+
 // Which browser is this? The extension is Chrome MV3, so only a desktop Chromium browser
 // can host it. Safari/Firefox users aren't missing an install — they are in a browser that
 // can never run it, and iOS Chrome (CriOS) is WebKit underneath, so it can't either despite
@@ -160,7 +177,7 @@ export async function gateStart(token: string): Promise<Readiness> {
   } catch {
     /* fail-open */
   }
-  const extPresent = await checkExtensionPresent();
+  const extPresent = await checkExtensionSettled();
   const browser = detectBrowser();
   // Three different failures used to wear one label. "Not installed yet" (Chromium —
   // fixable right here) is not the same as "this browser can never run it" (Safari: the

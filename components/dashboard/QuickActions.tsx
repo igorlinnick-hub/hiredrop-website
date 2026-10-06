@@ -41,7 +41,7 @@ const RADIUS_STEPS = [10, 25, 50, 100];
 // How long Start waits for the extension's yes/no before rolling the server back.
 const START_VERDICT_WAIT_MS = 30_000;
 
-type Busy = "find" | "start" | "stop" | null;
+type Busy = "find" | "check" | "start" | "stop" | null;
 
 export default function QuickActions({
   token,
@@ -425,6 +425,9 @@ export default function QuickActions({
   // not a per-start popup.
   async function ensureReadyThenLaunch() {
     if (busy) return;
+    // The gate can take ~10 s when a seen-before extension is silent (mid-reload):
+    // say so, and keep a second click from starting a second gate.
+    setBusy("check");
     try {
       const t = await getFreshToken();
       const r = await gateStart(t);
@@ -433,7 +436,7 @@ export default function QuickActions({
       setReadyOpen(true);
     } catch {
       setLaunchOpen(true); // fail-open; extension start guards remain the backstop
-    }
+    } finally { setBusy(null); }
   }
 
   // Deep-link actions for the checklist rows.
@@ -708,7 +711,7 @@ export default function QuickActions({
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
                   clipRule="evenodd" />
               </svg>
-              {!modeLoaded ? "…" : mode === "tap" ? "Open Tap" : (busy === "start" ? "Starting…" : "Start Campaign")}
+              {!modeLoaded ? "…" : mode === "tap" ? "Open Tap" : (busy === "start" ? "Starting…" : busy === "check" ? "Checking…" : "Start Campaign")}
             </button>
           </>
         )}
