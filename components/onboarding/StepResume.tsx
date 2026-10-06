@@ -54,7 +54,7 @@ export default function StepResume({ resumeFile, setResumeFile, onNext, onBack, 
           : "border-border hover:border-accent hover:bg-accent/5";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form method="post" onSubmit={handleSubmit} className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-text">Upload your resume</h2>
         <p className="text-sm text-text2 mt-1">

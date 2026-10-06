@@ -50,7 +50,7 @@ export default function StepJobPreferences({ profile, updateProfile, onNext, onB
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form method="post" onSubmit={handleSubmit} className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-text">Job Preferences</h2>
         <p className="text-sm text-text2 mt-1">Tell us what kind of jobs you&apos;re looking for.</p>
