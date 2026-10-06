@@ -21,7 +21,7 @@ export default function TermsPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Terms of Service</h1>
 
           <div className="space-y-6 text-gray-600 text-sm leading-relaxed">
-            <p>Last updated: August 2026</p>
+            <p>Last updated: October 2026</p>
 
             <section>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">1. Acceptance of Terms</h2>
@@ -41,7 +41,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">4. Subscription & Billing</h2>
-              <p>HireDrop is billed at {PRICE_SENTENCE} — the full product on either plan. Subscriptions renew automatically at the end of each billing period until you cancel. You can cancel at any time in Settings → Billing (&quot;Manage subscription / cancel&quot;); cancellation takes effect at the end of the current billing period. Refunds are handled on a case-by-case basis.</p>
+              <p>HireDrop is billed at {PRICE_SENTENCE} — the full product on either plan. Subscriptions renew automatically at the end of each billing period until you cancel. You can cancel at any time in Settings → Billing (&quot;Manage subscription / cancel&quot;); cancellation takes effect at the end of the current billing period. Payments are non-refundable, including for a partly used billing period: instead of a refund, cancel and you keep full access until the end of the period you already paid for. The one exception is a billing error on our side, such as being charged twice for the same period — write to support@hiredrop.io and we will return the duplicate charge.</p>
             </section>
 
             <section>
