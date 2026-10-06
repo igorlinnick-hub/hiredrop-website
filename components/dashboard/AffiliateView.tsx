@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import AffiliateHero from "@/components/affiliate/AffiliateHero";
 import { ApiError, createAffiliateConnect } from "@/lib/api";
@@ -152,6 +153,96 @@ function ConnectPayoutsCard({ status }: { status: AffiliateStats["connect_status
   );
 }
 
+const RETURN_POLLS = 5; // × 3 s — the account.updated webhook usually lands within seconds
+
+/** What the partner sees right after Stripe sends them back.
+ *
+ * Stripe's return_url / refresh_url (app/routers/affiliate.py) land here with
+ * `?connect=return` or `?connect=refresh`. Without this the only sign that
+ * onboarding worked was the status card below the fold flipping quietly — a
+ * partner who just typed their SSN and bank got no "done" at all (10-06).
+ * `connect_status` stays the authority: the banner reads it, never the query.
+ */
+function ConnectReturnBanner({ status }: { status: AffiliateStats["connect_status"] }) {
+  const router = useRouter();
+  const [arrival, setArrival] = useState<"return" | "refresh" | null>(null);
+  const [polls, setPolls] = useState(0);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const connect = url.searchParams.get("connect");
+    if (connect !== "return" && connect !== "refresh") return;
+    // Mount-time read of window.location instead of useSearchParams — house
+    // pattern (CheckoutSuccessBanner.tsx) that avoids a Suspense boundary.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time read of the URL (see above)
+    setArrival(connect);
+    // A reload or a shared link must not replay the moment.
+    url.searchParams.delete("connect");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+  }, []);
+
+  // Back from Stripe before the webhook flipped payouts_enabled: re-read the
+  // server a few times rather than tell someone who just finished "not yet".
+  useEffect(() => {
+    if (arrival !== "return" || status === "enabled" || polls >= RETURN_POLLS) return;
+    const t = setTimeout(() => {
+      router.refresh();
+      setPolls((n) => n + 1);
+    }, 3000);
+    return () => clearTimeout(t);
+  }, [arrival, status, polls, router]);
+
+  if (!arrival) return null;
+
+  const done = status === "enabled";
+  const checking = arrival === "return" && !done && polls < RETURN_POLLS;
+  const title = done
+    ? "You're all set — payouts are on"
+    : checking
+      ? "Confirming with Stripe…"
+      : arrival === "refresh"
+        ? "That setup link expired"
+        : "Stripe needs a few more details";
+  const body = done
+    ? "Thanks for connecting. Every commission pays out to your bank automatically once it's 30 days old — nothing to ask us for."
+    : checking
+      ? "Your details are in. This page updates on its own in a few seconds."
+      : arrival === "refresh"
+        ? "Nothing you entered is lost. Press Continue setup below to pick up where you left off."
+        : "Your account isn't ready to receive payouts yet. Press Continue setup below to finish — it takes two minutes.";
+
+  return (
+    <div
+      role="status"
+      className={[
+        "rounded-2xl border p-5 flex items-start gap-3",
+        done ? "border-emerald-500/40 bg-emerald-500/10" : "border-amber-400/40 bg-amber-400/10",
+      ].join(" ")}
+    >
+      <span
+        className={[
+          "mt-1.5 h-2.5 w-2.5 rounded-full shrink-0",
+          done ? "bg-emerald-500" : "bg-amber-400",
+          checking ? "animate-pulse" : "",
+        ].join(" ")}
+      />
+      <div className="flex-1">
+        <p className="font-semibold text-text">{title}</p>
+        <p className="mt-1 text-sm text-text2">{body}</p>
+      </div>
+      {!checking && (
+        <button
+          onClick={() => setArrival(null)}
+          aria-label="Dismiss"
+          className="shrink-0 text-text2 hover:text-text text-lg leading-none px-1"
+        >
+          ×
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function AffiliateView({
   stats,
   commissions,
@@ -166,6 +257,8 @@ export default function AffiliateView({
 
   return (
     <div className="space-y-6">
+      <ConnectReturnBanner status={stats.connect_status} />
+
       {/* Same panel as /affiliate, by Igor's instruction (2026-09-21): the page
           that sold the program and the page that runs it should be recognisably
           the same place. */}
