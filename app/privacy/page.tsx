@@ -21,7 +21,7 @@ export default function PrivacyPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Privacy Policy</h1>
 
           <div className="space-y-6 text-gray-600 text-sm leading-relaxed">
-            <p>Last updated: September 30, 2026</p>
+            <p>Last updated: October 6, 2026</p>
 
             <section>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">1. Information We Collect</h2>
@@ -37,7 +37,9 @@ export default function PrivacyPage() {
 
             <section>
               <h2 className="text-lg font-semibold text-gray-900 mb-2">3. The HireDrop Chrome Extension</h2>
-              <p>The HireDrop Chrome extension runs only on indeed.com and on the HireDrop dashboard domain. On indeed.com it reads job titles, company names, and form fields, then uses your stored profile to autofill the application; it submits an application only after you explicitly start a campaign in the extension popup or on the dashboard.</p>
+              <p>The HireDrop Chrome extension runs on the job sites it applies on &mdash; indeed.com, ziprecruiter.com, greenhouse.io (job-boards.greenhouse.io and boards.greenhouse.io, including their .eu versions), jobs.lever.co, and ashbyhq.com &mdash; and on the HireDrop dashboard (hiredrop.io). On those job sites it reads job titles, company names, and form fields, then uses your stored profile to autofill the application; it submits an application only after you explicitly start a campaign in the extension popup or on the dashboard.</p>
+              <p className="mt-2">If you turn on the optional &ldquo;Tracking pop-up&rdquo; (Chrome asks for your permission first), the extension also shows a small status pill on other websites you visit. The pill only displays your own campaign progress: it reads nothing from those pages and sends nothing about them. You can turn it off in the popup or at chrome://extensions at any time.</p>
+              <p className="mt-2">When an application step cannot be completed, the extension records a short diagnostic in your activity log &mdash; the step&apos;s web address, button labels, headings, and error messages shown on the form, with email addresses and phone numbers masked &mdash; so we can fix the problem. It never records the values you or your profile entered into the form.</p>
               <p className="mt-2">The extension stores your Supabase session token in <code>chrome.storage.local</code> so it can authenticate API requests; this token never leaves your browser except when calling the HireDrop backend. Cached profile data is stored for 5 minutes to reduce API load. No data is shared with any third party other than the HireDrop backend, the Anthropic API (cover letters), and Supabase (storage).</p>
               <p className="mt-2">HireDrop is not affiliated with Indeed. Users are solely responsible for ensuring their use of automation tools complies with Indeed&apos;s terms of service and any other platform&apos;s terms they apply on.</p>
             </section>
