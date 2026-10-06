@@ -44,7 +44,7 @@ export default function LoginPage() {
 
       {/* Right — live demo, pressed into the page from the bottom-right corner */}
       <div
-        className="pointer-events-none absolute bottom-0 right-[4%] top-[3%] hidden w-[40%] items-center justify-center overflow-hidden rounded-tl-[48px] lg:flex"
+        className="pointer-events-none absolute bottom-0 right-0 top-[3%] hidden w-[44%] items-center justify-center overflow-hidden rounded-tl-[48px] lg:flex"
         style={{
           background: "radial-gradient(120% 90% at 30% 20%, #8A6248 0%, #5B3E2B 45%, #2E1F16 100%)",
           boxShadow:
