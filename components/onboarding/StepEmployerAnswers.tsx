@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import EmployerAnswersForm from "@/components/dashboard/EmployerAnswersForm";
 import Button from "@/components/ui/Button";
 import { apiGet } from "@/lib/api";
-import type { AnswerFlags, AnswerQuestion } from "@/lib/employerAnswers";
+import { askNow, type AnswerFlags, type AnswerQuestion } from "@/lib/employerAnswers";
 import { createClient } from "@/lib/supabase/client";
 import type { UserProfile } from "@/lib/types";
 
@@ -19,6 +19,9 @@ type AnswersResponse = { questions: AnswerQuestion[] } & Record<string, unknown>
 //
 // The list is the server's (GET /profile/employer-answers) — the same one the Start gate
 // refuses on, which stays as the backstop for accounts older than a question.
+// No resume yet (the Resume step is skippable): only the questions the server marks
+// `stage: "signup"` are asked here; the ones a resume answers wait for it, and the Start
+// gate asks them before the first run. Which question is which is the server's call.
 // A hung request must end on the screen that offers a way on, not on "Loading…" forever.
 const LOAD_TIMEOUT_MS = 15000;
 
@@ -43,6 +46,9 @@ export default function StepEmployerAnswers({
   const [flags, setFlags] = useState<AnswerFlags>({});
   const [err, setErr] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const hasResume = !!profile.resume_url;
+  // Some questions were held back for the resume — the copy says so.
+  const [deferred, setDeferred] = useState(false);
 
   useEffect(() => {
     if (preset) return;
@@ -63,9 +69,10 @@ export default function StepEmployerAnswers({
           work_authorized_us: profile.work_authorized_us,
           needs_sponsorship: profile.needs_sponsorship,
         };
-        const rows = (res.questions || []).map((q) =>
+        const all = (res.questions || []).map((q) =>
           q.value === null && typeof local[q.key] === "boolean" ? { ...q, value: local[q.key] } : q,
         );
+        const rows = askNow(all, hasResume);
         // Whichever opt-outs the server's questions carry — no flag is named here. (What
         // the resume says for the blank ones is the form's own job: EmployerAnswersForm.)
         const optedOut: AnswerFlags = Object.fromEntries(
@@ -73,6 +80,7 @@ export default function StepEmployerAnswers({
         );
         if (!live) return;
         setFlags(optedOut);
+        setDeferred(rows.length < all.length);
         setQuestions(rows);
       } catch (e) {
         if (live) setErr(e instanceof Error ? e.message : String(e));
@@ -89,7 +97,9 @@ export default function StepEmployerAnswers({
       <div>
         <h2 className="text-xl font-bold text-text">Answer these once</h2>
         <p className="text-sm text-text2 mt-1">
-          Employers ask them on almost every application. We filled in what your resume says — check it.
+          {deferred
+            ? "Employers ask them on almost every application. The rest come from your resume — we'll ask once you add it."
+            : "Employers ask them on almost every application. We filled in what your resume says — check it."}
         </p>
       </div>
 
@@ -137,6 +147,7 @@ export default function StepEmployerAnswers({
           onBack={onBack}
           onSkip={onNext}
           preview={!!preset}
+          withoutResume={!hasResume}
         />
       )}
     </div>
