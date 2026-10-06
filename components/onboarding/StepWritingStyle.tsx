@@ -18,7 +18,7 @@ export default function StepWritingStyle({ profile, updateProfile, onNext, onBac
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form method="post" onSubmit={handleSubmit} className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-text">Writing Style</h2>
         <p className="text-sm text-text2 mt-1">

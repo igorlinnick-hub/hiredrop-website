@@ -102,7 +102,9 @@ export default function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    // method="post": submitted before the JS loads (autofill + Enter on a slow phone), a
+    // form without it is a GET — email and password land in the URL, history and logs.
+    <form method="post" onSubmit={handleSubmit} className="space-y-5">
       {error && (
         <div className="p-3 rounded-lg bg-red/10 text-red text-sm">{error}</div>
       )}

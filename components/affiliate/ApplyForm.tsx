@@ -124,7 +124,7 @@ export default function ApplyForm({ source }: Props) {
   const hint = "text-xs text-text2 mt-1.5";
 
   return (
-    <form onSubmit={submit} className="hd-glass rounded-2xl p-6 sm:p-7 space-y-6">
+    <form method="post" onSubmit={submit} className="hd-glass rounded-2xl p-6 sm:p-7 space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
           <label className={label} htmlFor="name">Your name</label>
