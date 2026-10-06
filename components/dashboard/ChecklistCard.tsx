@@ -194,13 +194,33 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
   useEffect(() => {
     if (demo) return;
     let cancelled = false;
-    const probe = () =>
-      checkExtensionPresent().then((v) => {
+    let probing = false;
+    let lastSeen: boolean | null = null;
+    const probe = async () => {
+      if (probing) return;
+      probing = true;
+      try {
+        let v = await checkExtensionPresent();
+        // Answered in this browser before and silent now is, almost always, the
+        // extension mid-reload (store update, OFF/ON, a test run's reload): its bridge
+        // is back in ~5 s. Calling it "off" on the first miss flashed "Turn the
+        // extension back on" for those seconds (Igor, 10-06). Re-ask for ~12 s first;
+        // the row keeps its last state meanwhile. A real disable is still reported.
+        if (!v && detectBrowser() === "chromium" && extensionSeenHere()) {
+          for (let i = 0; i < 4 && !v && !cancelled; i++) {
+            await new Promise((r) => setTimeout(r, 3000));
+            if (!cancelled) v = await checkExtensionPresent();
+          }
+        }
         if (cancelled) return;
+        lastSeen = v;
         setExtPresent(v);
         setExtOff(!v && detectBrowser() === "chromium" && extensionSeenHere());
         setBrowser(detectBrowser());
-      });
+      } finally {
+        probing = false;
+      }
+    };
     probe();
 
     function onMsg(e: MessageEvent) {
@@ -220,7 +240,12 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
     };
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("focus", onVisible);
-    const iv = setInterval(ask, 10000);
+    // While the row says "off", keep asking: it turns back by itself when the
+    // extension returns, not only when the tab regains focus.
+    const iv = setInterval(() => {
+      ask();
+      if (lastSeen === false && !document.hidden) probe();
+    }, 10000);
     return () => {
       cancelled = true;
       window.removeEventListener("message", onMsg);
