@@ -61,12 +61,19 @@ const CSP_REPORT_ONLY = [
 
 // Sent on every response. Deliberately NOT here yet:
 // - the enforced full CSP — it runs Report-Only above until a clean week.
-// - HSTS includeSubDomains — Vercel already sends max-age=63072000 for the apex;
-//   widening it to every subdomain is a DNS audit, not a config line.
+// - HSTS `preload` — submitting to the browsers' preload list is close to
+//   permanent; includeSubDomains alone does the protecting.
 // - camera/microphone/geolocation are unused; clipboard IS used (copy-link
 //   buttons) and identity-credentials-get backs Google sign-in (FedCM), so
 //   neither is restricted.
 const SECURITY_HEADERS = [
+  // HTTPS on every subdomain too, not just the apex Vercel covers by default.
+  // DNS audit 10-05 (Cloudflare zone, CT logs: certs only for the apex and
+  // *.hiredrop.io, no wildcard record): the only web hosts are the apex and www,
+  // both Vercel over HTTPS. The rest is mail — MX / SPF / DKIM for Cloudflare
+  // Email Routing and Resend's `send.` — which browsers never load, so HSTS
+  // can't touch it. A NEW web subdomain must serve HTTPS from day one.
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
   // Nobody may frame the app (clickjacking on Start/Stop/billing). Same-origin
   // framing stays allowed; the app itself only frames resume previews.
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
