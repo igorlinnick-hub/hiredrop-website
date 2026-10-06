@@ -6,7 +6,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import ReviewPanel, { ReviewPending } from "@/components/dashboard/ReviewPanel";
 import { apiGet, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
-import { pollMaxAge, readCampaignStatus } from "@/lib/campaign/status";
+import { pollMaxAge, readCampaignStatus, zoneParam } from "@/lib/campaign/status";
 import { stopCampaignEverywhere } from "@/lib/campaign/stop";
 import { PLATFORMS } from "@/lib/constants";
 
@@ -276,12 +276,13 @@ export default function CampaignView({ token: initialToken }: Props) {
       const t = await getToken();
       // Send the user's LOCAL midnight (as a UTC instant) so "today" rolls over at
       // THEIR midnight, not the server's UTC — otherwise a late-evening submit shows
-      // as "today" the next local morning (Hawaii, 2026-08-12).
+      // as "today" the next local morning (Hawaii, 2026-08-12). Once the zone is on
+      // file the backend counts from its own stored midnight and ignores `since`.
       const localMidnight = new Date();
       localMidnight.setHours(0, 0, 0, 0);
       const since = encodeURIComponent(localMidnight.toISOString());
       const status = await apiGet<{ today_applications: number; jobs_ready: number; started_at?: string | null; submit_mode?: string }>(
-        `/campaign/status?since=${since}`,
+        `/campaign/status?since=${since}${zoneParam()}`,
         t
       );
       startedAtRef.current = status.started_at || null;

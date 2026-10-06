@@ -16,8 +16,26 @@ import { createSharedRead } from "@/lib/campaign/shared-read";
  */
 export const pollMaxAge = (intervalMs: number) => intervalMs / 2;
 
+/**
+ * `&tz=<IANA zone>` for /campaign/status, or "" when the browser can't tell.
+ *
+ * The backend stores the zone (backend #345) so the daily CAP rolls over at the
+ * user's own midnight, and counts "today" from that same stored midnight. This is
+ * the only place a zone reaches it: without it everyone stays on the UTC day and
+ * the number shown differs from the cap enforced. Sent from every client poll, not
+ * just the campaign screen, so the zone is on file whichever page the user opens.
+ */
+export function zoneParam(): string {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return tz ? `&tz=${encodeURIComponent(tz)}` : "";
+  } catch {
+    return ""; // old browser
+  }
+}
+
 const read = createSharedRead((token) =>
-  apiGet<CampaignStatusResponse>("/campaign/status", token),
+  apiGet<CampaignStatusResponse>(`/campaign/status?${zoneParam().slice(1)}`, token),
 );
 
 export function readCampaignStatus(
