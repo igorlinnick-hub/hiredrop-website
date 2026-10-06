@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { forgetResumeHints } from "@/lib/employerAnswersHints";
+import { resumeProfile, uploadOriginalResume } from "@/lib/resume/upload";
 import { createClient } from "@/lib/supabase/client";
 import { sessionUser } from "@/lib/supabase/session-user";
 import Button from "@/components/ui/Button";
@@ -181,18 +182,19 @@ export default function ResumeATSPanel() {
     const user = await sessionUser();
     if (!user) { setUploading(false); return; }
 
-    const { error: uploadError } = await supabase.storage
-      .from("resumes").upload(`${user.id}/resume.pdf`, file, { upsert: true });
+    const path = await uploadOriginalResume(
+      supabase.storage.from("resumes"),
+      resumeProfile(supabase, user.id, {
+        ats_approved: false, ats_score: null, ats_issues: [], ats_checked_at: null,
+      }),
+      user.id,
+      file,
+    );
 
-    if (uploadError) { setError("Upload failed. Please try again."); setUploading(false); return; }
-
-    await supabase.from("profiles").update({
-      resume_url: `${user.id}/resume.pdf`,
-      ats_approved: false, ats_score: null, ats_issues: [], ats_checked_at: null,
-    }).eq("user_id", user.id);
+    if (!path) { setError("Upload failed. Please try again."); setUploading(false); return; }
 
     setData(prev => ({
-      ...prev, resumeUrl: `${user.id}/resume.pdf`,
+      ...prev, resumeUrl: path,
       atsApproved: false, atsScore: null, atsIssues: [], atsIssueLabels: [], atsCheckedAt: null,
     }));
     setPreviewUrl(null);

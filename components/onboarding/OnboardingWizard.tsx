@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { sessionUser } from "@/lib/supabase/session-user";
+import { resumeProfile, uploadOriginalResume } from "@/lib/resume/upload";
 import { redeemPromoCode } from "@/lib/promo";
 import StepHeader from "./StepHeader";
 import StepPersonalInfo from "./StepPersonalInfo";
@@ -138,18 +139,20 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
     }
 
     if (resumeFile) {
-      const filePath = `${user.id}/resume.pdf`;
-      const { error: uploadError } = await supabase.storage
-        .from("resumes")
-        .upload(filePath, resumeFile, { upsert: true });
+      const filePath = await uploadOriginalResume(
+        supabase.storage.from("resumes"),
+        resumeProfile(supabase, user.id),
+        user.id,
+        resumeFile,
+      );
 
-      if (uploadError) {
+      if (!filePath) {
         setSaving(false);
         setSaveError("Resume upload failed. Please try again.");
         return;
       }
 
-      await supabase.from("profiles").update({ resume_url: filePath }).eq("user_id", user.id);
+      updateProfile({ resume_url: filePath });
       // What an earlier resume said is no hint about this one.
       forgetResumeHints();
     }
