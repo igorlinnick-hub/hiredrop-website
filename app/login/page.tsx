@@ -16,7 +16,7 @@ export default function LoginPage() {
     // the page from the bottom-right corner: it bleeds off the screen edge, and its
     // shadow falls inward so it reads as sunk into the background, not lying on top.
     <div className="hd-auth relative min-h-screen overflow-hidden bg-background">
-      <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-8 p-4 sm:p-8 lg:grid-cols-2 lg:items-start lg:gap-10 lg:px-10 lg:pb-10 lg:pt-2">
+      <div className="relative z-10 mx-auto grid min-h-screen w-full max-w-6xl items-start gap-8 p-4 sm:items-center sm:p-8 sm:pb-[10vh] lg:grid-cols-2 lg:gap-10 lg:px-10">
         {/* Left — form, straight on the cream page */}
         <div className="flex flex-col items-center justify-center px-2 py-8 sm:px-6 lg:-ml-10 lg:py-0">
           <div className="w-full max-w-md">
