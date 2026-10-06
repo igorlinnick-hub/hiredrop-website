@@ -1,8 +1,9 @@
 // The onboarding steps, in order. One list: the progress row, the header art and the
 // saved-progress snapshot all read it.
 //
-// `art` is the header image (public/onboarding/step-N.jpg). "Answers" joined on
-// 2026-09-30 and borrows the Profile art until it gets its own render.
+// `art` is the header image (public/onboarding/step-N.jpg, made by
+// scripts/gen_onboarding.py --drop): Drop acting out that step. Step 4 draws its own
+// header (platform logos), so it has no file.
 export const STEPS = [
   { id: 1, title: "Profile", art: 1 },
   { id: 2, title: "Preferences", art: 2 },
@@ -10,11 +11,11 @@ export const STEPS = [
   { id: 4, title: "Platforms", art: 4 },
   { id: 5, title: "Resume", art: 5 },
   { id: 6, title: "ATS", art: 6 },
-  { id: 7, title: "Answers", art: 1 },
-  { id: 8, title: "Style", art: 7 },
-  { id: 9, title: "Plan", art: 8 },
-  { id: 10, title: "Connect", art: 9 },
-  { id: 11, title: "Done", art: 10 },
+  { id: 7, title: "Answers", art: 7 },
+  { id: 8, title: "Style", art: 8 },
+  { id: 9, title: "Plan", art: 9 },
+  { id: 10, title: "Connect", art: 10 },
+  { id: 11, title: "Done", art: 11 },
 ] as const;
 
 export const STEP = { ats: 6, answers: 7, connect: 10, done: 11 } as const;
