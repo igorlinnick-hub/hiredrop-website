@@ -5,16 +5,16 @@ const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || "https://msxjcjzmf
 const SUPABASE_WSS = SUPABASE_URL.replace(/^https:/, "wss:");
 const isDev = process.env.NODE_ENV === "development";
 
-// The full policy, REPORT-ONLY: browsers block nothing, they POST what they
-// would have blocked to the backend, which logs one `[csp] directive=…
-// blocked=… doc=…` line per violation per hour (jobflow app/routers/csp.py).
-// A week with no line that is ours → move it to Content-Security-Policy.
+// The full policy, ENFORCED. Browsers block what is not listed and POST each
+// violation to the backend, which logs one `[csp] directive=…` line per hour
+// (jobflow app/routers/csp.py). Moved here 10-06 after a clean report-only week.
 // Without nonces on purpose: a nonce forces every page to render dynamically,
 // so script-src keeps 'unsafe-inline' (Next's own inline bootstrap needs it).
 // What it still buys: no script, fetch, frame or font from an origin not
 // listed here; no <object>, no <base> hijack, forms post only to us.
 // Stripe Checkout/Portal is a navigation, not a load — CSP doesn't govern it.
-const CSP_REPORT_ONLY = [
+const CSP = [
+  "frame-ancestors 'self'", // nobody may frame the app (Start/Stop/billing); same-origin only
   "default-src 'self'",
   [
     "script-src 'self' 'unsafe-inline'",
@@ -64,7 +64,6 @@ const CSP_REPORT_ONLY = [
   .join("; ");
 
 // Sent on every response. Deliberately NOT here yet:
-// - the enforced full CSP — it runs Report-Only above until a clean week.
 // - HSTS `preload` — submitting to the browsers' preload list is close to
 //   permanent; includeSubDomains alone does the protecting.
 // - camera/microphone/geolocation are unused; clipboard IS used (copy-link
@@ -83,8 +82,7 @@ const SECURITY_HEADERS = [
   // Nobody may frame the app (clickjacking on Start/Stop/billing). Same-origin
   // framing stays allowed; the app itself only frames resume previews.
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
-  { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
-  { key: "Content-Security-Policy-Report-Only", value: CSP_REPORT_ONLY },
+  { key: "Content-Security-Policy", value: CSP },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
