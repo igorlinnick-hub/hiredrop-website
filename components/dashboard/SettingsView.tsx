@@ -10,6 +10,7 @@ import SettingsRail, {
   IconPerson, IconForm, IconDoc, IconCard, IconShare, type SettingsSection,
 } from "@/components/dashboard/SettingsRail";
 import { AccountFields, FormFields } from "@/components/dashboard/SettingsProfileForm";
+import { profileFromRow, settingsPatch } from "@/lib/settings/profile";
 import type { UserProfile } from "@/lib/types";
 
 /* One section is open at a time, so the three heavy ones load when picked
@@ -33,7 +34,12 @@ const SECTIONS: SettingsSection[] = [
 ];
 
 /** The profile arrives from the server (app/dashboard/settings/page.tsx), so the
-    page paints with the person's data instead of a "Loading profile..." screen. */
+    page paints with the person's data instead of a "Loading profile..." screen.
+
+    That payload can be OLD: Back/Forward reuses the page as first rendered. So the
+    view re-reads the row once in the background and takes it while nothing has
+    been typed — and a Save only ever sends the fields typed on this screen
+    (settingsPatch), so an old screen can't write back over newer answers. */
 export default function SettingsView({ initialProfile }: { initialProfile: UserProfile }) {
   const supabase = createClient();
   const [profile, setProfile] = useState<UserProfile>(initialProfile);
@@ -42,6 +48,8 @@ export default function SettingsView({ initialProfile }: { initialProfile: UserP
     school: initialProfile.school || "",
     salary_expectation: initialProfile.salary_expectation || "",
   });
+  // Fields edited on this screen since the last save — the only ones a Save sends.
+  const touched = useRef(new Set<string>());
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false); // unsaved changes → the Save button lights up
@@ -49,6 +57,25 @@ export default function SettingsView({ initialProfile }: { initialProfile: UserP
   // Which section is open. The deep link from the "Upgrade →" banner (?tab=billing)
   // now opens a SECTION instead of scrolling a long page to an anchor.
   const [section, setSection] = useState("account");
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const user = await sessionUser();
+      if (!user) return;
+      const { data, error: readError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      // Keep what is on screen if the read failed or the person already started typing.
+      if (!alive || readError || !data || touched.current.size > 0) return;
+      const fresh = profileFromRow(data, user.email);
+      setProfile(fresh);
+      loaded.current = { school: fresh.school || "", salary_expectation: fresh.salary_expectation || "" };
+    })();
+    return () => { alive = false; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Deep link: ?tab=<section>. Read window.location directly to avoid a
   // useSearchParams Suspense boundary. Written back on every pick so the open
@@ -73,6 +100,7 @@ export default function SettingsView({ initialProfile }: { initialProfile: UserP
   }
 
   function update(updates: Partial<UserProfile>) {
+    for (const k of Object.keys(updates)) touched.current.add(k);
     setProfile((prev) => ({ ...prev, ...updates }));
     setSaved(false);
     setDirty(true);
@@ -89,40 +117,12 @@ export default function SettingsView({ initialProfile }: { initialProfile: UserP
       return;
     }
 
-    const { error: saveError } = await supabase
-      .from("profiles")
-      .update({
-        name: profile.name,
-        last_name: profile.last_name,
-        phone: profile.phone,
-        // keywords / location / job_type / platforms / submit_mode belong to the
-        // DASHBOARD (QuickActions → /profile/prefs). Saving them from here too is what let
-        // a stale Settings tab overwrite the filters of a running campaign.
-        linkedin_url: profile.linkedin_url,
-        portfolio_url: profile.portfolio_url,
-        street_address: profile.street_address,
-        city: profile.city,
-        state: profile.state,
-        postal_code: profile.postal_code,
-        current_employer: profile.current_employer,
-        current_title: profile.current_title,
-        school: profile.school,
-        degree: profile.degree,
-        salary_expectation: profile.salary_expectation,
-        // Typing an answer here takes back an earlier "I don't have one" — but only
-        // TYPING it: a value that was merely loaded and saved back untouched (any other
-        // field on this page changed) must not quietly undo the person's opt-out.
-        ...(profile.school?.trim() && profile.school !== loaded.current.school && { no_degree: false }),
-        ...(profile.salary_expectation?.trim() &&
-          profile.salary_expectation !== loaded.current.salary_expectation && {
-            no_salary_expectation: false,
-          }),
-        work_authorized_us: profile.work_authorized_us,
-        needs_sponsorship: profile.needs_sponsorship,
-        notice_period: profile.notice_period,
-        english_level: profile.english_level,
-      })
-      .eq("user_id", user.id);
+    // Only what was typed here (see settingsPatch) — dashboard-owned filters never.
+    const sent = new Set(touched.current);
+    const patch = settingsPatch(profile, sent, loaded.current);
+    const { error: saveError } = Object.keys(patch).length
+      ? await supabase.from("profiles").update(patch).eq("user_id", user.id)
+      : { error: null };
 
     setSaving(false);
 
@@ -136,8 +136,9 @@ export default function SettingsView({ initialProfile }: { initialProfile: UserP
       school: profile.school || "",
       salary_expectation: profile.salary_expectation || "",
     };
+    for (const k of sent) touched.current.delete(k);
     setSaved(true);
-    setDirty(false);
+    setDirty(touched.current.size > 0); // typed while the save was in flight → still unsaved
     setTimeout(() => setSaved(false), 3000);
   }
 

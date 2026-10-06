@@ -13,17 +13,30 @@
   A widget that interrupts to sell itself is the reason people hate these.
 
   Drop is on every dashboard page, so this file stays free of framer-motion: the
-  panel and nudge (BuddyBubble) load on first use, prefetched on hover/focus.
+  panel and nudge (BuddyBubble) load after the page is idle, or sooner on
+  hover/focus/open.
+
+  Loaded by hand, not with next/dynamic: a lazy component whose chunk fails to
+  arrive (offline, flaky mobile) THROWS on render, and the nearest boundary is the
+  dashboard's error page — tapping Drop would take the whole page down. Here a
+  failed load just says so next to Drop and the next tap tries again.
 */
 
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
 import DropFigure from "./DropFigure";
 import type { BuddyState } from "./BuddyOrb";
 import type { AskFn } from "./BuddyPanel";
 
-const loadBubble = () => import("./BuddyBubble");
-const BuddyBubble = dynamic(loadBubble, { ssr: false });
+type BubbleComponent = typeof import("./BuddyBubble").default;
+
+let bubbleLoad: Promise<BubbleComponent> | null = null;
+function loadBubble(): Promise<BubbleComponent> {
+  bubbleLoad ??= import("./BuddyBubble")
+    .then((m) => m.default)
+    .catch((e) => { bubbleLoad = null; throw e; }); // forget a failure so a retry refetches
+  return bubbleLoad;
+}
+const prefetchBubble = () => { loadBubble().catch(() => { /* the open path reports it */ }); };
 
 const NUDGE_SEEN_KEY = "hd_drop_nudge_seen";
 
@@ -65,10 +78,37 @@ export default function Buddy({
 
   const showNudge = !open && !!nudge && armed === nudge;
 
-  // Mount the bubble the first time there is something to show, then keep it
-  // mounted so closing the chat still plays its exit animation.
-  const [bubbleUsed, setBubbleUsed] = useState(false);
-  if ((open || showNudge) && !bubbleUsed) setBubbleUsed(true);
+  // The bubble component once its chunk has arrived. It stays mounted from then
+  // on, so closing the chat still plays the exit animation.
+  const [Bubble, setBubble] = useState<BubbleComponent | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  // Fetch it once the page has settled — off the first load, but usually in hand
+  // before anyone taps Drop (a touch screen has no hover to warn us).
+  useEffect(() => {
+    const idle = window.requestIdleCallback
+      ? window.requestIdleCallback(prefetchBubble, { timeout: 4000 })
+      : window.setTimeout(prefetchBubble, 2500);
+    return () => {
+      if (window.cancelIdleCallback) window.cancelIdleCallback(idle);
+      else window.clearTimeout(idle);
+    };
+  }, []);
+
+  const wanted = open || showNudge;
+  useEffect(() => {
+    if (!wanted || Bubble) return;
+    let alive = true;
+    loadBubble().then(
+      (c) => { if (alive) setBubble(() => c); },
+      () => {
+        if (!alive) return;
+        setOpen(false);
+        setLoadFailed(true);
+      },
+    );
+    return () => { alive = false; };
+  }, [wanted, Bubble]);
 
   function dismissNudge() {
     setArmed(null);
@@ -84,8 +124,18 @@ export default function Buddy({
       /* Below 640px the tap dock spans the screen at bottom:18px, so Drop sits
          above it rather than on top of it. */
     >
-      {bubbleUsed && (
-        <BuddyBubble
+      {loadFailed && !open && (
+        <p
+          role="status"
+          className="max-w-[250px] bg-surface border border-border rounded-2xl rounded-br-md
+                     px-3.5 py-2.5 text-[12.5px] leading-relaxed text-text/85 shadow-lg"
+        >
+          The chat didn&apos;t load — check your connection and tap me again.
+        </p>
+      )}
+
+      {Bubble && (
+        <Bubble
           open={open}
           nudge={showNudge ? nudge : null}
           greeting={greeting}
@@ -104,9 +154,9 @@ export default function Buddy({
       <button
         aria-label={open ? "Close Drop" : "Ask Drop"}
         aria-expanded={open}
-        onClick={() => { dismissNudge(); setOpen((o) => !o); }}
-        onPointerEnter={loadBubble}
-        onFocus={loadBubble}
+        onClick={() => { dismissNudge(); setLoadFailed(false); setOpen((o) => !o); }}
+        onPointerEnter={prefetchBubble}
+        onFocus={prefetchBubble}
         className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
                    transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]
                    hover:scale-[1.08] active:scale-[0.93] active:duration-100
