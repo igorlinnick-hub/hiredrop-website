@@ -3,6 +3,8 @@
 // (Platforms) is glass cubes carrying the REAL platform logos on the same
 // deep-space ground — icons IN the cubes, so "where should we apply" reads at a glance.
 
+import type { ReactNode } from "react";
+
 import { STEPS } from "@/lib/onboarding/steps";
 import DropCameo, { type CameoPose } from "@/components/landing/DropCameo";
 
@@ -46,48 +48,61 @@ function PlatformsHeader() {
   );
 }
 
-// Every other step (the questions) carries Drop on the header's bottom-right edge —
-// one pose per step, so the wizard reads as a little quiz with Drop as the host.
-// Step 4's header is a row of platform cubes across the middle, so its Drop is smaller and
-// pinned to the far edge, clear of the last cube.
+// Drop stands on the white card body under the header, at its right edge — outside the
+// picture, never over it. One pose per step, so the wizard reads as a little quiz with Drop as the host.
 const DROP_POSE: Partial<Record<number, { pose: CameoPose; width: number; className: string }>> = {
-  2: { pose: "point", width: 112, className: "right-6" },
-  4: { pose: "peek", width: 92, className: "right-0" },
-  6: { pose: "standing", width: 112, className: "right-6" },
-  8: { pose: "waving", width: 112, className: "right-6" },
-  10: { pose: "sit", width: 112, className: "right-6" },
+  2: { pose: "point", width: 112, className: "right-6 top-full" },
+  4: { pose: "peek", width: 92, className: "right-0 top-full" },
+  6: { pose: "standing", width: 112, className: "right-6 top-full" },
+  8: { pose: "waving", width: 112, className: "right-6 top-full" },
+  10: { pose: "sit", width: 112, className: "right-6 top-full" },
 };
+
+// One plain line icon per step on a cream field, so each header says what the step is about.
+const ICON_PATHS: Record<number, ReactNode> = {
+  1: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" /></>, // Profile
+  2: <><circle cx="11" cy="11" r="6.5" /><path d="M16 16l5 5" /></>, // Preferences — search
+  3: <path d="M12 3l7 3v5c0 5-3.2 8.2-7 10-3.8-1.8-7-5-7-10V6l7-3z" />, // Safety — shield
+  5: <><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M9.5 13h5M9.5 17h5" /></>, // Resume
+  6: <><path d="M5 6l2 2 3-3M5 14l2 2 3-3" /><path d="M13 7h6M13 15h6" /></>, // ATS — checklist
+  7: <path d="M4 5h16v11H9l-5 4V5z" />, // Answers — message
+  8: <><path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></>, // Style — sliders
+  9: <><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M3 10h18M7 15h4" /></>, // Plan — card
+  10: <><path d="M9 3v5M15 3v5" /><path d="M7 8h10v3a5 5 0 0 1-10 0V8z" /><path d="M12 16v5" /></>, // Connect — plug
+  11: <><circle cx="12" cy="12" r="9" /><path d="M8 12.5l2.7 2.7L16 9.5" /></>, // Done — check
+};
+
+function IconHeader({ step }: { step: number }) {
+  return (
+    <div className="relative w-full h-40 sm:h-48 overflow-hidden flex items-center justify-center" style={{ background: "#F3EEE3" }}>
+      <svg
+        viewBox="0 0 24 24"
+        width={72}
+        height={72}
+        fill="none"
+        stroke="#101014"
+        strokeWidth={1.4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        {ICON_PATHS[step]}
+      </svg>
+    </div>
+  );
+}
 
 export default function StepHeader({ step }: { step: number }) {
   const art = STEPS[step - 1]?.art;
   if (!art) return null;
-  const header = art === 4 ? <PlatformsHeader /> : <PhotoHeader art={art} />;
+  const header = art === 4 ? <PlatformsHeader /> : <IconHeader step={step} />;
   const drop = DROP_POSE[step];
   if (!drop) return header;
   return (
     <div className="relative">
       {header}
-      <DropCameo pose={drop.pose} width={drop.width} enter="up" className={`hidden sm:block absolute bottom-0 ${drop.className}`} />
+      <DropCameo pose={drop.pose} width={drop.width} enter="up" className={`hidden sm:block absolute ${drop.className}`} />
     </div>
   );
 }
 
-function PhotoHeader({ art }: { art: number }) {
-  return (
-    <div className="relative w-full h-40 sm:h-48 overflow-hidden">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={`/onboarding/step-${art}.jpg`}
-        alt=""
-        aria-hidden
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ transform: "scale(1.12)" }}
-      />
-      <div
-        aria-hidden
-        className="absolute inset-x-0 bottom-0 h-16"
-        style={{ background: "linear-gradient(to top, rgba(9,9,18,0.28), transparent)" }}
-      />
-    </div>
-  );
-}
