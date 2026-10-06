@@ -24,16 +24,20 @@ const CSP_REPORT_ONLY = [
     "https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com", // Google Ads tag
     "https://va.vercel-scripts.com https://vercel.live", // Vercel analytics debug + preview toolbar
   ].join(" "),
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style",
-  "font-src 'self' data: https://fonts.gstatic.com",
+  // Fonts are self-hosted since web #261 (lib/fonts.ts) — no Google Fonts origins.
+  "style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style",
+  "font-src 'self' data:",
   [
     "img-src 'self' data: blob:",
     SUPABASE_URL, // signed storage URLs (submission proof)
     "https://tiles.openfreemap.org",
     "https://www.facebook.com https://www.google.com https://googleads.g.doubleclick.net https://www.googletagmanager.com",
+    "https://connect.facebook.net", // the pixel's image beacon (report on /signup, 10-06)
   ].join(" "),
   [
-    "connect-src 'self'",
+    // data: — a library reading an inline resource via fetch (report on /dashboard/settings,
+    // 10-06). Can't send anything out: the bytes are already in the page.
+    "connect-src 'self' data:",
     API_URL,
     SUPABASE_URL,
     SUPABASE_WSS,
