@@ -16,9 +16,9 @@ export default function LoginPage() {
     // the page from the bottom-right corner: it bleeds off the screen edge, and its
     // shadow falls inward so it reads as sunk into the background, not lying on top.
     <div className="hd-auth relative min-h-screen overflow-hidden bg-background">
-      <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-8 p-4 sm:p-8 lg:grid-cols-2 lg:items-start lg:gap-10 lg:px-10 lg:pb-10 lg:pt-6">
+      <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-8 p-4 sm:p-8 lg:grid-cols-2 lg:items-start lg:gap-10 lg:px-10 lg:pb-10 lg:pt-2">
         {/* Left — form, straight on the cream page */}
-        <div className="flex flex-col items-center justify-center px-2 py-8 sm:px-6">
+        <div className="flex flex-col items-center justify-center px-2 py-8 sm:px-6 lg:-ml-10 lg:py-0">
           <div className="w-full max-w-md">
             <div className="text-center mb-8">
               <Link href="/" className="text-2xl font-bold text-[#101014]" style={{ fontFamily: "var(--hd-font-display), sans-serif" }}>
@@ -44,7 +44,7 @@ export default function LoginPage() {
 
       {/* Right — live demo, pressed into the page from the bottom-right corner */}
       <div
-        className="pointer-events-none absolute bottom-0 right-0 hidden h-[62%] w-[42%] items-center justify-center overflow-hidden rounded-tl-[48px] lg:flex"
+        className="pointer-events-none absolute right-[4%] top-[3%] hidden h-[72%] w-[40%] items-center justify-center overflow-hidden rounded-tl-[48px] lg:flex"
         style={{
           background: "radial-gradient(120% 90% at 30% 20%, #8A6248 0%, #5B3E2B 45%, #2E1F16 100%)",
           boxShadow:
@@ -52,7 +52,7 @@ export default function LoginPage() {
         }}
       >
         {/* The self-driving apply animation on a clean, flat backdrop */}
-        <div className="pointer-events-auto relative z-10 flex origin-center scale-[1.35] flex-col items-center">
+        <div className="pointer-events-auto relative z-10 flex w-[440px] max-w-[88%] flex-col items-center">
           <HeroCampaignDemo />
         </div>
       </div>
