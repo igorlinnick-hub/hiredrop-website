@@ -80,10 +80,13 @@ export type DockDemo = Snapshot & { done: number };
 //   "dome"  — a true half-round crown carrying the gauge, sitting on a flat bar.
 //             At dashboard width this is the only way a half-circle reads as a circle.
 //   "arch"  — the whole block crowned; at 560px wide it reads as a stadium pill.
-export type DockShape = "dome" | "arch";
+//   "bar"   — the default since 10-06: the gauge sits inside a flat bar. The dome
+//             reserved a 120px column and a fixed height under the crown, so the
+//             text hung right and the bar below it read as empty (Igor 10-06).
+export type DockShape = "dome" | "arch" | "bar";
 
 export default function TapProgressDock(
-  { demo, shape = "dome" }: { demo?: DockDemo; shape?: DockShape } = {},
+  { demo, shape = "bar" }: { demo?: DockDemo; shape?: DockShape } = {},
 ) {
   const [snap, setSnap] = useState<Snapshot | null>(demo ?? null);
   const [done, setDone] = useState(demo?.done ?? 0);
@@ -281,7 +284,7 @@ export default function TapProgressDock(
       </svg>
       <div className="hd-tap-gauge-num">
         <span className="hd-gauge-done">{done}</span>
-        <span className="hd-gauge-total">/{total}</span>
+        <span className="hd-gauge-total">{shape === "bar" ? `of ${total}` : `/${total}`}</span>
       </div>
     </>
   );
@@ -312,7 +315,7 @@ export default function TapProgressDock(
           {note && <p className="mt-0.5 text-[11.5px] text-red">{note}</p>}
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="hd-dock-actions flex items-center gap-2 shrink-0">
           {stranded && !remote && (
             <button onClick={applyNow} disabled={busy !== null} data-testid="dock-apply"
               className="px-3.5 py-2 rounded-xl bg-accent text-white text-[13px] font-semibold
@@ -402,7 +405,9 @@ function LiveRunDock({ snap, shape, busy, note, onStop, onHide }: {
       <div className="hd-tap-gauge-num">
         {/* key = the count: every new send remounts the digit and replays the bump. */}
         <span key={today} className="hd-gauge-done hd-gauge-bump" data-testid="live-dock-count">{today}</span>
-        <span className="hd-gauge-total">{limit !== null ? `/${limit}` : " today"}</span>
+        <span className="hd-gauge-total">{shape === "bar"
+          ? (limit !== null ? `of ${limit} today` : "today")
+          : (limit !== null ? `/${limit}` : " today")}</span>
       </div>
     </>
   );
@@ -441,7 +446,7 @@ function LiveRunDock({ snap, shape, busy, note, onStop, onHide }: {
           {note && <p className="mt-0.5 text-[11.5px] text-red">{note}</p>}
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="hd-dock-actions flex items-center gap-2 shrink-0">
           {!capped && (
             <button onClick={onStop} disabled={busy !== null} data-testid="live-dock-stop"
               className="px-3 py-2 rounded-xl border border-border text-[13px] font-medium text-text2

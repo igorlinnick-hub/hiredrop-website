@@ -949,6 +949,24 @@ h1, h2, h3 {
 }
 .hd-tap-dome .hd-gauge-svg { width: 84px; height: 49px; margin: 8px auto 0; display: block; }
 .hd-tap-dome .hd-tap-gauge-num { bottom: auto; top: 27px; }
+/* SHAPE C — "bar" (default): the gauge rides inside a flat bar, so the bar is
+   exactly as tall as what it says — no reserved column, no empty floor. */
+.hd-tap-dock.shape-bar {
+  padding: 12px 12px 12px 14px;
+  border-radius: 22px;
+}
+.hd-tap-dock.shape-bar .hd-tap-gauge { width: 78px; }
+.hd-tap-dock.shape-bar .hd-tap-gauge .hd-gauge-svg { width: 78px; height: 46px; }
+/* The number sits inside the arc; its caption ("of 30 today") hangs below the arc
+   ends instead of squeezing between them. */
+.hd-tap-dock.shape-bar .hd-tap-gauge-num { position: static; margin-top: -27px; }
+.hd-tap-dock.shape-bar .hd-gauge-done { display: block; }
+.hd-tap-dock.shape-bar .hd-gauge-total {
+  display: block;
+  margin-top: 7px;
+  font-size: 10.5px;
+  white-space: nowrap;
+}
 @keyframes hd-dock-rise {
   from { opacity: 0; transform: translateX(-50%) translateY(14px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -1135,6 +1153,14 @@ h1, h2, h3 {
   .hd-tap-dome { width: 80px; height: 80px; left: 12px; top: -44px; }
   .hd-tap-dome .hd-gauge-svg { width: 64px; height: 38px; margin-top: 10px; }
   .hd-tap-dome .hd-tap-gauge-num { top: 26px; }
+  /* Phone: the buttons take a second row under the text, so the headline and chips
+     keep the full width instead of folding into a column. */
+  .hd-tap-dock.shape-bar { flex-wrap: wrap; gap: 10px; padding: 12px 12px 12px 12px; border-radius: 18px; }
+  .hd-tap-dock.shape-bar .hd-tap-gauge { width: 64px; }
+  .hd-tap-dock.shape-bar .hd-tap-gauge .hd-gauge-svg { width: 64px; height: 38px; }
+  .hd-tap-dock.shape-bar .hd-tap-gauge-num { margin-top: -23px; }
+  .hd-tap-dock.shape-bar .hd-dock-actions { flex-basis: 100%; padding-left: 74px; }
+  .hd-tap-dock.shape-bar .hd-dock-actions > :last-child { margin-left: auto; }
   .hd-gauge-done { font-size: 17px; }
   .hd-tap-dock.has-rail { padding-bottom: 20px; }
   .hd-dock-rail { left: 14px; right: 14px; bottom: 8px; }
