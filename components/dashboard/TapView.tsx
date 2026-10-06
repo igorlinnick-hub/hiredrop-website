@@ -51,7 +51,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
   // unjudged (not prejudged yet) and are NOT counted: the number must not claim a fit
   // nobody checked (Igor, 09-30). No "of 30": the 30 is a ceiling, not a promise.
   const [fitsToday, setFitsToday] = useState(0);
-  const [busy, setBusy] = useState<null | "start" | "stop">(null);
+  const [busy, setBusy] = useState<null | "check" | "start" | "stop">(null);
   const [readyOpen, setReadyOpen] = useState(false);
   const [readyChecks, setReadyChecks] = useState<ReadinessCheck[]>([]);
   const [err, setErr] = useState<string | null>(null);
@@ -236,15 +236,19 @@ export default function TapView({ token: initialToken }: { token: string }) {
 
   async function ensureReadyThenStart() {
     if (busy) return;
+    // The gate can take ~10 s when a seen-before extension is silent (mid-reload).
+    setBusy("check");
+    let go = false;
     try {
       const t = await getToken();
       const r = await gateStart(t);
-      if (r.ready) { start(); return; }
-      setReadyChecks(r.checks);
-      setReadyOpen(true);
+      if (r.ready) go = true;
+      else { setReadyChecks(r.checks); setReadyOpen(true); }
     } catch {
-      start(); // fail-open; the extension's own start guards still protect the run
+      go = true; // fail-open; the extension's own start guards still protect the run
     }
+    setBusy(null);
+    if (go) start();
   }
 
   function fixReadiness(fix: string) {
@@ -536,7 +540,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
             </svg>
-            {busy === "start" ? "Starting…" : "Apply approved"}
+            {busy === "start" ? "Starting…" : busy === "check" ? "Checking…" : "Apply approved"}
           </button>
         )}
       </div>
@@ -817,7 +821,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
               </svg>
-              {busy === "start" ? "Starting…" : "Start"}
+              {busy === "start" ? "Starting…" : busy === "check" ? "Checking…" : "Start"}
             </button>
             {err && <p className="text-xs text-red" data-testid="tap-error">{err}</p>}
           </div>
