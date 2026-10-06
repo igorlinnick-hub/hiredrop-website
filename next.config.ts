@@ -67,13 +67,16 @@ const CSP_REPORT_ONLY = [
 //   buttons) and identity-credentials-get backs Google sign-in (FedCM), so
 //   neither is restricted.
 const SECURITY_HEADERS = [
-  // HTTPS on every subdomain too, not just the apex Vercel covers by default.
-  // DNS audit 10-05 (Cloudflare zone, CT logs: certs only for the apex and
-  // *.hiredrop.io, no wildcard record): the only web hosts are the apex and www,
-  // both Vercel over HTTPS. The rest is mail — MX / SPF / DKIM for Cloudflare
-  // Email Routing and Resend's `send.` — which browsers never load, so HSTS
-  // can't touch it. A NEW web subdomain must serve HTTPS from day one.
-  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+  // Apex only — NOT includeSubDomains, on purpose (web #272 rolled back the same
+  // day). www.hiredrop.io is served with the apex-only certificate (SAN lists just
+  // hiredrop.io), so with includeSubDomains every returning visitor got a hard,
+  // un-clickable TLS error on www. Sent explicitly (Vercel's default is the same
+  // value) so browsers that cached includeSubDomains drop it on their next visit.
+  // Re-add includeSubDomains only after this passes:
+  //   echo | openssl s_client -connect www.hiredrop.io:443 -servername www.hiredrop.io \
+  //     | openssl x509 -noout -ext subjectAltName      → must list www.hiredrop.io
+  // Every other name in the zone is mail (MX/SPF/DKIM) and never loaded by a browser.
+  { key: "Strict-Transport-Security", value: "max-age=63072000" },
   // Nobody may frame the app (clickjacking on Start/Stop/billing). Same-origin
   // framing stays allowed; the app itself only frames resume previews.
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
