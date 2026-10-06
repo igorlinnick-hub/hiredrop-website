@@ -25,7 +25,7 @@ interface Circle {
   size: number;
   left: number;
   top: number;
-  /** Dropped on narrow screens, where nine circles become confetti. */
+  /** Dropped on narrow screens, where seven circles become confetti. */
   wide?: boolean;
 }
 
@@ -36,9 +36,7 @@ const CIRCLES: Circle[] = [
   { n: 3, size: 19, left: 55, top: 50 },
   { n: 4, size: 17, left: 30, top: 55 },
   { n: 6, size: 14, left: 8, top: 62, wide: true },
-  { n: 7, size: 12, left: 86, top: 48, wide: true },
   { n: 8, size: 11, left: 19, top: 4, wide: true },
-  { n: 9, size: 10, left: 66, top: 82, wide: true },
 ];
 
 export default function PeopleCluster({ className = "" }: { className?: string }) {
