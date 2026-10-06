@@ -11,13 +11,19 @@
   A nudge is a one-line teaser Drop shows on its own. Rule: it only ever appears
   when something is actually WRONG and Drop can fix it — never "Hi! Need help?".
   A widget that interrupts to sell itself is the reason people hate these.
+
+  Drop is on every dashboard page, so this file stays free of framer-motion: the
+  panel and nudge (BuddyBubble) load on first use, prefetched on hover/focus.
 */
 
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import DropFigure from "./DropFigure";
-import { type BuddyState } from "./BuddyOrb";
-import BuddyPanel, { type AskFn } from "./BuddyPanel";
+import type { BuddyState } from "./BuddyOrb";
+import type { AskFn } from "./BuddyPanel";
+
+const loadBubble = () => import("./BuddyBubble");
+const BuddyBubble = dynamic(loadBubble, { ssr: false });
 
 const NUDGE_SEEN_KEY = "hd_drop_nudge_seen";
 
@@ -59,6 +65,11 @@ export default function Buddy({
 
   const showNudge = !open && !!nudge && armed === nudge;
 
+  // Mount the bubble the first time there is something to show, then keep it
+  // mounted so closing the chat still plays its exit animation.
+  const [bubbleUsed, setBubbleUsed] = useState(false);
+  if ((open || showNudge) && !bubbleUsed) setBubbleUsed(true);
+
   function dismissNudge() {
     setArmed(null);
     try { if (nudge) localStorage.setItem(NUDGE_SEEN_KEY, nudge); } catch { /* noop */ }
@@ -73,57 +84,36 @@ export default function Buddy({
       /* Below 640px the tap dock spans the screen at bottom:18px, so Drop sits
          above it rather than on top of it. */
     >
-      <AnimatePresence mode="wait">
-        {open ? (
-          <BuddyPanel
-            key="panel"
-            greeting={greeting}
-            suggestions={suggestions}
-            ask={ask}
-            onClose={() => { setOpen(false); setChatState(null); setChecking(false); }}
-            onStateChange={(s) => {
-              setChecking(s === "checking");
-              setChatState((s === "checking" ? "thinking" : s) as BuddyState);
-            }}
-          />
-        ) : showNudge ? (
-          <motion.div
-            key="nudge"
-            initial={{ opacity: 0, y: 8, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.97 }}
-            transition={{ type: "spring", stiffness: 320, damping: 26 }}
-            style={{ transformOrigin: "bottom right", boxShadow: "0 12px 32px rgba(31,22,84,0.16)" }}
-            className="relative max-w-[250px] bg-surface border border-border rounded-2xl rounded-br-md
-                       px-3.5 py-2.5 text-[12.5px] leading-relaxed text-text/85 cursor-pointer"
-            onClick={() => { dismissNudge(); setOpen(true); }}
-          >
-            {nudge}
-            <button
-              onClick={(e) => { e.stopPropagation(); dismissNudge(); }}
-              aria-label="Dismiss"
-              className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-surface border border-border
-                         grid place-items-center text-text/40 hover:text-text"
-            >
-              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {bubbleUsed && (
+        <BuddyBubble
+          open={open}
+          nudge={showNudge ? nudge : null}
+          greeting={greeting}
+          suggestions={suggestions}
+          ask={ask}
+          onClose={() => { setOpen(false); setChatState(null); setChecking(false); }}
+          onStateChange={(s) => {
+            setChecking(s === "checking");
+            setChatState((s === "checking" ? "thinking" : s) as BuddyState);
+          }}
+          onNudgeOpen={() => { dismissNudge(); setOpen(true); }}
+          onNudgeDismiss={dismissNudge}
+        />
+      )}
 
-      <motion.button
+      <button
         aria-label={open ? "Close Drop" : "Ask Drop"}
         aria-expanded={open}
         onClick={() => { dismissNudge(); setOpen((o) => !o); }}
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.93 }}
-        transition={{ type: "spring", stiffness: 420, damping: 22 }}
-        className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+        onPointerEnter={loadBubble}
+        onFocus={loadBubble}
+        className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
+                   transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                   hover:scale-[1.08] active:scale-[0.93] active:duration-100
+                   motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100"
       >
         <DropFigure size={116} state={state} working={working || (open && checking)} />
-      </motion.button>
+      </button>
     </div>
   );
 }
