@@ -13,6 +13,7 @@ import LaunchModal, { ALL_PLATFORMS_ID } from "@/components/dashboard/LaunchModa
 import StartReadinessModal, { gateStart, type ReadinessCheck } from "@/components/dashboard/StartReadiness";
 import RadiusMap, { type RadiusMiles } from "@/components/dashboard/RadiusMap";
 import LaunchModeCards from "@/components/dashboard/LaunchModeCards";
+import AutoDailyRow from "@/components/dashboard/AutoDailyRow";
 
 // Platforms the extension can auto-apply on. Exactly one runs per campaign.
 const AUTO_APPLY_IDS = PLATFORMS.filter((p) => p.autoApply).map((p) => p.id);
@@ -839,6 +840,10 @@ export default function QuickActions({
           />
         </div>
       )}
+
+      {/* Apply every day automatically — a setting the EXTENSION holds (its schedule belongs
+          to the machine Chrome runs on); this row reads it back over the bridge. */}
+      <AutoDailyRow />
 
       {/* Error. `context_invalidated` isn't a real failure — it means the extension was
           just reloaded/updated and this tab still holds the dead content-script bridge.
