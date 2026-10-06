@@ -67,16 +67,15 @@ const CSP_REPORT_ONLY = [
 //   buttons) and identity-credentials-get backs Google sign-in (FedCM), so
 //   neither is restricted.
 const SECURITY_HEADERS = [
-  // Apex only — NOT includeSubDomains, on purpose (web #272 rolled back the same
-  // day). www.hiredrop.io is served with the apex-only certificate (SAN lists just
-  // hiredrop.io), so with includeSubDomains every returning visitor got a hard,
-  // un-clickable TLS error on www. Sent explicitly (Vercel's default is the same
-  // value) so browsers that cached includeSubDomains drop it on their next visit.
-  // Re-add includeSubDomains only after this passes:
-  //   echo | openssl s_client -connect www.hiredrop.io:443 -servername www.hiredrop.io \
-  //     | openssl x509 -noout -ext subjectAltName      → must list www.hiredrop.io
-  // Every other name in the zone is mail (MX/SPF/DKIM) and never loaded by a browser.
-  { key: "Strict-Transport-Security", value: "max-age=63072000" },
+  // HTTPS on every subdomain, not just the apex Vercel covers by default.
+  // The only web names are the apex and www. www MUST stay attached to the Vercel
+  // project (redirect → apex), or it is served the apex-only certificate and, with
+  // includeSubDomains, becomes a hard un-clickable TLS error — it was missing
+  // until 10-05 (#272 → rollback #274 → domain added, cert issued). Check:
+  //   curl -sS -o /dev/null -w '%{http_code}\n' https://www.hiredrop.io/   → 308
+  // Every other name in the zone is mail (MX/SPF/DKIM), never loaded by a browser.
+  // A NEW web subdomain must be added to Vercel (with its cert) before any link to it.
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
   // Nobody may frame the app (clickjacking on Start/Stop/billing). Same-origin
   // framing stays allowed; the app itself only frames resume previews.
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
