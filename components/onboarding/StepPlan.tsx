@@ -80,7 +80,7 @@ export default function StepPlan({ onNext, onBack }: Props) {
       <motion.div variants={item} className="space-y-3">
         <h2 className="text-2xl font-bold text-text leading-tight">Pick your plan</h2>
         <p className="text-sm text-text2 max-w-md mx-auto">
-          One simple plan, two ways to pay. Full product on both — cancel anytime in one click.
+          One simple plan, two ways to pay. Full product on both — cancel anytime in one click, access runs to the end of the paid period, no refunds.
         </p>
       </motion.div>
 

@@ -289,7 +289,7 @@ export default function AffiliateView({
         <Stat label="Link opens" value={String(stats.clicks)} hint="same person once a day" />
         <Stat label="Signed up" value={String(stats.signups)} hint="used your link" />
         <Stat label="Paying now" value={String(stats.paying)} hint="subscribed at least once" />
-        <Stat label="Earned" value={money(stats.earned_cents)} hint="all time, refunds removed" />
+        <Stat label="Earned" value={money(stats.earned_cents)} hint="all time, reversals removed" />
         <Stat
           label="Next payout"
           value={money(stats.pending_cents)}
@@ -337,7 +337,7 @@ export default function AffiliateView({
                         {c.status === "paid_out"
                           ? "paid out"
                           : c.status === "reversed"
-                            ? "refunded"
+                            ? "reversed"
                             : "pending"}
                       </span>
                     </td>
@@ -392,7 +392,7 @@ export default function AffiliateView({
         <h2 className="font-semibold text-text">How you get paid</h2>
         <p>
           A commission becomes payable 30 days after it accrues — that&apos;s the window in which a
-          customer can still get a refund, which would take the commission back with it. Anything
+          payment can still be disputed with the bank, which would take the commission back with it. Anything
           under {money(MIN_PAYOUT_CENTS)} rolls into next month. Once you&apos;re connected (above),
           Stripe pays out automatically — nothing to ask us for.
         </p>

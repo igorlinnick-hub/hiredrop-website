@@ -102,9 +102,10 @@ export default function AffiliatePage() {
                 A referral who never subscribes is worth $0 — to us and to you.
               </li>
               <li>
-                <span className="font-medium text-gray-900">Refunds come back out.</span> If someone
-                you referred gets refunded inside 30 days, that commission is reversed. It&apos;s why
-                payouts wait out the refund window.
+                <span className="font-medium text-gray-900">Chargebacks come back out.</span> HireDrop
+                doesn&apos;t refund subscriptions, but if a payment you earned on is disputed with the
+                bank or returned as a billing error, that commission is reversed. It&apos;s why
+                payouts wait 30 days.
               </li>
               <li>
                 <span className="font-medium text-gray-900">Links are issued by hand.</span> We read

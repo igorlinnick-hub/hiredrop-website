@@ -235,7 +235,8 @@ export default function FreeTastePaywall({ freeUsed, freeLimit }: FreeTastePaywa
           <p className="mt-3 text-sm text-text2">
             That was the free taste: real applications, tailored cover letters, sent from
             your own browser. To keep applying — and unlock ATS resume tailoring — pick a
-            plan. Cancel anytime.
+            plan. Cancel anytime — you keep access to the end of the period you paid for; payments
+            aren&apos;t refunded.
           </p>
 
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
