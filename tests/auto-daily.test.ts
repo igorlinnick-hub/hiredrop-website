@@ -43,14 +43,34 @@ test("next run: today's exact time, tomorrow's window, starting now", () => {
 test("today line says what happened, and stays quiet when nothing did", () => {
   assert.equal(todayLabel(null), null);
   assert.equal(todayLabel({ day: "d", status: "pending", reason: null, message: "", at: null }), null);
-  assert.equal(todayLabel({ day: "d", status: "started", reason: null, message: "", at: at(9, 23) }), "Today: started at 9:23 AM.");
+  assert.deepEqual(todayLabel({ day: "d", status: "starting", reason: null, message: "Starting now…", at: null }),
+    { text: "Today: starting your run now…", href: null });
+  assert.deepEqual(todayLabel({ day: "d", status: "started", reason: null, message: "", at: at(9, 23) }),
+    { text: "Today: started at 9:23 AM.", href: null });
   assert.equal(todayLabel({ day: "d", status: "skipped", reason: "set_after_time", message: "x", at: null }), null);
-  assert.equal(
+  assert.deepEqual(
     todayLabel({ day: "d", status: "skipped", reason: "cap_reached", message: "Skipped today — the daily limit was already reached (30/30).", at: null }),
-    "Skipped today — the daily limit was already reached (30/30).",
+    { text: "Skipped today — the daily limit was already reached (30/30).", href: null },
   );
+});
+
+test("a refusal is one sentence ending in a period, with a link to where it's fixed", () => {
+  assert.deepEqual(
+    todayLabel({ day: "d", status: "refused", reason: "employer_answers_missing",
+      message: "Some questions employers ask aren't answered yet — open HireDrop to fix it.", at: null }),
+    { text: "Didn't start today: Some questions employers ask aren't answered yet.", href: "/dashboard/settings?tab=forms" },
+  );
+  assert.deepEqual(
+    todayLabel({ day: "d", status: "refused", reason: "free_limit_reached", message: "You've used all 40 free applications", at: null }),
+    { text: "Didn't start today: You've used all 40 free applications.", href: "/dashboard/settings?tab=billing" },
+  );
+  // Unknown reason: no guessed link.
+  assert.equal(todayLabel({ day: "d", status: "failed", reason: "status_unreachable", message: "Couldn't reach HireDrop", at: null })?.href, null);
+});
+
+test("no last launch is said once (by the row), not twice", () => {
   assert.equal(
-    todayLabel({ day: "d", status: "refused", reason: "us_only", message: "HireDrop applies to US jobs only — open HireDrop to fix it.", at: null }),
-    "Didn't start today: HireDrop applies to US jobs only — open HireDrop to fix it.",
+    todayLabel({ day: "d", status: "skipped", reason: "no_last_launch", message: "No previous launch to repeat yet — start once from the dashboard.", at: null }),
+    null,
   );
 });

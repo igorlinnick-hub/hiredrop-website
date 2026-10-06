@@ -19,7 +19,9 @@ export type AutoDailyNextRun = {
 
 export type AutoDailyToday = {
   day: string;
-  status: "pending" | "started" | "skipped" | "refused" | "failed" | "missed";
+  // "starting" = the extension claimed today's start and hasn't heard back yet (ext #376);
+  // "started" is only ever reported after the start actually succeeded.
+  status: "pending" | "starting" | "started" | "skipped" | "refused" | "failed" | "missed";
   reason: string | null;
   message: string;
   at: number | null;
@@ -75,13 +77,47 @@ export function nextRunLabel(next: AutoDailyNextRun | null, now: number = Date.n
   return `Next run: ${next.day}, ${a}–${clockLabel(next.latest)}`;
 }
 
-/** One line about today, or null when there's nothing worth saying. */
-export function todayLabel(today: AutoDailyToday | null): string | null {
+/** Where on the site each refusal is fixed (reasons from /campaign/start and the extension's
+ *  own start gates). Unknown reason → no link rather than a guess. */
+const FIX_PATH: Record<string, string> = {
+  onboarding_incomplete: "/onboarding",
+  employer_answers_missing: "/dashboard/settings?tab=forms",
+  us_only: "/dashboard/settings",
+  disposable_email: "/dashboard/settings",
+  free_limit_reached: "/dashboard/settings?tab=billing",
+  no_approved_jobs: "/dashboard/tap",
+  not_connected: "/dashboard/platforms",
+  lever_needs_tap: "/dashboard",
+  no_keywords: "/dashboard",
+};
+
+export function fixPathFor(reason: string | null): string | null {
+  return (reason && FIX_PATH[reason]) || null;
+}
+
+/** "… — open HireDrop to fix it." is the extension's notification copy; on the site we ARE
+ *  HireDrop, so drop that tail and end the sentence. */
+function sentence(text: string): string {
+  const t = text.replace(/\s*[—-]\s*open HireDrop to (fix|start)( it)?\.?$/i, "").trim();
+  return /[.!?…]$/.test(t) ? t : `${t}.`;
+}
+
+export type TodayLine = { text: string; href: string | null };
+
+/** One line about today (plus where to fix it), or null when there's nothing worth saying. */
+export function todayLabel(today: AutoDailyToday | null): TodayLine | null {
   if (!today || today.status === "pending") return null;
-  if (today.status === "started") return today.at ? `Today: started at ${clockLabel(today.at)}.` : "Today: started.";
+  if (today.status === "starting") return { text: "Today: starting your run now…", href: null };
+  if (today.status === "started") {
+    return { text: today.at ? `Today: started at ${clockLabel(today.at)}.` : "Today: started.", href: null };
+  }
   // "set after time" is the toggle's own doing — the next-run line already says tomorrow.
-  if (today.reason === "set_after_time") return null;
+  // "no last launch" is said once by the row's own "press Start once" line.
+  if (today.reason === "set_after_time" || today.reason === "no_last_launch") return null;
   if (!today.message) return null;
   // Skips carry their own sentence ("Skipped today — …"); refusals carry the reason only.
-  return today.status === "refused" || today.status === "failed" ? `Didn't start today: ${today.message}` : today.message;
+  if (today.status === "refused" || today.status === "failed") {
+    return { text: `Didn't start today: ${sentence(today.message)}`, href: fixPathFor(today.reason) };
+  }
+  return { text: sentence(today.message), href: null };
 }
