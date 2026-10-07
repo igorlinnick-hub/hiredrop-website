@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { dropArt } from "@/lib/dropArt";
 
 export type CameoPose = "peek" | "sit" | "point" | "wave" | "standing" | "waving" | "at-desk";
 
@@ -64,7 +65,7 @@ export default function DropCameo({ pose, width, className = "", enter = "up", f
       <div className="relative">
       {/* eslint-disable-next-line @next/next/no-img-element -- transparent WebP, fixed size, no optimizer needed */}
       <img
-        src={`/character/cameos/${pose}.webp`}
+        src={dropArt(`/character/cameos/${pose}.webp`)}
         alt=""
         width={width}
         draggable={false}

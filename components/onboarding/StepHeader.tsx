@@ -5,6 +5,7 @@
 
 import { STEPS } from "@/lib/onboarding/steps";
 import DropCameo from "@/components/landing/DropCameo";
+import { dropArt } from "@/lib/dropArt";
 
 const PLATFORMS = ["indeed", "linkedin", "ziprecruiter", "greenhouse", "lever", "ashby"];
 
@@ -50,7 +51,7 @@ function PhotoHeader({ art }: { art: number }) {
     <div className="relative w-full aspect-[16/7] overflow-hidden bg-[#F4F0E8]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={`/onboarding/step-${art}.jpg`}
+        src={dropArt(`/onboarding/step-${art}.jpg`)}
         alt=""
         aria-hidden
         className="absolute inset-0 w-full h-full object-cover"
