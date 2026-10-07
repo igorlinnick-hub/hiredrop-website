@@ -44,6 +44,8 @@ export default function Button({
 }: ButtonProps) {
   const classes = [
     "inline-flex items-center justify-center rounded-lg transition cursor-pointer",
+    // A disabled button must look it — Continue on a step that isn't done yet read as live.
+    "disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none",
     variantStyles[variant],
     sizeStyles[size],
     fullWidth ? "w-full" : "",
