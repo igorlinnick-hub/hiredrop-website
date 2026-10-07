@@ -25,10 +25,11 @@
 
 import { useEffect, useState } from "react";
 import type { BuddyState } from "./BuddyOrb";
+import { dropArt } from "@/lib/dropArt";
 
-const REST = "/character/idle.mp4";     // stands, faces you, blinks — the canon
-const WORK = "/character/desk.mp4";     // sits at the desk and types
-const POSTER = "/character/idle-poster.jpg";
+const REST = dropArt("/character/idle.mp4");     // stands, faces you, blinks — the canon
+const WORK = dropArt("/character/desk.mp4");     // sits at the desk and types
+const POSTER = dropArt("/character/idle-poster.jpg");
 
 // The ring is the mood tell. Colours come from the ink-day palette already on the site.
 const RING: Record<BuddyState, { color: string; width: number; pulse: boolean }> = {
