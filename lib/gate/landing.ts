@@ -55,3 +55,19 @@ export function landingAfterAuth(s: AuthLandingState & { next?: string | null })
   if (isAffiliateOnly(s)) return "/dashboard/affiliate";
   return "/onboarding";
 }
+
+/**
+ * Where middleware sends someone who is ALREADY signed in and opens /login or
+ * /signup. It used to be /dashboard for everyone, which dropped what the page
+ * was asked for: Igor 10-06, signed in, pressed "Get your link" on the landing
+ * and got the job-seeker quiz — /signup?affiliate=1 → /dashboard → the
+ * onboarding gate → /onboarding. The button only learns about the session
+ * after mount, so a quick click still carries the signed-out href.
+ */
+export function signedInAuthPageRedirect(pathname: string, params: URLSearchParams): string {
+  if (pathname === "/signup" && params.get("affiliate")) return "/dashboard/affiliate";
+  const next = safeNextPath(params.get("next"));
+  // next=/login would bounce a signed-in person between middleware and itself.
+  if (!next || /^\/(login|signup)(?:[/?#]|$)/.test(next)) return "/dashboard";
+  return next;
+}

@@ -8,7 +8,12 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
 
-import { isAffiliateOnly, landingAfterAuth, safeNextPath } from "../lib/gate/landing.ts";
+import {
+  isAffiliateOnly,
+  landingAfterAuth,
+  safeNextPath,
+  signedInAuthPageRedirect,
+} from "../lib/gate/landing.ts";
 
 const seeker = { onboarded: false, isAffiliate: false, affiliateIntent: false };
 
@@ -53,4 +58,20 @@ test("affiliate-only means not onboarded AND here for the program", () => {
   assert.equal(isAffiliateOnly({ ...seeker, isAffiliate: true }), true);
   // Did the quiz: a job seeker with a link, not an affiliate-only account.
   assert.equal(isAffiliateOnly({ onboarded: true, isAffiliate: true, affiliateIntent: true }), false);
+});
+
+test("signed in + affiliate signup goes to the affiliate page, not the quiz", () => {
+  const q = (s: string) => new URLSearchParams(s);
+  assert.equal(signedInAuthPageRedirect("/signup", q("affiliate=1")), "/dashboard/affiliate");
+  assert.equal(signedInAuthPageRedirect("/signup", q("affiliate=jane")), "/dashboard/affiliate");
+  assert.equal(signedInAuthPageRedirect("/signup", q("")), "/dashboard");
+  assert.equal(
+    signedInAuthPageRedirect("/login", q("next=%2Fdashboard%2Faffiliate")),
+    "/dashboard/affiliate",
+  );
+  assert.equal(signedInAuthPageRedirect("/login", q("next=%2F%2Fevil.com")), "/dashboard");
+  assert.equal(signedInAuthPageRedirect("/login", q("affiliate=1")), "/dashboard");
+  // Never back to an auth page — that would be a redirect loop.
+  assert.equal(signedInAuthPageRedirect("/login", q("next=%2Flogin")), "/dashboard");
+  assert.equal(signedInAuthPageRedirect("/login", q("next=%2Fsignup%3Faffiliate%3D1")), "/dashboard");
 });

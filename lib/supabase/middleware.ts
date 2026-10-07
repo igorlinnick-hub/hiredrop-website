@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { AuthError } from "@supabase/supabase-js";
 
+import { signedInAuthPageRedirect } from "@/lib/gate/landing";
+
 /** Set by middleware.ts so server components can see which route is rendering. */
 export const PATHNAME_HEADER = "x-hd-pathname";
 
@@ -101,10 +103,16 @@ export async function updateSession(request: NextRequest, requestHeaders?: Heade
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth pages
+  // Redirect authenticated users away from auth pages — to what the page was
+  // opened for (affiliate signup, ?next=), not always the job-seeker dashboard.
   if (user && isAuthPage) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    const dest = new URL(
+      signedInAuthPageRedirect(request.nextUrl.pathname, request.nextUrl.searchParams),
+      request.nextUrl.origin,
+    );
+    url.pathname = dest.pathname;
+    url.search = dest.search;
     return NextResponse.redirect(url);
   }
 
