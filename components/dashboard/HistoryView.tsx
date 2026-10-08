@@ -133,7 +133,11 @@ export default function HistoryView({
   const [handbacksOpen, setHandbacksOpen] = useState(false);
   const { allHidden: handbacksHidden, hide: hideHandbacks } = useHiddenHandbacks(handbacks);
   const handbacksFold = handbacks.length > FOLD_AT;
-  const shownHandbacks = handbacksFold && !handbacksOpen ? handbacks.slice(0, FOLD_AT) : handbacks;
+  // The row being answered is never folded away: a new hand-back arriving on the 30s
+  // poll pushes the list down a slot, and slicing the form out would drop what was typed.
+  const shownHandbacks = handbacksFold && !handbacksOpen
+    ? handbacks.filter((h, i) => i < FOLD_AT || h.id === answering)
+    : handbacks;
 
   const toggleExpand = (id: string) =>
     setExpanded((prev) => {
@@ -312,7 +316,7 @@ export default function HistoryView({
               )}
               <button
                 type="button"
-                onClick={hideHandbacks}
+                onClick={() => { setAnswering(null); hideHandbacks(); }}
                 aria-label="Hide this list"
                 title="Hide — it comes back when a new one needs you"
                 className="hd-icon-btn"
@@ -327,7 +331,7 @@ export default function HistoryView({
             const pct = handbackProgress(h.steps_done);
             // Rows the fold just let out rise in one after another, so opening the
             // list reads as the list growing rather than the page jumping.
-            const revealed = i >= FOLD_AT;
+            const revealed = handbacksOpen && i >= FOLD_AT;
             return (
               // The whole row is the affordance. No banner above it, no explanation
               // beside it — a red dot, and the rest appears only if you look (Igor,
