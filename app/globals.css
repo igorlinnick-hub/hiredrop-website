@@ -1242,6 +1242,29 @@ h1, h2, h3 {
 .hd-chip-done svg,
 .hd-chip-done:hover svg { color: var(--green); }
 
+/* History's place filter: a paper chip with its count; the chosen one inverts
+   the way an open Settings section does — ink by day, paper by night. */
+.hd-place-chip { padding: 7px 11px; gap: 7px; }
+.hd-chip-n {
+  font-size: 11px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text2);
+}
+.hd-place-chip.is-on,
+.hd-place-chip.is-on:hover {
+  background: linear-gradient(180deg, #26262F 0%, #101014 100%);
+  border-color: #101014;
+  color: #FFFFFF;
+}
+.hd-place-chip.is-on .hd-chip-n { color: rgba(255, 255, 255, .62); }
+.dark .hd-place-chip.is-on,
+.dark .hd-place-chip.is-on:hover {
+  background: linear-gradient(180deg, #FFFFFF 0%, #ECE8F8 100%);
+  border-color: rgba(255, 255, 255, .55);
+  color: #14141C;
+}
+.dark .hd-place-chip.is-on .hd-chip-n { color: #4A4A5A; }
+
 /* Entrances: the expanded record fades down into place; its children rise
    in with per-item delays set inline. Light, one-shot, sub-300ms. */
 @keyframes hdDetailIn {
@@ -1553,10 +1576,6 @@ h1, h2, h3 {
   --hd-heat-4: rgba(16, 16, 20, .88);
   --hd-draw: #14141A;                /* the one hue for meter + bars */
   --hd-track: rgba(26, 22, 14, .11);
-  --hd-o-wait: rgba(26, 22, 14, .20);
-  --hd-o-recv: #B07C0A;
-  --hd-o-intv: #00806A;
-  --hd-o-rej:  #C2410C;
 }
 .dark .hd-insights {
   --hd-heat-0: rgba(255, 255, 255, .06);
@@ -1566,14 +1585,6 @@ h1, h2, h3 {
   --hd-heat-4: rgba(150, 136, 255, .98);
   --hd-draw: rgba(255, 255, 255, .88);
   --hd-track: rgba(255, 255, 255, .12);
-  /* Night steps are the ones scripts/validate_palette.js passed against a dark
-     surface (the bright day-ish trio failed the lightness band); the red↔green
-     pair sits in the CVD floor band, which is legal here because every segment
-     is also named in the legend beside its count. */
-  --hd-o-wait: rgba(255, 255, 255, .20);
-  --hd-o-recv: #B8862F;
-  --hd-o-intv: #0E8C72;
-  --hd-o-rej:  #D9584C;
 }
 
 /* Card headings inside the panel: one step under the page's display line,
@@ -1655,7 +1666,6 @@ h1, h2, h3 {
 
 .hd-stack { display: flex; gap: 2px; height: 12px; border-radius: 999px; overflow: hidden; }
 .hd-stack-seg { display: block; width: var(--w); border-radius: 3px; }
-.hd-dot { width: 9px; height: 9px; border-radius: 3px; flex: none; }
 
 /* ── Where they went: one hue, length is the story ─────────── */
 .hd-bar-row { display: flex; align-items: center; gap: 12px; }

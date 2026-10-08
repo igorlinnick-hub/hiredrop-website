@@ -30,6 +30,7 @@ import { useHandbacks, useHiddenHandbacks, handbackProgress, type Handback } fro
 import HandbackAnswers from "@/components/dashboard/HandbackAnswers";
 import HistoryInsights from "@/components/dashboard/HistoryInsights";
 import PosterPanel from "@/components/dashboard/PosterPanel";
+import { buildPlaceChips, placeText } from "@/lib/history/places";
 import DropCameo from "@/components/landing/DropCameo";
 
 type Receipt = {
@@ -138,6 +139,8 @@ export default function HistoryView({
   const shownHandbacks = handbacksFold && !handbacksOpen
     ? handbacks.filter((h, i) => i < FOLD_AT || h.id === answering)
     : handbacks;
+  // The place chip the list is narrowed to ("all" = the whole record).
+  const [where, setWhere] = useState("all");
 
   const toggleExpand = (id: string) =>
     setExpanded((prev) => {
@@ -225,14 +228,22 @@ export default function HistoryView({
     [applications, statusEdits]
   );
 
+  // Where the jobs were: Remote · each city · Hybrid in that city — built from the
+  // record itself (lib/history/places.ts). Filtering keeps the day grouping, because
+  // "what we sent, when" is what this page is; a chip only narrows it.
+  const places = useMemo(() => buildPlaceChips(rows), [rows]);
+  // A chip can vanish under a selection (live data moved) — fall back to everything.
+  const activeWhere = places.chips.some((c) => c.key === where) ? where : "all";
+
   const byDay = useMemo(() => {
     const groups = new Map<string, Application[]>();
     for (const a of rows) {
+      if (activeWhere !== "all" && places.chipOf(a) !== activeWhere) continue;
       const k = dayKey(a.date_applied);
       (groups.get(k) ?? groups.set(k, []).get(k)!).push(a);
     }
     return Array.from(groups.entries()).sort((a, b) => (a[0] < b[0] ? 1 : -1));
-  }, [rows]);
+  }, [rows, places, activeWhere]);
 
   return (
     /* .hd-history carries the day wallpaper + the paper/ink vocabulary — see
@@ -280,8 +291,8 @@ export default function HistoryView({
       </PosterPanel>
       </div>
 
-      {/* How much · when · what came back · where they went. Four blocks, four
-          questions, every number computed from the record we already store. */}
+      {/* How much · when · today · where they went. Four blocks, four questions,
+          every number computed from the record we already store. */}
       <HistoryInsights rows={rows} statsOverride={statsOverride} />
 
       {statusError && (
@@ -481,8 +492,32 @@ export default function HistoryView({
         </div>
       )}
 
+      {/* Where — narrows the list below to one place. Hidden when every row sits
+          in one group: a single chip is not a choice. */}
+      {places.chips.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by where the job is"
+          data-testid="history-places">
+          {places.chips.map((c) => {
+            const on = c.key === activeWhere;
+            return (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => setWhere(c.key)}
+                aria-pressed={on}
+                title={c.title}
+                className={["hd-chip hd-place-chip", on ? "is-on" : ""].join(" ")}
+              >
+                {c.label}
+                <span className="hd-chip-n">{c.n}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Applications by day */}
-      {byDay.length === 0 ? (
+      {rows.length === 0 ? (
         <div className="hd-sheet p-10 text-center">
           <DropCameo pose="waving" width={120} enter="up" className="mx-auto mb-4" />
           <p className="hd-eyebrow hd-eyebrow-ink">Nothing here yet</p>
@@ -520,12 +555,16 @@ export default function HistoryView({
                           r ? (r.verified ? "bg-emerald-500" : "bg-amber-400") : "bg-border"].join(" ")}
                         title={r ? (r.verified ? `confirmed (${r.signal})` : "submitted — confirmation page not detected") : "no receipt captured"}
                       />
-                      <div className="min-w-0 flex-1">
+                      {/* On a phone the text keeps most of the row and the controls wrap
+                          under it — otherwise the title truncates to a word and the
+                          platform · place · time line breaks after every token. */}
+                      <div className="min-w-[58%] flex-1 sm:min-w-0">
                         <div className="hd-hist-title truncate">
                           {a.title} <span className="hd-hist-sub">@ {a.company}</span>
                         </div>
                         <div className="hd-eyebrow mt-1 tabular-nums">
                           {platformName(a.platform)}
+                          {placeText(a) && <>{" · "}{placeText(a)}</>}
                           {" · "}
                           {new Date(a.date_applied).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </div>

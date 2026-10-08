@@ -20,14 +20,18 @@
  * we have — a status only changes when the USER marks it by hand, so on a real
  * account every application reads "no reply yet" and the meter reads 0%. What we
  * genuinely know is the run: the daily cap, how much of it is left, how many jobs
- * are in the pool, how many arrived today. Those replaced it. Outcome counts now
- * appear only if the user has actually marked at least one — a block that can
- * only ever say zero is worse than no block.
+ * are in the pool, how many arrived today. Those replaced it.
+ *
+ * 10-08, Igor: the "What came back" card (hand-marked outcomes, shown once at
+ * least one was marked) is gone too. A live account read "Interview 0" on the
+ * day an employer texted an interview invite — replies arrive by SMS and mail,
+ * which we never see, so the card could only ever be as true as the user's taps.
+ * Marking a reply stays where it does work: the status chip on the row, which
+ * puts the interview-prep button on an "Interview".
  *
  * Form choices follow the dataviz rules: a single ratio is a METER, not a
  * two-slice pie; part-to-whole is a stacked bar with a 2px surface gap and a
- * legend; the heatmap is one sequential hue with a scale legend; status colours
- * are used only where the colour MEANS a status.
+ * legend; the heatmap is one sequential hue with a scale legend.
  *
  * Motion (Igor: «чтоб анимация графики начиналась каждый раз при открытии
  * страницы и продолжалась 1 секунду»): everything draws itself in on mount —
@@ -50,22 +54,6 @@ const WEEKS = 18;           // ≈ 4 months, in whole weeks — wider than the c
 const ANIM_MS = 1000;       // the whole panel draws itself in one second
 
 const platformName = (id: string) => PLATFORMS.find((p) => p.id === id)?.name ?? id;
-
-/** The four outcomes, in the order a search actually moves. Status colours, used
- *  here because the colour genuinely means a state — never as "series 1..4". */
-const OUTCOMES = [
-  { key: "waiting", label: "No reply yet", tone: "var(--hd-o-wait)" },
-  { key: "received", label: "Received", tone: "var(--hd-o-recv)" },
-  { key: "interview", label: "Interview", tone: "var(--hd-o-intv)" },
-  { key: "rejected", label: "Rejected", tone: "var(--hd-o-rej)" },
-] as const;
-
-const outcomeOf = (status: string) => {
-  if (status === "interview" || status === "interview_invite" || status === "hired") return "interview";
-  if (status === "received") return "received";
-  if (status === "rejected") return "rejected";
-  return "waiting";
-};
 
 const dayStamp = (d: Date) => {
   const c = new Date(d);
@@ -180,12 +168,6 @@ export default function HistoryInsights({
     const last24 = hours.reduce((s, n) => s + n, 0);
     const hourMax = Math.max(...hours);
 
-    // ── Outcomes ──────────────────────────────────────────────────────────
-    const counts: Record<string, number> = { waiting: 0, received: 0, interview: 0, rejected: 0 };
-    for (const a of rows) counts[outcomeOf(a.status)] += 1;
-    const answered = counts.received + counts.interview + counts.rejected;
-    const rate = total ? Math.round((answered / total) * 100) : 0;
-
     // ── Platforms (nominal categories → one hue, sorted by size) ──────────
     const byPlatform = new Map<string, number>();
     for (const a of rows) byPlatform.set(a.platform, (byPlatform.get(a.platform) ?? 0) + 1);
@@ -221,7 +203,7 @@ export default function HistoryInsights({
       if (!months.length || months[months.length - 1].label !== label) months.push({ col: w, label });
     }
 
-    return { total, week, hours, last24, hourMax, counts, answered, rate, platforms, platformMax, cells, busiest, months };
+    return { total, week, hours, last24, hourMax, platforms, platformMax, cells, busiest, months };
   }, [rows, now]);
 
   // Heat bins: four steps of ONE hue (sequential), plus "nothing that day".
@@ -430,45 +412,6 @@ export default function HistoryInsights({
           )}
         </div>
       </div>
-
-      {/* WHAT CAME BACK — shown ONLY if the user has marked at least one reply.
-          Statuses are set by hand, so on most accounts this block would be a
-          confident-looking "0 replies" that means "nobody clicked the chip".
-          When there IS something to show, it is part-to-whole with a named
-          legend — never colour alone. */}
-      {data.answered > 0 && (
-        <div className="hd-sheet p-5 sm:p-6" data-testid="insights-outcomes">
-          <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <h3 className="hd-hist-sub-head">What came back</h3>
-            <span className="hd-eyebrow">
-              <b className="hd-stat-inline hd-untrack">{data.answered}</b> of {data.total} marked
-            </span>
-          </div>
-          <div className="hd-stack mt-4" role="img" aria-label="Outcome breakdown">
-            {OUTCOMES.map((o) => {
-              const n = data.counts[o.key];
-              if (!n) return null;
-              return (
-                <span
-                  key={o.key}
-                  className="hd-stack-seg"
-                  style={{ background: o.tone, ["--w" as string]: `${(n / (data.total || 1)) * 100}%` }}
-                  title={`${o.label}: ${n}`}
-                />
-              );
-            })}
-          </div>
-          <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
-            {OUTCOMES.map((o) => (
-              <li key={o.key} className="flex items-center gap-2.5">
-                <i className="hd-dot" style={{ background: o.tone }} />
-                <span className="hd-hist-sub flex-1 whitespace-nowrap">{o.label}</span>
-                <b className="hd-stat-inline tabular-nums">{data.counts[o.key]}</b>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       {/* WHERE — nominal categories, so one hue for every bar; the length is
           the whole story and the name sits on the bar. */}

@@ -202,6 +202,9 @@ export interface ApiApplication {
   date_applied: string;
   status: string;
   cover_letter?: string;
+  location?: string;
+  work_setting?: "remote" | "hybrid" | "onsite" | null;
+  place?: string | null;
 }
 
 export interface CampaignState {
