@@ -26,9 +26,9 @@ Every diff, by the author, the review agents and CI. Sources: [google/eng-practi
 5. **The diff is as wide as the bug.** No drive-by refactors, renames or copy edits in a fix. User-facing wording is a product decision: show Igor "before → after" first.
 6. **One rule, one place.** Logic needed twice moves into a shared function or hook. A "same as X" comment over a copy is a duplicate.
 7. **Tests check behavior**: call the function, render the component, hit the endpoint. A regex over source files ("setWorkerUrl appears before new Map") passes on real bugs and fails on harmless refactors. A repo-wide scan is fine as a contract over data (every Settings link names a real section).
-8. **No TODO / FIXME / HACK in code.** Open an issue. No commented-out code. CI: `no-warning-comments`; ruff `ERA001`.
+8. **No TODO / FIXME / HACK in code.** Open an issue. No commented-out code. CI: `no-warning-comments`; ruff `FIX`.
 9. **The PR is the record.** Title: what changes, with a Conventional Commits prefix (`fix:`, `feat:`, `chore:`). Body: root cause → fix → how it was verified (commands, screenshots) → blast radius. History lives here.
 
 **Review.** Approve when the diff leaves the code healthier overall, even if not perfect ([standard of code review](https://google.github.io/eng-practices/review/reviewer/standard.html)). A violation of 1–8 blocks the merge; it is not a style note.
 
-**Old code.** Violations that predate a rule are frozen in `eslint-suppressions.json` (backend: the ratchet baseline). Do not rewrite old comments en masse. Leave what you touch compliant, then `npx eslint . --prune-suppressions` to lock in the gain.
+**Old code.** Violations that predate a rule are frozen in `eslint-suppressions.json` (backend: the ratchet baseline). Do not rewrite old comments en masse. Leave what you touch compliant, then run `npx eslint . --prune-suppressions` and commit the file: CI fails on a suppression that no longer matches anything. Two PRs that both change it conflict there; take main's file and prune again.
