@@ -9,7 +9,7 @@ import { strict as assert } from "node:assert";
 import { test } from "node:test";
 
 import type { AnswerQuestion } from "../lib/employerAnswers.ts";
-import { mayContinue, residencyQuestion } from "../lib/usResident.ts";
+import { mayContinue, residencyQuestion, withoutSettledResidency } from "../lib/usResident.ts";
 
 const US: AnswerQuestion = { key: "country", label: "Do you live in the United States?", kind: "us_resident", value: null };
 const LIST: AnswerQuestion[] = [
@@ -33,4 +33,10 @@ test("only a Yes leaves the first step", () => {
 
 test("no question loaded is never a dead end", () => {
   assert.equal(mayContinue(null, null), true);
+});
+
+test("the answers step drops the residency question only when it is already a Yes", () => {
+  assert.deepEqual(withoutSettledResidency([{ ...US, value: true }, ...LIST.slice(0, 1)]).map((q) => q.key), ["city"]);
+  assert.equal(withoutSettledResidency([{ ...US, value: false }]).length, 1);
+  assert.equal(withoutSettledResidency([US]).length, 1);
 });

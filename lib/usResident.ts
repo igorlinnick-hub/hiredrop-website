@@ -16,3 +16,10 @@ export function residencyQuestion(questions: AnswerQuestion[] | null | undefined
 export function mayContinue(question: AnswerQuestion | null, answer: boolean | null): boolean {
   return question === null || answer === true;
 }
+
+/** The answers step, after the first screen took a Yes: asking "do you live in the US?" a
+ *  second time is noise. A No (an account from before the first-screen question) stays,
+ *  so its "US only" note still shows where the person can change it. */
+export function withoutSettledResidency(questions: AnswerQuestion[]): AnswerQuestion[] {
+  return questions.filter((q) => !(q.kind === "us_resident" && q.value === true));
+}

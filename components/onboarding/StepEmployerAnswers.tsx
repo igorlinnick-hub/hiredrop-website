@@ -8,6 +8,7 @@ import { apiGet } from "@/lib/api";
 import { askNow, type AnswerFlags, type AnswerQuestion } from "@/lib/employerAnswers";
 import { createClient } from "@/lib/supabase/client";
 import type { UserProfile } from "@/lib/types";
+import { withoutSettledResidency } from "@/lib/usResident";
 
 // `questions` plus one boolean per "I don't have one" flag the questions carry.
 type AnswersResponse = { questions: AnswerQuestion[] } & Record<string, unknown>;
@@ -81,7 +82,7 @@ export default function StepEmployerAnswers({
         if (!live) return;
         setFlags(optedOut);
         setDeferred(rows.length < all.length);
-        setQuestions(rows);
+        setQuestions(withoutSettledResidency(rows));
       } catch (e) {
         if (live) setErr(e instanceof Error ? e.message : String(e));
       }
