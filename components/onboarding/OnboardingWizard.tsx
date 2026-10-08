@@ -61,11 +61,13 @@ function loadSaved(): { v?: number; step?: number; profile?: Partial<UserProfile
 export default function OnboardingWizard({ initialStep }: { initialStep?: number } = {}) {
   const router = useRouter();
   const supabase = createClient();
-  const [step, setStep] = useState<number>(() => initialStep ?? resumeStep(loadSaved()) ?? 1);
-  const [profile, setProfile] = useState<UserProfile>(() => ({
-    ...initialProfile,
-    ...(loadSaved()?.profile || {}),
-  }));
+  const [step, setStep] = useState<number>(initialStep ?? 1);
+  const [profile, setProfile] = useState<UserProfile>(initialProfile);
+  // The saved snapshot lives in localStorage, which the server can't read. Reading it in
+  // the state initialisers rendered step 1 on the server and step N in the browser — a
+  // hydration mismatch (React #418) on every resume. Restore it after mount instead, and
+  // don't write the snapshot until then, or the first pass would save step 1 over it.
+  const [restored, setRestored] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -74,6 +76,15 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
   function updateProfile(updates: Partial<UserProfile>) {
     setProfile((prev) => ({ ...prev, ...updates }));
   }
+
+  useEffect(() => {
+    const saved = loadSaved();
+    const savedStep = initialStep === undefined ? resumeStep(saved) : undefined;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time read of localStorage; see above
+    if (savedStep) setStep(savedStep);
+    if (saved?.profile) setProfile((prev) => ({ ...prev, ...saved.profile }));
+    setRestored(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pre-fill email from auth user + redeem any promo code carried from signup.
   useEffect(() => {
@@ -116,13 +127,13 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
 
   // Keep the saved snapshot in sync so a reload on the extension step is lossless.
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!restored) return;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: SNAPSHOT_VERSION, step, profile }));
     } catch {
       /* storage full / private mode — non-fatal */
     }
-  }, [step, profile]);
+  }, [restored, step, profile]);
 
   function back() {
     if (step > 1) setStep(step - 1);
