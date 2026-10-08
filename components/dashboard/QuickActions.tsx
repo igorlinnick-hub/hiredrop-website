@@ -229,15 +229,12 @@ export default function QuickActions({
 
   // ── keyword tag input ──────────────────────────────────────────────────────
 
-  // Chips write on change, like job type / work setting (persistChips) — not on the
-  // 20-second warm-up timer. That timer is cleaned up on unmount, so "remove a chip,
-  // open Tap, come back" lost the removal: the save never fired, the server page
-  // re-read the profile, and the removed keyword was back (Igor, live 2026-10-08).
+  // Chips write on change, like job type / work setting (persistChips), not on the
+  // 20-second warm-up timer: that timer is cleared on unmount, so a removal followed by
+  // a trip to Tap would never be saved and the profile would bring the keyword back.
   // Writes are serialized and coalesced: holding Backspace fires one edit per keydown,
-  // and two unordered POSTs can land last-write-wins with the STALE list — the very
-  // symptom this fixes. One request in flight; a burst collapses into one more request
-  // carrying the latest list. platforms rides along as-is, same as every other prefs
-  // writer in this file (one policy; unifying it is its own change).
+  // and two unordered POSTs can land last-write-wins with the stale list. One request
+  // in flight; a burst collapses into one more request carrying the latest list.
   const kwSaveChain = useRef<Promise<void>>(Promise.resolve());
   const kwToSave = useRef<string[] | null>(null);
   function setAndPersistKeywords(next: string[]) {
@@ -249,7 +246,7 @@ export default function QuickActions({
       kwToSave.current = null;
       try {
         const t = await getFreshToken();
-        await apiPost("/profile/prefs", t, { keywords: want, location, job_type: jobType, work_setting: workSetting, platforms });
+        await apiPost("/profile/prefs", t, { keywords: want, location, job_type: jobType, work_setting: workSetting });
       } catch { /* optional filter — ignore */ }
     });
   }
@@ -338,7 +335,6 @@ export default function QuickActions({
           location,
           job_type: jt,
           work_setting: ws,
-          platforms,
         });
       } catch { /* optional filter — ignore */ }
     })();
@@ -360,7 +356,7 @@ export default function QuickActions({
     (async () => {
       try {
         const t = await getFreshToken();
-        await apiPost("/profile/prefs", t, { keywords, location: label, job_type: jobType, work_setting: workSetting, platforms });
+        await apiPost("/profile/prefs", t, { keywords, location: label, job_type: jobType, work_setting: workSetting });
       } catch { /* optional filter — ignore */ }
     })();
   }
@@ -406,7 +402,7 @@ export default function QuickActions({
         // and takes the server's cooldown with it, so the new search gets nothing and the
         // log still says "discovery started".
         await apiPost("/profile/prefs", t, {
-          keywords, location, job_type: jobType, work_setting: workSetting, platforms,
+          keywords, location, job_type: jobType, work_setting: workSetting,
         });
         await apiPost("/jobs/find-ats", t, {});
       } catch { /* offline, or the server threw — the next edit tries again */ }
@@ -426,13 +422,19 @@ export default function QuickActions({
     throw new Error("Session expired — please log in again");
   }
 
-  async function savePrefsWith(plats: string[]) {
+  // Only Start sends platforms, with the launch pick. Every other prefs write leaves the
+  // field out and the server keeps the stored list: `platforms` here is the launch
+  // picker's one-platform default, and sending it would cut a multi-platform list down.
+  async function savePrefsWith(plats?: string[]) {
     const t = await getFreshToken();
-    await apiPost("/profile/prefs", t, { keywords, location, job_type: jobType, work_setting: workSetting, platforms: plats });
+    await apiPost("/profile/prefs", t, {
+      keywords, location, job_type: jobType, work_setting: workSetting,
+      ...(plats ? { platforms: plats } : {}),
+    });
   }
 
   async function savePrefs() {
-    await savePrefsWith(platforms);
+    await savePrefsWith();
   }
 
   async function findJobs() {
@@ -643,11 +645,15 @@ export default function QuickActions({
       )}
 
       {/* ── Main search bar ── */}
-      <div className="flex gap-2 items-stretch">
+      {/* Below md it stacks: keywords, then location, then the two buttons side by side.
+          One row needs ~616px, wider than a phone, so the buttons would sit off-screen and
+          the page would pan sideways. Location gets its own line because location + both
+          buttons is ~415px, wider than any phone row, and Start would wrap alone. */}
+      <div className="flex flex-wrap md:flex-nowrap gap-2 items-stretch">
 
         {/* Keyword tag input */}
         <div
-          className="flex-1 flex flex-wrap items-center gap-1.5 min-h-[44px] px-3 py-2
+          className="flex-1 basis-full md:basis-auto min-w-0 flex flex-wrap items-center gap-1.5 min-h-[44px] px-3 py-2
             bg-surface border border-border rounded-xl cursor-text
             focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/10 transition"
           onClick={() => inputRef.current?.focus()}
@@ -684,11 +690,11 @@ export default function QuickActions({
         </div>
 
         {/* Location dropdown */}
-        <div className="relative">
+        <div className="relative basis-full md:basis-auto">
           <select
             value={location}
             onChange={(e) => pickLocation(e.target.value)}
-            className="h-full pl-3 pr-7 bg-surface border border-border rounded-xl text-sm text-text
+            className="w-full md:w-auto h-full min-h-[44px] pl-3 pr-7 bg-surface border border-border rounded-xl text-sm text-text
               appearance-none cursor-pointer focus:outline-none focus:border-accent/50
               focus:ring-2 focus:ring-accent/10 transition whitespace-nowrap"
           >
@@ -709,13 +715,13 @@ export default function QuickActions({
         {campaignRunning ? (
           <>
             <a href="/dashboard/campaign"
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl border
+              className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2 text-sm font-medium rounded-xl border
                 border-green/30 bg-green/8 text-green hover:bg-green/15 transition whitespace-nowrap">
               <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />
               Watch Live
             </a>
             <button onClick={stopCampaign} disabled={busy !== null} data-testid="btn-stop"
-              className="px-4 py-2 text-sm font-medium rounded-xl border bg-red/8 text-red
+              className="flex-1 md:flex-initial min-h-[44px] px-4 py-2 text-sm font-medium rounded-xl border bg-red/8 text-red
                 border-red/20 hover:bg-red/15 disabled:opacity-50 transition whitespace-nowrap">
               {busy === "stop" ? "Stopping…" : "Stop"}
             </button>
@@ -723,7 +729,7 @@ export default function QuickActions({
         ) : (
           <>
             <button onClick={findJobs} disabled={busy !== null} data-testid="btn-find-jobs"
-              className="px-4 py-2 text-sm font-medium rounded-xl border border-border bg-surface
+              className="flex-1 md:flex-initial min-h-[44px] px-4 py-2 text-sm font-medium rounded-xl border border-border bg-surface
                 text-text hover:bg-surface2 hover:border-accent/40 disabled:opacity-50 transition whitespace-nowrap">
               {busy === "find" ? "Scanning…" : "Find Jobs"}
             </button>
@@ -732,7 +738,7 @@ export default function QuickActions({
                 the dedicated tap page (its own Start lives there). Prevents the "auto
                 started with tap mode" trap. */}
             <button onClick={mode === "tap" ? goTap : ensureReadyThenLaunch} disabled={busy !== null || !modeLoaded} data-testid="btn-start"
-              className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl
+              className="flex-1 md:flex-initial flex items-center justify-center gap-2 min-h-[44px] px-5 py-2 text-sm font-semibold rounded-xl
                 bg-accent text-white hover:bg-accent2 disabled:opacity-50 transition shadow-sm whitespace-nowrap">
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd"
