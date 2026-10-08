@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { apiGet } from "@/lib/api";
 
@@ -80,4 +80,67 @@ export function handbackProgress(stepsDone: number): number | null {
   const done = Math.max(0, Math.floor(stepsDone || 0));
   if (done <= 0) return null;
   return Math.round((done / (done + 1)) * 100);
+}
+
+/**
+ * The ✕ on the History list (Igor, 10-08: «крестик чтоб убрать если что»).
+ *
+ * Hiding is not resolving: the rows stay open on the server, and "Done" is still the only
+ * way to say a job is finished. The ✕ remembers WHICH rows were on screen when it was
+ * pressed, so the list — and the nav dot, which reads the same flag — come back on their
+ * own the moment a new hand-back arrives. "Hide these", never "hide hand-backs forever":
+ * a job that needs a human must not go silent because an older batch was dismissed.
+ *
+ * This browser only (localStorage), with an in-memory fallback so the ✕ still works for
+ * the visit when storage is blocked. The snapshot is the raw string — a primitive — so
+ * useSyncExternalStore sees one value until it actually changes.
+ */
+const HIDDEN_KEY = "hd:handbacks:hidden";
+const hiddenListeners = new Set<() => void>();
+let hiddenInMemory = "";
+
+const readHidden = () => {
+  try {
+    return localStorage.getItem(HIDDEN_KEY) ?? hiddenInMemory;
+  } catch {
+    return hiddenInMemory;
+  }
+};
+
+const subscribeHidden = (listener: () => void) => {
+  hiddenListeners.add(listener);
+  // The ✕ pressed in another tab hides the list here too.
+  const onStorage = (e: StorageEvent) => { if (e.key === HIDDEN_KEY) listener(); };
+  window.addEventListener("storage", onStorage);
+  return () => {
+    hiddenListeners.delete(listener);
+    window.removeEventListener("storage", onStorage);
+  };
+};
+
+export function useHiddenHandbacks(items: Handback[]) {
+  const raw = useSyncExternalStore(subscribeHidden, readHidden, () => "");
+  const hidden = useMemo(() => {
+    try {
+      return new Set<string>(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      return new Set<string>();
+    }
+  }, [raw]);
+
+  const allHidden = items.length > 0 && items.every((h) => hidden.has(h.id));
+
+  // Replaces the stored set rather than adding to it: only what is on screen now is
+  // remembered, so the key never outgrows one page of /handbacks.
+  const hide = useCallback(() => {
+    hiddenInMemory = JSON.stringify(items.map((h) => h.id));
+    try {
+      localStorage.setItem(HIDDEN_KEY, hiddenInMemory);
+    } catch {
+      // Private mode / blocked storage — hidden for this visit only.
+    }
+    hiddenListeners.forEach((l) => l());
+  }, [items]);
+
+  return { allHidden, hide };
 }

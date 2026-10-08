@@ -26,7 +26,7 @@ import type { Application } from "@/lib/types";
 import { PLATFORMS, JOB_STATUSES } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import { apiPatch, apiPost, type StatsResponse } from "@/lib/api";
-import { useHandbacks, handbackProgress, type Handback } from "@/components/dashboard/useHandbacks";
+import { useHandbacks, useHiddenHandbacks, handbackProgress, type Handback } from "@/components/dashboard/useHandbacks";
 import HandbackAnswers from "@/components/dashboard/HandbackAnswers";
 import HistoryInsights from "@/components/dashboard/HistoryInsights";
 import PosterPanel from "@/components/dashboard/PosterPanel";
@@ -57,6 +57,9 @@ const REASON_MAP: [RegExp, string][] = [
  *  button that opens an empty form. */
 const questionsFor = (h: { questions?: { label: string; options: string[] }[] }) =>
   (h.questions || []).filter((q) => (q.label || "").trim());
+
+/** How many hand-backs the list shows before it folds — a glance, not a scroll. */
+const FOLD_AT = 5;
 
 const userReason = (raw: string) => REASON_MAP.find(([re]) => re.test(raw))?.[1] ?? "we couldn't finish this one automatically";
 
@@ -125,6 +128,12 @@ export default function HistoryView({
   const [answering, setAnswering] = useState<string | null>(null);
   const [requeued, setRequeued] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // The hand-back list: folded to FOLD_AT rows by default once it is longer than that,
+  // and hidden outright by the ✕ until a hand-back it hasn't seen shows up.
+  const [handbacksOpen, setHandbacksOpen] = useState(false);
+  const { allHidden: handbacksHidden, hide: hideHandbacks } = useHiddenHandbacks(handbacks);
+  const handbacksFold = handbacks.length > FOLD_AT;
+  const shownHandbacks = handbacksFold && !handbacksOpen ? handbacks.slice(0, FOLD_AT) : handbacks;
 
   const toggleExpand = (id: string) =>
     setExpanded((prev) => {
@@ -226,15 +235,11 @@ export default function HistoryView({
        "HISTORY — PAPER & INK" in globals.css. Nothing here is styled locally,
        so /preview/history-chips shows exactly what the dashboard ships. */
     <div className="hd-history space-y-7">
-      <div>
-        <p className="hd-eyebrow">The record</p>
-        <h1 className="hd-hist-display mt-2">
-          Every application, <em className="italic">kept</em>.
-        </h1>
-        <p className="hd-hist-sub mt-2.5 max-w-xl leading-relaxed">
-          Links, status and proof of submission — what we sent, and when we sent it.
-        </p>
-      </div>
+      {/* Headline only — the eyebrow and the sub-line said the same thing the poster
+          below shows (Igor, 10-08: убрать). */}
+      <h1 className="hd-hist-display">
+        Every application, <em className="italic">kept</em>.
+      </h1>
 
       {/* The banner: a poster panel whose plate is one of OUR onboarding renders
           put through brand-visuals/skills-photo.py (blurred, darkened) and, for
@@ -248,7 +253,6 @@ export default function HistoryView({
         <DropCameo pose="at-desk" width={150} enter="up" className="hidden md:block absolute right-10 bottom-[calc(100%-72px)]" />
       <PosterPanel
         title={<>We kept <em className="italic">everything</em> we sent.</>}
-        body="Open any row and the record is right there — no digging through your sent folder."
         image="/bg/poster-history-day.jpg"
         imageNight="/bg/poster-history-night.jpg"
         testId="history-poster"
@@ -280,16 +284,59 @@ export default function HistoryView({
         <p className="text-[12px] text-red" role="alert">{statusError}</p>
       )}
 
-      {/* Couldn't submit these (hand-backs) */}
-      {handbacks.length > 0 && (
-        <div id="handbacks" className="scroll-mt-24 space-y-1.5">
-          {handbacks.map((h) => {
+      {/* Couldn't submit these (hand-backs). Past FOLD_AT rows the list folds to its
+          first FOLD_AT, and the ✕ puts the batch away until a new one arrives (Igor,
+          10-08: «сворачивался когда больше 5ти незаконченных … и крестик чтоб убрать»).
+          The header is the same ruled ledger line as a day below — a place for the two
+          controls, not a banner. */}
+      {handbacks.length > 0 && !handbacksHidden && (
+        <div id="handbacks" className="scroll-mt-24" data-testid="handbacks">
+          <div className="hd-hist-day">
+            <h2 className="hd-eyebrow hd-eyebrow-ink">Unfinished</h2>
+            <span className="hd-eyebrow tabular-nums order-last">
+              {handbacks.length} application{handbacks.length === 1 ? "" : "s"}
+            </span>
+            <span className="order-last -mr-1.5 flex items-center gap-0.5">
+              {handbacksFold && (
+                <button
+                  type="button"
+                  onClick={() => setHandbacksOpen((o) => !o)}
+                  aria-expanded={handbacksOpen}
+                  aria-controls="handback-rows"
+                  aria-label={handbacksOpen ? "Collapse the list" : "Show the whole list"}
+                  className="hd-icon-btn"
+                  data-testid="handbacks-fold"
+                >
+                  <IconChevron open={handbacksOpen} />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={hideHandbacks}
+                aria-label="Hide this list"
+                title="Hide — it comes back when a new one needs you"
+                className="hd-icon-btn"
+                data-testid="handbacks-hide"
+              >
+                <IconClose />
+              </button>
+            </span>
+          </div>
+          <div id="handback-rows" className="space-y-1.5">
+          {shownHandbacks.map((h, i) => {
             const pct = handbackProgress(h.steps_done);
+            // Rows the fold just let out rise in one after another, so opening the
+            // list reads as the list growing rather than the page jumping.
+            const revealed = i >= FOLD_AT;
             return (
               // The whole row is the affordance. No banner above it, no explanation
               // beside it — a red dot, and the rest appears only if you look (Igor,
               // 09-21: "чтоб он не видел кучу текста и каких то разных уведомлений").
-              <div key={h.id} className="group relative">
+              <div
+                key={h.id}
+                className={["group relative", revealed ? "hd-rise" : ""].join(" ")}
+                style={revealed ? { animationDelay: `${Math.min(i - FOLD_AT, 10) * 30}ms` } : undefined}
+              >
                 {/* Hover card, above the row so it never covers what you're pointing at. */}
                 <div
                   className="hd-sheet pointer-events-none absolute -top-2 left-0 z-20 w-72
@@ -411,6 +458,22 @@ export default function HistoryView({
               </div>
             );
           })}
+          </div>
+          {handbacksFold && (
+            <div className="mt-2.5 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setHandbacksOpen((o) => !o)}
+                aria-expanded={handbacksOpen}
+                aria-controls="handback-rows"
+                className="hd-chip hd-chip-ghost"
+                data-testid="handbacks-more"
+              >
+                {handbacksOpen ? "Show less" : `Show ${handbacks.length - FOLD_AT} more`}
+                <IconChevron open={handbacksOpen} />
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -718,6 +781,21 @@ function IconCopy() {
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <rect x="7" y="7" width="9" height="9" rx="1.5" />
       <path d="M13 7V5.5A1.5 1.5 0 0 0 11.5 4h-6A1.5 1.5 0 0 0 4 5.5v6A1.5 1.5 0 0 0 5.5 13H7" />
+    </svg>
+  );
+}
+function IconChevron({ open }: { open: boolean }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+      className={["transition-transform duration-200", open ? "rotate-180" : ""].join(" ")}>
+      <path d="M6 8l4 4 4-4" />
+    </svg>
+  );
+}
+function IconClose() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+      <path d="M6 6l8 8M14 6l-8 8" />
     </svg>
   );
 }

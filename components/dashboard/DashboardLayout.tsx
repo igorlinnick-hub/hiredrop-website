@@ -13,7 +13,7 @@ import FitModeMenu from "@/components/dashboard/FitModeMenu";
 import ChecklistCard from "@/components/dashboard/ChecklistCard";
 import TapProgressDock from "@/components/dashboard/TapProgressDock";
 import DashboardBuddy from "@/components/dashboard/DashboardBuddy";
-import { useHandbacks } from "@/components/dashboard/useHandbacks";
+import { useHandbacks, useHiddenHandbacks } from "@/components/dashboard/useHandbacks";
 
 const NAV_ITEMS = [
   {
@@ -114,6 +114,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [affiliateOnly, setAffiliateOnly] = useState(false);
   // Only the count is used here — the list itself belongs to History.
   const { items: handbacks } = useHandbacks();
+  // The ✕ on History hides the dot with the list — a dot pointing at nothing is noise.
+  const { allHidden: handbacksHidden } = useHiddenHandbacks(handbacks);
 
   useEffect(() => {
     async function loadUser() {
@@ -218,7 +220,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {/* Unfinished applications announce themselves with a dot on the tab
                     that holds them — nothing else. No banner, no count, no sentence:
                     the user should feel a nudge, not read a notice (Igor, 09-21). */}
-                {item.href === "/dashboard/history" && handbacks.length > 0 && (
+                {item.href === "/dashboard/history" && handbacks.length > 0 && !handbacksHidden && (
                   <span
                     className="ml-auto h-2 w-2 shrink-0 rounded-full bg-red"
                     aria-label={`${handbacks.length} unfinished`}
