@@ -70,6 +70,15 @@ export default function BillingSection() {
     return () => window.removeEventListener("focus", onFocus);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Deep link from the avatar menu (?tab=billing#billing). This section loads on
+  // demand, after the browser looked for the anchor, so scroll to it here — on
+  // a phone it sits below the checklist and the section list.
+  useEffect(() => {
+    if (window.location.hash === "#billing") {
+      document.getElementById("billing")?.scrollIntoView({ block: "start" });
+    }
+  }, []);
+
   // Fetch a fresh token per action — it can expire between mount and click.
   async function freshToken(): Promise<string> {
     const { data: { session } } = await supabase.auth.getSession();

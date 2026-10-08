@@ -332,7 +332,8 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
       hint: "Fills forms, feeds letters",
       done: doneResume,
       progress: doneResume ? 1 : 0,
-      href: "/dashboard/settings",
+      // Settings opens one section at a time (Account by default); ?tab= picks it.
+      href: "/dashboard/settings?tab=resume",
     },
     {
       id: "skills",
@@ -340,9 +341,10 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
       hint: "Gets you past ATS screens",
       done: doneSkills,
       progress: doneSkills ? 1 : 0,
-      // The panel sits at the bottom of a long Settings page — without the anchor
-      // this drops the user at "Personal Information" and the step looks broken.
-      href: "/dashboard/settings#skills",
+      // Without the tab this drops the user on Account and the step looks broken.
+      // #skills opens the skills box itself — with no résumé yet too, where the
+      // Résumé section has no other way into it.
+      href: "/dashboard/settings?tab=resume#skills",
     },
     {
       id: "eligibility",
@@ -350,7 +352,7 @@ export default function ChecklistCard({ demo = false }: { demo?: boolean } = {})
       hint: "Two questions every form asks",
       done: eligibilityDone,
       progress: eligibilityDone ? 1 : 0,
-      href: "/dashboard/settings#eligibility",
+      href: "/dashboard/settings?tab=forms#eligibility",
     },
     {
       id: "extension",

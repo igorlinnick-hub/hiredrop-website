@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { sessionUser } from "@/lib/supabase/session-user";
 import PosterPanel from "@/components/dashboard/PosterPanel";
@@ -33,6 +34,10 @@ const SECTIONS: SettingsSection[] = [
   { id: "ambassador", label: "Ambassador", icon: <IconShare /> },
 ];
 
+function sectionFor(tab: string | null): string {
+  return tab && SECTIONS.some((x) => x.id === tab) ? tab : "account";
+}
+
 /** The profile arrives from the server (app/dashboard/settings/page.tsx), so the
     page paints with the person's data instead of a "Loading profile..." screen.
 
@@ -54,9 +59,19 @@ export default function SettingsView({ initialProfile }: { initialProfile: UserP
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false); // unsaved changes → the Save button lights up
   const [error, setError] = useState("");
-  // Which section is open. The deep link from the "Upgrade →" banner (?tab=billing)
-  // now opens a SECTION instead of scrolling a long page to an anchor.
-  const [section, setSection] = useState("account");
+  // Which section is open: the one ?tab= names, else Account. Written back on every
+  // pick so it survives a reload and can be shared as a link. The setup checklist and
+  // the avatar menu link here while Settings may already be on screen, a soft
+  // navigation that keeps this component mounted, so a changed ?tab= opens its
+  // section during render rather than only on mount. No Suspense boundary is needed
+  // for useSearchParams: this route reads the session cookie, so it is never prerendered.
+  const tab = useSearchParams().get("tab");
+  const [section, setSection] = useState(() => sectionFor(tab));
+  const [shownTab, setShownTab] = useState(tab);
+  if (tab !== shownTab) {
+    setShownTab(tab);
+    setSection(sectionFor(tab));
+  }
 
   useEffect(() => {
     let alive = true;
@@ -77,24 +92,26 @@ export default function SettingsView({ initialProfile }: { initialProfile: UserP
     return () => { alive = false; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Deep link: ?tab=<section>. Read window.location directly to avoid a
-  // useSearchParams Suspense boundary. Written back on every pick so the open
-  // section survives a reload and can be shared as a link.
+  // A link can also name a spot inside the section (#eligibility sits low in
+  // Application details). The browser looked for it before the section was
+  // open, so scroll to it once the section is on screen. The sections that load
+  // on demand aren't there yet at this point; they scroll to their own anchor
+  // when they arrive (#skills in ResumeATSPanel, #billing in BillingSection).
   useEffect(() => {
-    // Read it in a frame callback, not in the effect body: setting state
-    // synchronously there is what the React compiler rules forbid, and reading
-    // location during render would make the render impure (and mismatch SSR).
-    const raf = requestAnimationFrame(() => {
-      const want = new URLSearchParams(window.location.search).get("tab");
-      if (want && SECTIONS.some((x) => x.id === want)) setSection(want);
-    });
+    const id = window.location.hash.slice(1);
+    if (!id) return;
+    const raf = requestAnimationFrame(() =>
+      document.getElementById(id)?.scrollIntoView({ block: "start" }));
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [section]);
 
   function pickSection(id: string) {
     setSection(id);
     const url = new URL(window.location.href);
     url.searchParams.set("tab", id);
+    // Drop an anchor a link brought along: it belonged to that link's section,
+    // and #skills would reopen the skills box every time Résumé is picked.
+    url.hash = "";
     window.history.replaceState(null, "", url);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
