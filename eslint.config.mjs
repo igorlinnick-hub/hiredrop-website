@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     // Agent worktrees (gitignored) — full checkouts with their own .next builds;
     // linting them buried the real 25 findings under ~15,000 from copies.
     ".claude/**",
+    // maplibre's minified worker, copied from node_modules (scripts/maplibre-worker.mjs).
+    "public/maplibre/**",
   ]),
 ]);
 
