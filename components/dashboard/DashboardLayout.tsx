@@ -382,7 +382,7 @@ function ProfileMenu({ email, onLogout }: { email: string; onLogout: () => void 
     },
     {
       label: "Billing",
-      href: "/dashboard/settings#billing",
+      href: "/dashboard/settings?tab=billing#billing",
       icon: (
         <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
           <rect x="3" y="5" width="18" height="14" rx="2.5" />
