@@ -45,8 +45,11 @@ export default function DropFigure({
   size = 116,
   state = "idle",
   working = false,
+  className = "",
 }: {
   size?: number;
+  /** Extra classes on the circle — e.g. a smaller size on phones (needs `!`, the size is inline). */
+  className?: string;
   state?: BuddyState;
   /** A campaign is actually running — Drop sits down at the desk and works. */
   working?: boolean;
@@ -66,7 +69,7 @@ export default function DropFigure({
 
   return (
     <div
-      className="relative overflow-hidden rounded-full bg-white"
+      className={`relative overflow-hidden rounded-full bg-white ${className}`}
       style={{
         width: size,
         height: size,
