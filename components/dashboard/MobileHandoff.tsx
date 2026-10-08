@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { apiPost } from "@/lib/api";
-import { createClient } from "@/lib/supabase/client";
+import { useIsPhoneOrTablet } from "@/lib/device";
+import { useDesktopLink } from "@/lib/useDesktopLink";
 
 // Mobile hand-off banner. HireDrop applies from Chrome on a computer — a phone
 // visitor can finish the whole setup here, but the launch happens on desktop.
@@ -10,29 +9,10 @@ import { createClient } from "@/lib/supabase/client";
 // campaign is already live on their computer — point them to the phone's real
 // superpower: approving applications from anywhere.
 export default function MobileHandoff({ campaignRunning }: { campaignRunning: boolean }) {
-  const [mobile, setMobile] = useState(false);
-  const [state, setState] = useState<null | "sending" | "sent">(null);
-
-  useEffect(() => {
-    const ua = navigator.userAgent;
-    // iPadOS reports as Macintosh — the touch-point check catches it.
-    setMobile(/Android|iPhone|iPod/i.test(ua) || (/iPad|Macintosh/.test(ua) && navigator.maxTouchPoints > 1));
-  }, []);
+  const mobile = useIsPhoneOrTablet();
+  const link = useDesktopLink();
 
   if (!mobile) return null;
-
-  async function send() {
-    if (state) return;
-    setState("sending");
-    try {
-      const { data: { session } } = await createClient().auth.getSession();
-      if (!session?.access_token) throw new Error("no session");
-      await apiPost("/profile/send-desktop-link", session.access_token, {});
-      setState("sent");
-    } catch {
-      setState(null);
-    }
-  }
 
   return (
     <div className="mb-6 rounded-2xl border border-accent/25 bg-gradient-to-br from-accent/8 to-accent/[0.03] p-4">
@@ -61,10 +41,10 @@ export default function MobileHandoff({ campaignRunning }: { campaignRunning: bo
               Profile, résumé and preferences all work here. Applying runs from Chrome on your{" "}
               <strong className="text-text">computer</strong> — install the extension there and hit Start.
             </p>
-            <button onClick={send} disabled={state !== null}
+            <button onClick={link.send} disabled={link.busy}
               className="mt-2.5 px-4 py-2 rounded-xl text-xs font-bold border border-accent/40 bg-surface
                 text-accent hover:bg-accent/10 disabled:opacity-60 transition">
-              {state === "sent" ? "Sent — open it on your computer ✓" : state === "sending" ? "Sending…" : "📧 Email me the desktop link"}
+              {link.label}
             </button>
           </div>
         </div>
