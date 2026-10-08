@@ -14,6 +14,9 @@ export type Handback = {
   url: string;
   reason: string;
   steps_done: number;
+  /** When the wall happened. Drives the expired treatment (lib/handbacks/freshness):
+   *  the employer's form keeps nothing, so after ~a day this is a record, not a to-do. */
+  created_at?: string | null;
   /** What the form asked and we left blank. Empty for rows written before 09-21, and
    *  for walls that weren't about a question (no submit button, resume upload failed). */
   questions?: HandbackQuestion[];
@@ -65,6 +68,24 @@ export function useHandbacks(pollMs = 30000) {
   }, [load, pollMs]);
 
   return { items, reload: load, setItems };
+}
+
+/**
+ * The wall clock, render-pure: 0 until mounted, then refreshed every minute. Freshness
+ * (lib/handbacks/freshness) must not call Date.now() during render — the lint rule is
+ * right that it makes renders unstable — and a minute's resolution is all "did this go
+ * stale overnight?" needs. 0 = "don't know yet": callers treat that as fresh.
+ */
+export function useNowMs(everyMs = 60_000) {
+  const [nowMs, setNowMs] = useState(0);
+  useEffect(() => {
+    // The first tick must arrive without waiting a minute — same shape as load() above.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNowMs(Date.now());
+    const iv = setInterval(() => setNowMs(Date.now()), everyMs);
+    return () => clearInterval(iv);
+  }, [everyMs]);
+  return nowMs;
 }
 
 /**
