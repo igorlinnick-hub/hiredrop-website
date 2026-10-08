@@ -1,5 +1,5 @@
-// The one-time check before the first run — "everything we tell employers, on one page"
-// (Igor, 10-07). The LIST is the server's (GET /profile/review, modules/review_sheet.py):
+// The one-time check before the first run — everything we tell employers, on one page.
+// The LIST is the server's (GET /profile/review, modules/review_sheet.py):
 // nothing here knows which rows exist, only how one is shown and answered. Pure, so
 // `node --test` can hold the rules.
 

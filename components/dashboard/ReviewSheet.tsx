@@ -28,7 +28,7 @@ async function token(): Promise<string> {
   return t;
 }
 
-// Once, before the first run (Igor, 10-07): every value the forms get from the profile,
+// Once, before the first run: every value the forms get from the profile,
 // on one page, and one "Everything's correct". The rows are the server's
 // (GET /profile/review); the Start gate asks for this until the person confirms it once.
 export default function ReviewSheet({ onDone }: { onDone: () => void }) {
