@@ -20,7 +20,7 @@ const PUBLISHED = ALTERNATIVES.find((entry) => entry.path === PATH)!.published;
 
 const TITLE = "LazyApply Alternative: HireDrop vs LazyApply";
 const DESCRIPTION =
-  "LazyApply blasts up to 150 applications a day on an annual plan. HireDrop sends up to 30 human-paced applications you approve, from your own browser, weekly or monthly. An honest side-by-side.";
+  "LazyApply blasts up to 150 applications a day on an annual plan. HireDrop sends up to 30 human-paced applications from your own browser, with an optional review step, weekly or monthly. An honest side-by-side.";
 
 export const metadata = pageMetadata({
   title: `${TITLE} — which one fits your search`,
@@ -46,7 +46,7 @@ const ROWS = [
   },
   {
     dimension: "Do you see them first?",
-    hiredrop: "Yes by default — Tap mode shows each filled application and waits for your approval. Full auto is opt-in.",
+    hiredrop: "If you want — Tap mode shows each filled application and waits for your approval. Auto, the default, sends for you.",
     rival: "Built around unattended bulk sending.",
   },
   {
@@ -120,8 +120,8 @@ export default function Page() {
           <p>
             <strong>Pick HireDrop</strong> if you want every application to be worth opening:
             a resume and cover letter written for that specific posting, a daily cap that keeps
-            your account looking human, and a review step before anything sends. You pay by the
-            week or month and stop when you are hired.
+            your account looking human, and the option to review each one before it sends. You
+            pay by the week or month and stop when you are hired.
           </p>
         </Section>
 
@@ -195,10 +195,10 @@ export default function Page() {
             requirements, and a cover letter written from the job description in your own voice.
           </p>
           <p>
-            By default it stops there and shows you the filled application — that is Tap mode,
-            and it is the setting we ship on. One tap sends it, and you can approve from your
-            phone while the browser on your computer does the work. Turning on full auto is your
-            choice, not the default.
+            By default it then sends the application, at a human pace — that is Auto mode, the
+            setting we ship on. Switch to Tap mode and it stops at the filled application instead:
+            one tap sends it, and you can approve from your phone while the browser on your
+            computer does the work. Which mode runs is your choice.
           </p>
           <p>
             Everything runs in your Chrome, on your connection, at a pace we deliberately keep

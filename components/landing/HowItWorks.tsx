@@ -28,8 +28,8 @@ const STEPS = [
   },
   {
     number: "04",
-    title: "You review, then it applies",
-    description: "The Chrome extension fills out and submits each application from your own browser — you approve first, so your account stays safe.",
+    title: "Then it applies for you",
+    description: "The Chrome extension fills out and submits each application from your own browser, so your account stays safe. Prefer to approve first? Use Tap mode.",
     badge: "Ban-safe",
     badgeColor: "from-[#26262F] to-[#101014]",
   },

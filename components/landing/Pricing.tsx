@@ -16,7 +16,7 @@ const INCLUDED = [
   "ATS resume tailored to each job",
   "Handles complex ATS — Greenhouse, Lever & Ashby",
   "Up to 30 applications a day, human-paced",
-  "You review before anything sends",
+  "Sends for you, or waits for your OK",
 ];
 
 const PLANS = [

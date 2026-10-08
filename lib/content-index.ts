@@ -21,7 +21,7 @@ export const ALTERNATIVES: ContentEntry[] = [
     path: "/alternatives/lazyapply",
     title: "HireDrop vs LazyApply",
     description:
-      "Volume blasting at 150 applications a day versus 30 human-paced ones you approve. What each approach actually costs you.",
+      "Volume blasting at 150 applications a day versus 30 tailored, human-paced ones. What each approach actually costs you.",
     published: "2026-09-09",
   },
   {

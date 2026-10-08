@@ -29,7 +29,7 @@ export default function Page() {
           specific posting or reused.
         </p>
         <p>
-          HireDrop&apos;s answers: your browser, yes by default, and written per posting — up to 30
+          HireDrop&apos;s answers: your browser, yes in Tap mode, and written per posting — up to 30
           applications a day, {WEEKLY_PRICE}/week or {MONTHLY_PRICE}/month. The comparisons below
           are where that lands against the alternatives.
         </p>

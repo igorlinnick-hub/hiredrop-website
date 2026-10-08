@@ -28,7 +28,7 @@ export function organizationSchema() {
     url: SITE_URL,
     slogan: SITE_TAGLINE,
     description:
-      "HireDrop is an AI job-application assistant. It finds matching roles, tailors a resume and cover letter for each one, and applies from the job seeker's own browser, with a review step before anything sends.",
+      "HireDrop is an AI job-application assistant. It finds matching roles, tailors a resume and cover letter for each one, and applies from the job seeker's own browser, with an optional review step before each one sends.",
   };
 }
 

@@ -51,7 +51,7 @@ const ROWS = [
   },
   {
     dimension: "Review before send",
-    hiredrop: "Default on. Tap mode shows each filled application; approve from your phone.",
+    hiredrop: "Optional. Tap mode shows each filled application; approve from your phone. Auto, the default, sends for you.",
     rival: "Not described as a step you control per application.",
   },
   {
@@ -69,7 +69,7 @@ const ROWS = [
 const FAQS = [
   {
     q: "What is the main difference between HireDrop and AIApply?",
-    a: "Scope. AIApply gives you a set of AI tools to run yourself — build a resume, scan it, write a letter, prep for the interview — with auto-apply added on top as credits. HireDrop does one thing end to end: it watches the boards, writes each application, and submits it from your browser with your approval. If you want a workbench, that's AIApply. If you want the applications to simply happen, that's HireDrop.",
+    a: "Scope. AIApply gives you a set of AI tools to run yourself — build a resume, scan it, write a letter, prep for the interview — with auto-apply added on top as credits. HireDrop does one thing end to end: it watches the boards, writes each application, and submits it from your browser, automatically or after you approve it. If you want a workbench, that's AIApply. If you want the applications to simply happen, that's HireDrop.",
   },
   {
     q: "How much does AIApply cost?",

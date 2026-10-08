@@ -71,8 +71,9 @@ export default function Footer() {
             HireDrop is a job-application assistant for job seekers in the United States. It finds
             openings that match your resume and preferences, writes a tailored resume, cover letter,
             and answers to application questions for each one, and submits applications from your own
-            browser after you approve them. Its AI works with text only: it does not create, edit, or
-            analyze images or video of people, and never produces intimate or sexual imagery.
+            browser, automatically or after you approve each one. Its AI works with text only: it does
+            not create, edit, or analyze images or video of people, and never produces intimate or
+            sexual imagery.
           </p>
           <p className="mt-2">
             Google Sign-In is optional and is used only to create and sign in to your HireDrop
