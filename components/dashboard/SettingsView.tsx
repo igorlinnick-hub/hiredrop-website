@@ -154,7 +154,7 @@ export default function SettingsView({ initialProfile }: { initialProfile: UserP
           "px-4 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap",
           dirty && !saving
             ? "bg-accent text-white hover:opacity-90 shadow-sm"
-            : "bg-surface2 text-text2/40 cursor-default",
+            : "bg-surface2 text-text2/60 ring-1 ring-inset ring-border cursor-default",
         ].join(" ")}
       >
         {saving ? "Saving…" : "Save changes"}

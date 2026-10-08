@@ -162,7 +162,13 @@ export default function Buddy({
                    hover:scale-[1.08] active:scale-[0.93] active:duration-100
                    motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100"
       >
-        <DropFigure size={116} state={state} working={working || (open && checking)} />
+        {/* 116px on a phone covers the right third of a form field; 72 keeps it a button. */}
+        <DropFigure
+          size={116}
+          className="max-[640px]:size-[72px]!"
+          state={state}
+          working={working || (open && checking)}
+        />
       </button>
     </div>
   );
