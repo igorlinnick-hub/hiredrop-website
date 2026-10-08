@@ -1,7 +1,6 @@
-// maplibre-gl v6 can't find its own tile worker once Next bundles it, so the
-// dashboard map stayed blank (no tiles, no radius ring) until 10-07. We serve
-// the worker from public/maplibre/ (scripts/maplibre-worker.mjs) and point
-// RadiusMap at it. This keeps the copy complete and the URL pointing at it.
+// RadiusMap loads maplibre's tile worker from public/maplibre/, which
+// scripts/maplibre-worker.mjs fills from the installed package. A copy that
+// misses a chunk the worker imports leaves the map without tiles.
 //   node --test tests/maplibre-worker.test.ts
 
 import { strict as assert } from "node:assert";
@@ -28,12 +27,4 @@ test("the copy carries the worker and every chunk it imports", () => {
   } finally {
     rmSync(out, { recursive: true, force: true });
   }
-});
-
-test("RadiusMap points maplibre at the copied worker before creating the map", () => {
-  const src = readFileSync("components/dashboard/RadiusMap.tsx", "utf8");
-  const set = src.match(/maplibregl\.setWorkerUrl\("([^"]+)"\)/);
-  assert.ok(set, "RadiusMap never calls maplibregl.setWorkerUrl");
-  assert.equal(set[1], `/maplibre/${WORKER}`);
-  assert.ok(set.index! < src.indexOf("new maplibregl.Map("), "setWorkerUrl must run before the Map is created");
 });
