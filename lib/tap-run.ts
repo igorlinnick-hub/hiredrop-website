@@ -1,5 +1,8 @@
 "use client";
 
+import { apiGet } from "@/lib/api";
+import { answersUi } from "@/lib/employerAnswers";
+import { TapStartRefused, tapRefusal } from "@/lib/employerAnswersGate";
 import { createClient } from "@/lib/supabase/client";
 import { sessionUser } from "@/lib/supabase/session-user";
 
@@ -18,6 +21,10 @@ import { sessionUser } from "@/lib/supabase/session-user";
  *      (there is no second fill-and-stop review in the tapalka);
  *   3. START_CAMPAIGN over the ping.js bridge — the extension's own guards (mode
  *      unknown, nothing approved, free limit) do the refusing.
+ *
+ * Before all three: the server's Start gate (GET /campaign/readiness). The extension does
+ * not know the employer answers, so without this a Tap run skipped the gate an auto Start
+ * cannot (lib/employerAnswersGate).
  *
  * submit_mode already lives in three places (profile / extension reviewMode /
  * campaign-view chip). A second copy of this sequence would be the fourth.
@@ -48,12 +55,36 @@ export async function loadTapFilters(): Promise<TapRunFilters> {
   };
 }
 
+// Same wait as the Start buttons' readiness call (StartReadiness.fetchReadiness).
+const GATE_WAIT_MS = 6000;
+
+/** Ask the server's Start gate. Throws TapStartRefused when it says no; a gate that
+ *  cannot be reached (no session, network, timeout) lets the run go, like the buttons. */
+async function passTapGate(): Promise<void> {
+  let readiness: unknown = null;
+  try {
+    const { data } = await createClient().auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) return;
+    readiness = await Promise.race([
+      apiGet<unknown>(answersUi("/campaign/readiness"), token),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), GATE_WAIT_MS)),
+    ]);
+  } catch {
+    return; // fail-open — see above
+  }
+  const refused = tapRefusal(readiness);
+  if (refused.length) throw new TapStartRefused(refused);
+}
+
 /**
- * Persist Tap mode, then ask the extension to start. Returns the filters it sent so
- * the caller can log/report them. Never throws on the profile write — the extension
+ * Ask the server's gate, persist Tap mode, then ask the extension to start. Returns the
+ * filters it sent so the caller can log/report them. Throws TapStartRefused (and starts
+ * nothing) when the gate says no. Never throws on the profile write — the extension
  * has its own swipe-first guard, so a failed write costs a mode chip, not a run.
  */
 export async function startTapRun(): Promise<TapRunFilters> {
+  await passTapGate();
   const filters = await loadTapFilters();
   try {
     const supabase = createClient();

@@ -19,7 +19,7 @@ import StepWritingStyle from "./StepWritingStyle";
 import StepPlan from "./StepPlan";
 import StepConnectExtension from "./StepConnectExtension";
 import StepDone from "./StepDone";
-import { forgetResumeHints } from "@/lib/employerAnswersHints";
+import { forgetResumeHints, prefetchResumeHints } from "@/lib/employerAnswersHints";
 import { resumeStep, SNAPSHOT_VERSION, STEP, STEPS } from "@/lib/onboarding/steps";
 import type { UserProfile } from "@/lib/types";
 
@@ -164,8 +164,16 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
       }
 
       updateProfile({ resume_url: filePath });
-      // What an earlier resume said is no hint about this one.
+      // What an earlier resume said is no hint about this one — and start reading this
+      // one now, so the Answers step two screens on opens already filled in.
       forgetResumeHints();
+      // Fire-and-forget: a failed prefetch only means the form reads the resume itself.
+      void supabase.auth
+        .getSession()
+        .then(({ data: { session } }) => {
+          if (session?.access_token) prefetchResumeHints(session.access_token, user.id, filePath);
+        })
+        .catch(() => {});
     }
 
     setSaving(false);

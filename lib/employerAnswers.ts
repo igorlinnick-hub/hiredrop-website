@@ -39,7 +39,79 @@ export interface AnswerQuestion {
   suggestion?: string;
   // "I don't have one" — a tickbox that answers this question (and its siblings).
   opt_out?: { flag: string; label: string };
+  // When signup asks it: "signup" before the resume, "resume" after one is uploaded. An
+  // older server sends none — then everything is asked at once, as it always was.
+  stage?: string;
+  // What is wrong with the answer on file, in the server's words (drawn under the question).
+  note?: string;
 }
+
+/** Signup without a resume asks only what a resume could never answer; the rest waits
+ *  for one. The Start gate still refuses until EVERY question is answered — this moves
+ *  when they are asked, not whether. No stages from the server (older backend) = all. */
+export function askNow(questions: AnswerQuestion[], hasResume: boolean): AnswerQuestion[] {
+  if (hasResume || !questions.some((q) => q.stage)) return questions;
+  return questions.filter((q) => q.stage !== "resume");
+}
+
+/** The questions to confirm as one group: the server says their suggestion came from the
+ *  person's own resume (`from_resume`), nothing is on file yet, and there is a value to
+ *  show. A server that does not say (`from_resume` absent) gets no group. */
+export function resumeGroup(
+  questions: AnswerQuestion[],
+  fromResume: string[] | null | undefined,
+  values: AnswerValues,
+): string[] {
+  if (!Array.isArray(fromResume)) return [];
+  const said = new Set(fromResume);
+  return questions
+    .filter((q) => {
+      const v = values[q.key];
+      return said.has(q.key) && q.kind === "text" && !q.value && typeof v === "string" && v.trim() !== "";
+    })
+    .map((q) => q.key);
+}
+
+/** What the resume said is only an answer once the person says so — "Looks right" for the
+ *  group, or by touching the box themselves. Until then it is not saved. */
+export function awaitingConfirmation(
+  group: string[],
+  confirmed: Record<string, boolean>,
+  questions: AnswerQuestion[],
+  flags: AnswerFlags,
+): string[] {
+  return group.filter((key) => {
+    const q = questions.find((x) => x.key === key);
+    return !!q && !confirmed[key] && !optedOut(q, flags);
+  });
+}
+
+/** What POST /profile/employer-answers/suggest found, from the server or the tab's cache. */
+export interface ResumeHints {
+  suggestions: Record<string, string>;
+  // Which of them the resume itself said; null = a server too old to say.
+  fromResume: string[] | null;
+}
+
+export function parseHints(raw: unknown): ResumeHints | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as { suggestions?: unknown; from_resume?: unknown };
+  if (!r.suggestions || typeof r.suggestions !== "object") return null;
+  const suggestions: Record<string, string> = {};
+  for (const [k, v] of Object.entries(r.suggestions as Record<string, unknown>)) {
+    if (typeof v === "string" && v.trim()) suggestions[k] = v;
+  }
+  const fromResume = Array.isArray(r.from_resume)
+    ? r.from_resume.filter((k): k is string => typeof k === "string")
+    : null;
+  return { suggestions, fromResume };
+}
+
+/** One cache entry per resume FILE: a new upload is a new name (lib/resume/upload), so
+ *  what the previous resume said can never be served for this one. */
+export const HINTS_PREFIX = "hd_answer_hints:";
+export const hintCacheKey = (userId: string, resume: string | null | undefined) =>
+  `${HINTS_PREFIX}${userId}:${resume || ""}`;
 
 export type AnswerValues = Record<string, string | boolean>;
 export type AnswerFlags = Record<string, boolean>;

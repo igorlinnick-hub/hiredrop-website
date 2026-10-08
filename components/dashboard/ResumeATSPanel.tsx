@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { forgetResumeHints } from "@/lib/employerAnswersHints";
+import { forgetResumeHints, prefetchResumeHints } from "@/lib/employerAnswersHints";
 import { resumeProfile, uploadOriginalResume } from "@/lib/resume/upload";
 import { createClient } from "@/lib/supabase/client";
 import { sessionUser } from "@/lib/supabase/session-user";
@@ -199,8 +199,10 @@ export default function ResumeATSPanel() {
     }));
     setPreviewUrl(null);
     setUploading(false);
-    // What the previous resume said is no hint about this one.
+    // What the previous resume said is no hint about this one — and start reading this
+    // one now, so the Start sheet's questions open already filled in.
     forgetResumeHints();
+    getToken().then((t) => prefetchResumeHints(t, user.id, path)).catch(() => {});
     flash("Resume uploaded. Run ATS check to analyze it.");
   }
 
