@@ -347,7 +347,8 @@ export default function HistoryView({
             // was filled (ZR's lk= link can even open an EMPTY pane once the job rotates
             // off that results page — Igor, 10-08). The row stays, muted: a record with
             // a working link and a Done, never a to-do that blinks forever.
-            const expired = nowMs ? handbackExpired(h.created_at, nowMs) : false;
+            const isQueued = requeued.has(h.id) || !!h.requeued_at;
+            const expired = nowMs && !isQueued ? handbackExpired(h.created_at, nowMs) : false;
             const age = nowMs ? handbackAge(h.created_at, nowMs) : null;
             // Rows the fold just let out rise in one after another, so opening the
             // list reads as the list growing rather than the page jumping.
@@ -402,7 +403,7 @@ export default function HistoryView({
                   )}
                 </div>
 
-                <div className={["hd-sheet hd-sheet-lift flex items-center gap-3 px-4 py-3.5",
+                <div className={["hd-sheet hd-sheet-lift flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-1.5 px-4 py-3.5",
                   expired ? "opacity-70" : ""].join(" ")}>
                   {/* The red dot BLINKS (Igor 09-23: «красные кнопочки должны
                       мигать») — a hand-back is the one row on this screen that
@@ -412,7 +413,7 @@ export default function HistoryView({
                   {expired
                     ? <span className="h-2 w-2 shrink-0 rounded-full bg-border" aria-hidden />
                     : <span className="hd-alert-dot shrink-0" aria-hidden />}
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 basis-[calc(100%-1.25rem)] sm:basis-auto">
                     {h.url ? (
                       <a
                         href={h.url}
@@ -448,7 +449,7 @@ export default function HistoryView({
                   {/* The questions that blocked it — answer them here instead of
                       redoing the whole form on the employer's site. Only when we
                       actually captured them AND they aren't answered yet. */}
-                  {!!questionsFor(h).length && !requeued.has(h.id) && !h.requeued_at && (
+                  {!!questionsFor(h).length && !isQueued && (
                     <button
                       onClick={() => setAnswering((cur) => (cur === h.id ? null : h.id))}
                       data-testid="handback-answer-open"
@@ -458,7 +459,7 @@ export default function HistoryView({
                       {answering === h.id ? "Close" : `Answer ${questionsFor(h).length}`}
                     </button>
                   )}
-                  {h.newer_build && !requeued.has(h.id) && !h.requeued_at && (
+                  {h.newer_build && !isQueued && (
                     <button
                       onClick={() => retryHandback(h.id)}
                       data-testid="handback-retry"
@@ -471,14 +472,15 @@ export default function HistoryView({
                   {/* The way IN — the one thing the row is FOR. A title that happens to
                       be a link is not an affordance: Igor opened a 95% row and found
                       nothing to click but Done (10-08). Always visible. */}
-                  {h.url && !requeued.has(h.id) && !h.requeued_at && (
+                  {h.url && !isQueued && (
                     <a
                       href={h.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       data-testid="handback-open-form"
-                      className="hd-answer-cta shrink-0 rounded-md border border-accent/40 bg-accent/8 px-2 py-0.5
-                        text-[11px] font-medium text-accent transition hover:bg-accent/15"
+                      className={[expired ? "" : "hd-answer-cta", // the pulse means "needs you NOW" — a stale record sits still
+                        "shrink-0 rounded-md border border-accent/40 bg-accent/8 px-2 py-0.5",
+                        "text-[11px] font-medium text-accent transition hover:bg-accent/15"].join(" ")}
                     >
                       {expired ? "Open posting ↗" : "Finish form ↗"}
                     </a>
