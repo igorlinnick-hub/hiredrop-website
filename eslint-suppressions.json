@@ -175,7 +175,7 @@
       "count": 3
     },
     "local/no-history-comments": {
-      "count": 4
+      "count": 5
     }
   },
   "components/dashboard/RadiusMap.tsx": {
@@ -416,12 +416,22 @@
       "count": 6
     }
   },
+  "scripts/maplibre-worker.mjs": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
   "tests/campaign-stop-order.test.ts": {
     "local/no-history-comments": {
       "count": 1
     }
   },
   "tests/forms-post.test.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "tests/maplibre-worker.test.ts": {
     "local/no-history-comments": {
       "count": 1
     }
