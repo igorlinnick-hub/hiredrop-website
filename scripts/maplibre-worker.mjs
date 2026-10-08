@@ -1,16 +1,14 @@
 // Copies maplibre-gl's tile worker out of the INSTALLED package into
 // public/maplibre/, where RadiusMap points maplibregl.setWorkerUrl().
 //
-// Why: v6 no longer inlines its worker (v4 did, as a blob). It derives the
-// worker URL from import.meta.url, which Next's bundler rewrites to a non-http
-// string, so maplibre falls back to "" and `new Worker("")` loads the page
-// itself — the dashboard map stayed blank, no tiles and no radius ring, from
-// the 4 → 6 upgrade (#222) until 10-07.
+// maplibre-gl locates its worker relative to import.meta.url, which Next's
+// bundler rewrites to a non-http string; maplibre then starts the worker from
+// "" (the page itself) and the map draws no tiles and no radius ring.
 //
 // Runs on postinstall, predev and prebuild, so the copy always matches the
 // main-thread code that got bundled: the chunks import each other by minified
 // names, and a worker from another version breaks. The output is gitignored
-// for the same reason — a committed copy would go stale on the next bump.
+// for the same reason: a committed copy goes stale on the next version bump.
 //   node scripts/maplibre-worker.mjs
 
 import { copyFileSync, mkdirSync, readFileSync, realpathSync } from "node:fs";
@@ -25,8 +23,8 @@ export function maplibreDist() {
   return join(dirname(createRequire(import.meta.url).resolve("maplibre-gl/package.json")), "dist");
 }
 
-// The worker plus every chunk it reaches through relative imports (today just
-// maplibre-gl-shared.mjs) — followed, not listed, so a re-split chunk is never
+// The worker plus every chunk it reaches through relative imports
+// (maplibre-gl-shared.mjs): followed, not listed, so a re-split chunk is never
 // left behind.
 export function workerFiles(distDir, entry = WORKER) {
   const seen = new Set();
