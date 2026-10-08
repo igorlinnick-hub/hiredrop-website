@@ -361,6 +361,11 @@
       "count": 1
     }
   },
+  "lib/history/places.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
   "lib/pricing.ts": {
     "local/no-history-comments": {
       "count": 1

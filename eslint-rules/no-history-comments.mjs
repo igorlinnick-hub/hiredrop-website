@@ -38,4 +38,6 @@ const rule = {
   },
 };
 
-export default { meta: { name: "local" }, rules: { "no-history-comments": rule } };
+const plugin = { meta: { name: "local" }, rules: { "no-history-comments": rule } };
+
+export default plugin;
