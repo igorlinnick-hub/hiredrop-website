@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Button from "@/components/ui/Button";
+import { useIsPhoneOrTablet } from "@/lib/device";
 import { createClient } from "@/lib/supabase/client";
+import { useDesktopLink } from "@/lib/useDesktopLink";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "https://web-production-db45.up.railway.app";
@@ -33,12 +35,19 @@ interface Props {
  * this already-open tab. So after the user installs and returns to this tab we reload
  * once — OnboardingWizard persists progress to localStorage, so the reload is lossless —
  * and the fresh page load has ping.js and links automatically.
+ *
+ * Phones and tablets are the exception: they can never run the extension, so the gate
+ * would be a dead end there. They get "Finish on your computer" instead (email the
+ * desktop link, then Continue), step 11 saves their profile, and the extension is
+ * still required where it matters: the dashboard's Start won't launch without it.
  */
 export default function StepConnectExtension({ onNext, onBack }: Props) {
   const [state, setState] = useState<State>("waiting");
   const [detail, setDetail] = useState("");
   const [installClicked, setInstallClicked] = useState(false);
   const linkingRef = useRef(false);
+  const mobile = useIsPhoneOrTablet();
+  const link = useDesktopLink();
 
   // Persistent detect loop: keep pinging while we don't have the extension, so a PONG
   // that arrives later (returning user, or after a reload) still auto-links.
@@ -168,6 +177,8 @@ export default function StepConnectExtension({ onNext, onBack }: Props) {
   }
 
   const connected = state === "connected";
+  // A phone that somehow does answer the PING keeps the normal connected view.
+  const handoff = mobile && !connected;
   const showInstall = state === "waiting" || state === "failed";
 
   return (
@@ -180,83 +191,109 @@ export default function StepConnectExtension({ onNext, onBack }: Props) {
 
         {/* Text + actions — side format, left-aligned */}
         <div className="order-2 md:order-1 flex-1 space-y-5 text-left">
-          <div className="space-y-2">
-            <h2 className="text-[1.7rem] leading-tight font-bold text-text">
-              One last step —<br className="hidden sm:block" /> connect the extension
-            </h2>
-            <p className="text-sm text-text2 max-w-sm">
-              HireDrop applies from <strong className="text-text">your own browser</strong>, so it
-              lives as a Chrome extension. Add it and this page links your account automatically.
-            </p>
-          </div>
-
-          {showInstall && (
-            <div className="space-y-2.5">
-              <a
-                href={CWS_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setInstallClicked(true)}
-                className="group inline-flex items-center gap-2.5 px-5 py-3 rounded-xl bg-accent text-white
-                  text-[0.95rem] font-semibold shadow-sm hover:bg-accent2 transition"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                  strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <circle cx="12" cy="12" r="4" />
-                  <line x1="21.17" y1="8" x2="12" y2="8" />
-                  <line x1="3.95" y1="6.06" x2="8.54" y2="14" />
-                  <line x1="10.88" y1="21.94" x2="15.46" y2="14" />
-                </svg>
-                Add to Chrome — it’s free
-                <span className="opacity-70 group-hover:translate-x-0.5 transition">↗</span>
-              </a>
-              <div>
-                <button
-                  onClick={refreshNow}
-                  className="text-xs font-medium text-text2 hover:text-accent underline underline-offset-2 transition"
-                >
-                  Already added it? ↻ Refresh to detect
-                </button>
+          {handoff ? (
+            <>
+              <div className="space-y-2">
+                <h2 className="text-[1.7rem] leading-tight font-bold text-text">
+                  Finish on your computer
+                </h2>
+                <p className="text-sm text-text2 max-w-sm">
+                  HireDrop applies from Chrome on a <strong className="text-text">computer</strong> — it
+                  can’t run on a phone or tablet. Finish setup here, then add the extension on your
+                  computer and hit Start.
+                </p>
               </div>
-            </div>
-          )}
+              <button
+                type="button"
+                onClick={link.send}
+                disabled={link.busy}
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-accent/40 bg-surface
+                  text-accent text-[0.95rem] font-semibold hover:bg-accent/10 disabled:opacity-60 transition"
+              >
+                {link.label}
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <h2 className="text-[1.7rem] leading-tight font-bold text-text">
+                  One last step —<br className="hidden sm:block" /> connect the extension
+                </h2>
+                <p className="text-sm text-text2 max-w-sm">
+                  HireDrop applies from <strong className="text-text">your own browser</strong>, so it
+                  lives as a Chrome extension. Add it and this page links your account automatically.
+                </p>
+              </div>
 
-          {/* Live status pill */}
-          <div>
-            <span className={[
-              "inline-flex items-center gap-2.5 rounded-full px-4 py-2 text-sm font-medium border",
-              connected
-                ? "border-green/30 bg-green/10 text-green"
-                : state === "failed"
-                ? "border-red/30 bg-red/10 text-red"
-                : "border-border bg-surface2/50 text-text2",
-            ].join(" ")}>
-              <span className="relative flex h-2.5 w-2.5">
-                {!connected && state !== "failed" && (
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-60 animate-ping" />
-                )}
+              {showInstall && (
+                <div className="space-y-2.5">
+                  <a
+                    href={CWS_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setInstallClicked(true)}
+                    className="group inline-flex items-center gap-2.5 px-5 py-3 rounded-xl bg-accent text-white
+                      text-[0.95rem] font-semibold shadow-sm hover:bg-accent2 transition"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                      strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <circle cx="12" cy="12" r="4" />
+                      <line x1="21.17" y1="8" x2="12" y2="8" />
+                      <line x1="3.95" y1="6.06" x2="8.54" y2="14" />
+                      <line x1="10.88" y1="21.94" x2="15.46" y2="14" />
+                    </svg>
+                    Add to Chrome — it’s free
+                    <span className="opacity-70 group-hover:translate-x-0.5 transition">↗</span>
+                  </a>
+                  <div>
+                    <button
+                      onClick={refreshNow}
+                      className="text-xs font-medium text-text2 hover:text-accent underline underline-offset-2 transition"
+                    >
+                      Already added it? ↻ Refresh to detect
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Live status pill */}
+              <div>
                 <span className={[
-                  "relative inline-flex h-2.5 w-2.5 rounded-full",
-                  connected ? "bg-green" : state === "failed" ? "bg-red" : "bg-accent",
-                ].join(" ")} />
-              </span>
-              {state === "waiting" && "Waiting for the extension…"}
-              {state === "linking" && "Linking your account…"}
-              {connected && "Extension connected ✓"}
-              {state === "failed" && (detail || "Couldn’t link — reload the extension")}
-            </span>
-          </div>
+                  "inline-flex items-center gap-2.5 rounded-full px-4 py-2 text-sm font-medium border",
+                  connected
+                    ? "border-green/30 bg-green/10 text-green"
+                    : state === "failed"
+                    ? "border-red/30 bg-red/10 text-red"
+                    : "border-border bg-surface2/50 text-text2",
+                ].join(" ")}>
+                  <span className="relative flex h-2.5 w-2.5">
+                    {!connected && state !== "failed" && (
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-60 animate-ping" />
+                    )}
+                    <span className={[
+                      "relative inline-flex h-2.5 w-2.5 rounded-full",
+                      connected ? "bg-green" : state === "failed" ? "bg-red" : "bg-accent",
+                    ].join(" ")} />
+                  </span>
+                  {state === "waiting" && "Waiting for the extension…"}
+                  {state === "linking" && "Linking your account…"}
+                  {connected && "Extension connected ✓"}
+                  {state === "failed" && (detail || "Couldn’t link — reload the extension")}
+                </span>
+              </div>
 
-          <p className="text-xs text-text2/60">Requires Google Chrome on a desktop computer.</p>
+              <p className="text-xs text-text2/60">Requires Google Chrome on a desktop computer.</p>
+            </>
+          )}
         </div>
       </div>
 
       {/* Nav spans the full width below both columns */}
       <div className="flex justify-between items-center">
         <Button type="button" variant="ghost" onClick={onBack}>Back</Button>
-        <Button onClick={onNext} disabled={!connected}>
-          {connected ? "Continue →" : "Connect to continue"}
+        <Button onClick={onNext} disabled={!connected && !handoff}>
+          {connected || handoff ? "Continue →" : "Connect to continue"}
         </Button>
       </div>
     </div>
