@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
@@ -22,6 +22,7 @@ import StepDone from "./StepDone";
 import { forgetResumeHints, prefetchResumeHints } from "@/lib/employerAnswersHints";
 import { resumeStep, SNAPSHOT_VERSION, STEP, STEPS } from "@/lib/onboarding/steps";
 import type { UserProfile } from "@/lib/types";
+import { ownSnapshot } from "@/lib/onboarding/snapshot";
 
 
 const initialProfile: UserProfile = {
@@ -48,8 +49,9 @@ const initialProfile: UserProfile = {
 // after a first-time install, to inject the extension's content script) never loses the
 // answers the user already typed. resumeFile isn't stored — by the time we reach the
 // extension step the resume is already uploaded to storage (resume_url), so it's safe.
+// `uid` ties the snapshot to the account that wrote it (see ownSnapshot).
 const STORAGE_KEY = "hd_onboarding_v1";
-function loadSaved(): { v?: number; step?: number; profile?: Partial<UserProfile> } | null {
+function loadSaved(): { v?: number; uid?: string; step?: number; profile?: Partial<UserProfile> } | null {
   if (typeof window === "undefined") return null;
   try {
     return JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "null");
@@ -68,7 +70,12 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
   // hydration mismatch (React #418) on every resume. Restore it after mount instead, and
   // don't write the snapshot until then, or the first pass would save step 1 over it.
   const [restored, setRestored] = useState(false);
+  // The account the snapshot is written for, known once the restore has checked it.
+  const uid = useRef<string | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  // The file already in storage. Back → Continue with it must not upload it again: the
+  // upload clears the ATS approval, which was given for this very file.
+  const uploadedFile = useRef<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [promoTier, setPromoTier] = useState<string | null>(null);
@@ -78,12 +85,23 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
   }
 
   useEffect(() => {
-    const saved = loadSaved();
-    const savedStep = initialStep === undefined ? resumeStep(saved) : undefined;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time read of localStorage; see above
-    if (savedStep) setStep(savedStep);
-    if (saved?.profile) setProfile((prev) => ({ ...prev, ...saved.profile }));
-    setRestored(true);
+    async function restore() {
+      // Whose progress is this? Only the signed-in account's own snapshot is resumed;
+      // another account's is dropped before anything is shown or saved over it. With no
+      // session nothing is restored or written at all.
+      const user = await sessionUser();
+      if (!user) return;
+      const saved = ownSnapshot(loadSaved(), user);
+      if (!saved) {
+        try { window.localStorage.removeItem(STORAGE_KEY); } catch { /* storage blocked: there is no snapshot to drop */ }
+      }
+      const savedStep = initialStep === undefined ? resumeStep(saved) : undefined;
+      if (savedStep) setStep(savedStep);
+      if (saved?.profile) setProfile((prev) => ({ ...prev, ...saved.profile }));
+      uid.current = user.id;
+      setRestored(true);
+    }
+    restore();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pre-fill email from auth user + redeem any promo code carried from signup.
@@ -129,7 +147,10 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
   useEffect(() => {
     if (!restored) return;
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: SNAPSHOT_VERSION, step, profile }));
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ v: SNAPSHOT_VERSION, uid: uid.current, step, profile }),
+      );
     } catch {
       /* storage full / private mode — non-fatal */
     }
@@ -149,10 +170,14 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
       return;
     }
 
-    if (resumeFile) {
+    if (resumeFile && resumeFile !== uploadedFile.current) {
       const filePath = await uploadOriginalResume(
         supabase.storage.from("resumes"),
-        resumeProfile(supabase, user.id),
+        // A new file voids the ATS check and approval: they measured the previous one,
+        // and an approved ATS version would keep going out instead of this resume.
+        resumeProfile(supabase, user.id, {
+          ats_approved: false, ats_score: null, ats_issues: [], ats_checked_at: null,
+        }),
         user.id,
         resumeFile,
       );
@@ -163,6 +188,7 @@ export default function OnboardingWizard({ initialStep }: { initialStep?: number
         return;
       }
 
+      uploadedFile.current = resumeFile;
       updateProfile({ resume_url: filePath });
       // What an earlier resume said is no hint about this one — and start reading this
       // one now, so the Answers step two screens on opens already filled in.
