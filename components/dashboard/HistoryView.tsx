@@ -26,7 +26,8 @@ import type { Application } from "@/lib/types";
 import { PLATFORMS, JOB_STATUSES } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import { apiPatch, apiPost, type StatsResponse } from "@/lib/api";
-import { useHandbacks, useHiddenHandbacks, handbackProgress, type Handback } from "@/components/dashboard/useHandbacks";
+import { handbackAge, handbackExpired } from "@/lib/handbacks/freshness";
+import { useNowMs, useHandbacks, useHiddenHandbacks, handbackProgress, type Handback } from "@/components/dashboard/useHandbacks";
 import HandbackAnswers from "@/components/dashboard/HandbackAnswers";
 import HistoryInsights from "@/components/dashboard/HistoryInsights";
 import PosterPanel from "@/components/dashboard/PosterPanel";
@@ -133,6 +134,8 @@ export default function HistoryView({
   // and hidden outright by the ✕ until a hand-back it hasn't seen shows up.
   const [handbacksOpen, setHandbacksOpen] = useState(false);
   const { allHidden: handbacksHidden, hide: hideHandbacks } = useHiddenHandbacks(handbacks);
+  // Minute clock for the stale treatment (0 before mount = everything fresh).
+  const nowMs = useNowMs();
   const handbacksFold = handbacks.length > FOLD_AT;
   // The row being answered is never folded away: a new hand-back arriving on the 30s
   // poll pushes the list down a slot, and slicing the form out would drop what was typed.
@@ -340,6 +343,13 @@ export default function HistoryView({
           <div id="handback-rows" className="space-y-1.5">
           {shownHandbacks.map((h, i) => {
             const pct = handbackProgress(h.steps_done);
+            // Older than a day = the employer's form has reset and kept nothing of what
+            // was filled (ZR's lk= link can even open an EMPTY pane once the job rotates
+            // off that results page — Igor, 10-08). The row stays, muted: a record with
+            // a working link and a Done, never a to-do that blinks forever.
+            const isQueued = requeued.has(h.id) || !!h.requeued_at;
+            const expired = nowMs && !isQueued ? handbackExpired(h.created_at, nowMs) : false;
+            const age = nowMs ? handbackAge(h.created_at, nowMs) : null;
             // Rows the fold just let out rise in one after another, so opening the
             // list reads as the list growing rather than the page jumping.
             const revealed = handbacksOpen && i >= FOLD_AT;
@@ -358,10 +368,19 @@ export default function HistoryView({
                     -translate-y-full p-3.5 opacity-0 transition-opacity group-hover:opacity-100"
                   role="tooltip"
                 >
-                  <p className="hd-eyebrow hd-eyebrow-ink">Finish this one by hand</p>
+                  <p className="hd-eyebrow hd-eyebrow-ink">
+                    {expired ? "This one went stale" : "Finish this one by hand"}
+                  </p>
                   <p className="hd-hist-sub mt-1.5 text-[12px] leading-snug" title={h.reason}>
                     {userReason(h.reason)}
                   </p>
+                  {expired && (
+                    <p className="hd-hist-sub mt-1.5 text-[12px] leading-snug">
+                      A day or more passed, and the employer&apos;s form keeps nothing that
+                      long — opening it starts over. Still interested? Open it and apply
+                      fresh; otherwise press Done to clear it.
+                    </p>
+                  )}
                   {h.newer_build && !h.requeued_at && !requeued.has(h.id) && (
                     <p className="hd-hist-sub mt-1.5 text-[12px] leading-snug">
                       HireDrop has updated since — Try again sends it back to your next run.
@@ -376,20 +395,25 @@ export default function HistoryView({
                       {/* Screens, not a guess: we counted the ones we completed and we
                           know one is left. Never claim to know what's behind it. */}
                       <p className="mt-1 text-[11px] text-text2 tabular-nums">
-                        {pct}% done — {h.steps_done} {h.steps_done === 1 ? "screen" : "screens"} filled, one left
+                        {expired
+                          ? `${h.steps_done} ${h.steps_done === 1 ? "screen" : "screens"} were filled before the form reset`
+                          : `${pct}% done — ${h.steps_done} ${h.steps_done === 1 ? "screen" : "screens"} filled, one left`}
                       </p>
                     </>
                   )}
                 </div>
 
-                <div className="hd-sheet hd-sheet-lift flex items-center gap-3 px-4 py-3.5">
+                <div className={["hd-sheet hd-sheet-lift flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-1.5 px-4 py-3.5",
+                  expired ? "opacity-70" : ""].join(" ")}>
                   {/* The red dot BLINKS (Igor 09-23: «красные кнопочки должны
                       мигать») — a hand-back is the one row on this screen that
                       needs a human, and a still dot in a long list never gets
                       noticed. Pulse + a ring that expands out of it; both stop
                       under prefers-reduced-motion. */}
-                  <span className="hd-alert-dot shrink-0" aria-hidden />
-                  <div className="min-w-0 flex-1">
+                  {expired
+                    ? <span className="h-2 w-2 shrink-0 rounded-full bg-border" aria-hidden />
+                    : <span className="hd-alert-dot shrink-0" aria-hidden />}
+                  <div className="min-w-0 flex-1 basis-[calc(100%-1.25rem)] sm:basis-auto">
                     {h.url ? (
                       <a
                         href={h.url}
@@ -404,7 +428,10 @@ export default function HistoryView({
                     )}
                     {h.company ? <span className="hd-hist-sub"> · {h.company}</span> : null}
                   </div>
-                  {pct !== null && (
+                  {age && (
+                    <span className="shrink-0 text-[11px] text-text2 tabular-nums">{age}</span>
+                  )}
+                  {pct !== null && !expired && (
                     <span className="shrink-0 text-[11px] text-text2 tabular-nums opacity-0
                       transition-opacity group-hover:opacity-100">
                       {pct}%
@@ -422,7 +449,7 @@ export default function HistoryView({
                   {/* The questions that blocked it — answer them here instead of
                       redoing the whole form on the employer's site. Only when we
                       actually captured them AND they aren't answered yet. */}
-                  {!!questionsFor(h).length && !requeued.has(h.id) && !h.requeued_at && (
+                  {!!questionsFor(h).length && !isQueued && (
                     <button
                       onClick={() => setAnswering((cur) => (cur === h.id ? null : h.id))}
                       data-testid="handback-answer-open"
@@ -432,7 +459,7 @@ export default function HistoryView({
                       {answering === h.id ? "Close" : `Answer ${questionsFor(h).length}`}
                     </button>
                   )}
-                  {h.newer_build && !requeued.has(h.id) && !h.requeued_at && (
+                  {h.newer_build && !isQueued && (
                     <button
                       onClick={() => retryHandback(h.id)}
                       data-testid="handback-retry"
@@ -442,11 +469,29 @@ export default function HistoryView({
                       Try again
                     </button>
                   )}
-                  {/* Appears on hover: a list that never drains stops being read. */}
+                  {/* The way IN — the one thing the row is FOR. A title that happens to
+                      be a link is not an affordance: Igor opened a 95% row and found
+                      nothing to click but Done (10-08). Always visible. */}
+                  {h.url && !isQueued && (
+                    <a
+                      href={h.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-testid="handback-open-form"
+                      className={[expired ? "" : "hd-answer-cta", // the pulse means "needs you NOW" — a stale record sits still
+                        "shrink-0 rounded-md border border-accent/40 bg-accent/8 px-2 py-0.5",
+                        "text-[11px] font-medium text-accent transition hover:bg-accent/15"].join(" ")}
+                    >
+                      {expired ? "Open posting ↗" : "Finish form ↗"}
+                    </a>
+                  )}
+                  {/* Hover-only while fresh (a list that never drains stops being read);
+                      always visible once stale — Done is the honest exit then. */}
                   <button
                     onClick={() => markHandbackDone(h.id)}
-                    className="shrink-0 rounded-md border border-border px-2 py-0.5 text-[11px]
-                      font-medium text-text2 opacity-0 transition hover:text-text group-hover:opacity-100"
+                    className={["shrink-0 rounded-md border border-border px-2 py-0.5 text-[11px]",
+                      "font-medium text-text2 transition hover:text-text",
+                      expired ? "" : "opacity-0 group-hover:opacity-100"].join(" ")}
                   >
                     Done
                   </button>
