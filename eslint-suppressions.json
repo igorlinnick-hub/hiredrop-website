@@ -1,0 +1,439 @@
+{
+  "app/affiliate/apply/page.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "app/dashboard/campaign/page.tsx": {
+    "no-empty": {
+      "count": 1
+    }
+  },
+  "app/dashboard/layout.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "app/dashboard/loading.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "app/dashboard/page.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/affiliate/AffiliateCta.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/affiliate/AffiliateHero.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/affiliate/ApplyForm.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/affiliate/PeopleCluster.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/auth/AuthHiccup.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/auth/GoogleButton.tsx": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    }
+  },
+  "components/dashboard/AffiliateView.tsx": {
+    "local/no-history-comments": {
+      "count": 3
+    }
+  },
+  "components/dashboard/AmbassadorSection.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/dashboard/BillingSection.tsx": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    },
+    "local/no-history-comments": {
+      "count": 3
+    }
+  },
+  "components/dashboard/CampaignView.tsx": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 5
+    },
+    "local/no-history-comments": {
+      "count": 16
+    },
+    "no-empty": {
+      "count": 4
+    }
+  },
+  "components/dashboard/CaptchaAlert.tsx": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 2
+    },
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/dashboard/ChecklistCard.tsx": {
+    "local/no-history-comments": {
+      "count": 5
+    }
+  },
+  "components/dashboard/CheckoutSuccessBanner.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/dashboard/DashboardLayout.tsx": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    },
+    "local/no-history-comments": {
+      "count": 3
+    }
+  },
+  "components/dashboard/DevPanel.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/dashboard/EmployerAnswersForm.tsx": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    }
+  },
+  "components/dashboard/FreeTastePaywall.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/dashboard/HandbackAnswers.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/dashboard/HistoryInsights.tsx": {
+    "local/no-history-comments": {
+      "count": 3
+    }
+  },
+  "components/dashboard/HistoryView.tsx": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    },
+    "local/no-history-comments": {
+      "count": 9
+    }
+  },
+  "components/dashboard/LaunchModal.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/dashboard/LaunchModeCards.tsx": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    },
+    "local/no-history-comments": {
+      "count": 7
+    }
+  },
+  "components/dashboard/PlatformConnections.tsx": {
+    "local/no-history-comments": {
+      "count": 2
+    }
+  },
+  "components/dashboard/PlatformsIndicator.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/dashboard/PosterPanel.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/dashboard/QuickActions.tsx": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 3
+    },
+    "local/no-history-comments": {
+      "count": 5
+    }
+  },
+  "components/dashboard/RadiusMap.tsx": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 2
+    },
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/dashboard/ResumeATSPanel.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/dashboard/SettingsProfileForm.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/dashboard/SettingsRail.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/dashboard/SettingsView.tsx": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    },
+    "local/no-history-comments": {
+      "count": 2
+    }
+  },
+  "components/dashboard/SkillsCard.tsx": {
+    "local/no-history-comments": {
+      "count": 2
+    }
+  },
+  "components/dashboard/SkillsModal.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/dashboard/StartReadiness.tsx": {
+    "local/no-history-comments": {
+      "count": 4
+    }
+  },
+  "components/dashboard/StatsCards.tsx": {
+    "local/no-history-comments": {
+      "count": 2
+    }
+  },
+  "components/dashboard/SubmitModePanel.tsx": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    },
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/dashboard/TapProgressDock.tsx": {
+    "local/no-history-comments": {
+      "count": 4
+    }
+  },
+  "components/dashboard/TapView.tsx": {
+    "local/no-history-comments": {
+      "count": 15
+    },
+    "no-empty": {
+      "count": 1
+    }
+  },
+  "components/dashboard/TodayList.tsx": {
+    "local/no-history-comments": {
+      "count": 2
+    }
+  },
+  "components/dashboard/TrackingPopupRow.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/dashboard/useHandbacks.ts": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 2
+    },
+    "local/no-history-comments": {
+      "count": 4
+    }
+  },
+  "components/landing/AffiliateBand.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/landing/HeroCampaignDemo.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/landing/ProblemStats.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/onboarding/OnboardingWizard.tsx": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 2
+    }
+  },
+  "components/onboarding/StepEmployerAnswers.tsx": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    },
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/onboarding/StepHeader.tsx": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 2
+    }
+  },
+  "components/onboarding/StepPersonalInfo.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "components/onboarding/StepPlan.tsx": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "lib/api.ts": {
+    "local/no-history-comments": {
+      "count": 2
+    }
+  },
+  "lib/auth/signup-result.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "lib/campaign/auto-daily.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "lib/campaign/status.ts": {
+    "local/no-history-comments": {
+      "count": 2
+    }
+  },
+  "lib/campaign/stop.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "lib/constants.ts": {
+    "local/no-history-comments": {
+      "count": 8
+    }
+  },
+  "lib/dropArt.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "lib/extension-bridge.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "lib/fonts.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "lib/gate/landing.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "lib/handbacks/freshness.ts": {
+    "local/no-history-comments": {
+      "count": 2
+    }
+  },
+  "lib/history/places.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "lib/pricing.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "lib/resume/upload.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "lib/seo.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "lib/settings/profile.ts": {
+    "@eslint-community/eslint-comments/require-description": {
+      "count": 1
+    }
+  },
+  "lib/supabase/gate.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "lib/supabase/middleware.ts": {
+    "local/no-history-comments": {
+      "count": 3
+    }
+  },
+  "lib/supabase/session-user.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "lib/tap-run.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "lib/usResident.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "next.config.ts": {
+    "local/no-history-comments": {
+      "count": 6
+    }
+  },
+  "tests/campaign-stop-order.test.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "tests/forms-post.test.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "tests/handback-freshness.test.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  }
+}
