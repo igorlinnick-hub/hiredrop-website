@@ -119,4 +119,10 @@ export interface Application {
   cover_letter?: string;
   tailored_resume?: string;
   resume_pdf_url?: string; // signed URL to the ATS PDF we actually submitted (1h TTL)
+  // Where the job is (GET /applications/history, backend modules/job_location.py):
+  // the board's own text, what it says about the arrangement, and its "City, ST".
+  // Empty/null = we never saw a location — History counts it as such, never guesses.
+  location?: string;
+  work_setting?: "remote" | "hybrid" | "onsite" | null;
+  place?: string | null;
 }
