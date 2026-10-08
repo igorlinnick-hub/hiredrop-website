@@ -649,32 +649,7 @@ export default function TapView({ token: initialToken }: { token: string }) {
                           </p>
                         </div>
                       </div>
-                      {card.fit_current && typeof card.fit_score === "number" ? (
-                        <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border"
-                          title="Fit judge's score for your current resume and preferences"
-                          style={card.fit_score >= 70
-                            ? { background: "var(--hdc-pmint-bg)", color: "var(--hdc-pmint-tx)", borderColor: "var(--hdc-pmint-bd)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.15)" }
-                            : card.fit_score >= 55
-                            ? { background: "var(--hdc-pvio-bg)", color: "var(--hdc-pvio-tx)", borderColor: "var(--hdc-pvio-bd)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.15)" }
-                            : { background: "var(--hdc-pmut-bg)", color: "var(--hdc-pmut-tx)", borderColor: "var(--hdc-pmut-bd)" }}>
-                          {card.fit_score} fit
-                        </span>
-                      ) : (
-                        <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border"
-                          title="Not judged ahead of time — the fit judge checks it the moment we apply, and skips it if it doesn't fit."
-                          style={{ background: "var(--hdc-pmut-bg)", color: "var(--hdc-pmut-tx)", borderColor: "var(--hdc-pmut-bd)" }}>
-                          Fit checked when applying
-                        </span>
-                      )}
                     </div>
-
-                    {/* The judge's one line — reached against today's resume, never a stale one */}
-                    {card.fit_current && card.fit_reason && (
-                      <p className="text-[13px] leading-snug mb-3" style={{ color: "var(--hdc-sub)" }}>
-                        <span className="font-medium" style={{ color: "var(--hdc-title)" }}>Judge&apos;s note: </span>
-                        {card.fit_reason}
-                      </p>
-                    )}
 
                     {/* The job description — what you actually decide on */}
                     {card.description ? (

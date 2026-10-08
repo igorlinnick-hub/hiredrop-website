@@ -129,16 +129,6 @@ export default async function DashboardPage() {
         <div id="jobs">
           <TodayList jobs={todayJobs} fitsToday={fitsToday} />
         </div>
-
-        {/* The full record — applications by day, links, statuses, receipts, and the
-            "couldn't submit these" hand-backs — now lives in its own History tab
-            (/dashboard/history), not stacked under the dashboard. */}
-        <a
-          href="/dashboard/history"
-          className="hd-glass block rounded-2xl p-4 text-sm text-text2 hover:text-text hover:border-accent/40 transition"
-        >
-          View your full application history, per day — with links &amp; proof of submission →
-        </a>
       </div>
     </DashboardLayout>
   );
