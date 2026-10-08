@@ -149,6 +149,11 @@ export default function RadiusMap({
       // v6 is ESM-only with named exports — there is no default export anymore.
       const maplibregl = await import("maplibre-gl");
       if (cancelled || !containerRef.current || mapRef.current) return;
+      // v6 also stopped inlining its tile worker: it derives the worker's URL from
+      // import.meta.url, which the bundler rewrites, so it fell back to "" and loaded
+      // this page as the worker — a blank map with no tiles and no ring. Serve it from
+      // our origin; scripts/maplibre-worker.mjs copies the installed version there.
+      maplibregl.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
       // Brand accent for the ring — read the CSS var (WebGL paint can't use var()).
       const cs = getComputedStyle(containerRef.current);

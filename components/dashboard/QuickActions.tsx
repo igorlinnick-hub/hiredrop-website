@@ -229,9 +229,34 @@ export default function QuickActions({
 
   // ── keyword tag input ──────────────────────────────────────────────────────
 
+  // Chips write on change, like job type / work setting (persistChips) — not on the
+  // 20-second warm-up timer. That timer is cleaned up on unmount, so "remove a chip,
+  // open Tap, come back" lost the removal: the save never fired, the server page
+  // re-read the profile, and the removed keyword was back (Igor, live 2026-10-08).
+  // Writes are serialized and coalesced: holding Backspace fires one edit per keydown,
+  // and two unordered POSTs can land last-write-wins with the STALE list — the very
+  // symptom this fixes. One request in flight; a burst collapses into one more request
+  // carrying the latest list. platforms rides along as-is, same as every other prefs
+  // writer in this file (one policy; unifying it is its own change).
+  const kwSaveChain = useRef<Promise<void>>(Promise.resolve());
+  const kwToSave = useRef<string[] | null>(null);
+  function setAndPersistKeywords(next: string[]) {
+    setKeywords(next);
+    kwToSave.current = next;
+    kwSaveChain.current = kwSaveChain.current.then(async () => {
+      const want = kwToSave.current;
+      if (!want) return; // a later edit in this burst already carried it
+      kwToSave.current = null;
+      try {
+        const t = await getFreshToken();
+        await apiPost("/profile/prefs", t, { keywords: want, location, job_type: jobType, work_setting: workSetting, platforms });
+      } catch { /* optional filter — ignore */ }
+    });
+  }
+
   function addKeyword(raw: string) {
     const word = raw.trim();
-    if (word && !keywords.includes(word)) setKeywords((p) => [...p, word]);
+    if (word && !keywords.includes(word)) setAndPersistKeywords([...keywords, word]);
     setKwInput("");
   }
 
@@ -240,7 +265,7 @@ export default function QuickActions({
       e.preventDefault();
       addKeyword(kwInput);
     } else if (e.key === "Backspace" && kwInput === "" && keywords.length > 0) {
-      setKeywords((p) => p.slice(0, -1));
+      setAndPersistKeywords(keywords.slice(0, -1));
     }
   }
 
@@ -262,7 +287,9 @@ export default function QuickActions({
   }, [keywords]);
 
   function applyTypoFix(original: string, suggestion: string) {
-    setKeywords((p) => (p.includes(suggestion) ? p.filter((k) => k !== original) : p.map((k) => (k === original ? suggestion : k))));
+    setAndPersistKeywords(
+      keywords.includes(suggestion) ? keywords.filter((k) => k !== original) : keywords.map((k) => (k === original ? suggestion : k)),
+    );
     setTypoSuggestions((s) => s.filter((c) => c.original !== original));
   }
   function dismissTypoFix(original: string) {
@@ -636,7 +663,7 @@ export default function QuickActions({
                 text-xs font-medium rounded-full border border-accent/15 whitespace-nowrap">
               {kw}
               <button type="button"
-                onClick={(e) => { e.stopPropagation(); setKeywords((p) => p.filter((k) => k !== kw)); }}
+                onClick={(e) => { e.stopPropagation(); setAndPersistKeywords(keywords.filter((k) => k !== kw)); }}
                 className="hover:text-red/80 transition">
                 <svg className="w-2.5 h-2.5" viewBox="0 0 10 10" fill="currentColor">
                   <path d="M5 4.293 8.146 1.146a.5.5 0 0 1 .708.708L5.707 5l3.147 3.146a.5.5 0 0 1-.708.708L5 5.707 1.854 8.854a.5.5 0 0 1-.708-.708L4.293 5 1.146 1.854a.5.5 0 1 1 .708-.708z" />
