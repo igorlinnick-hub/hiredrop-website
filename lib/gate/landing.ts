@@ -27,18 +27,32 @@ export interface AuthLandingState {
   affiliateIntent: boolean;
 }
 
+/** Resolves `?next=` without a real host; never part of what safeNextPath returns. */
+const NEXT_PROBE_ORIGIN = "https://next.invalid";
+
 /**
- * `?next=` if it is a path on this site, otherwise null.
+ * `?next=` if it is a path on this site, otherwise null, normalized the way a
+ * browser reads it.
  *
- * "//host" and "/\host" are both protocol-relative to a browser (it reads the
- * backslash as a slash), so either would turn `?next=` into a way to send
- * someone who has just typed their password to another site.
+ * Parsed with the URL parser rather than checked as a string: a browser reads a
+ * backslash as a slash and deletes tabs and newlines before navigating, so
+ * "/\t/evil.com" becomes "//evil.com", another host. Sending someone there
+ * right after they typed their password is the attack this closes.
  */
 export function safeNextPath(next: string | null | undefined): string | null {
   if (!next) return null;
   if (!next.startsWith("/")) return null;
-  if (next.startsWith("//") || next.startsWith("/\\")) return null;
-  return next;
+  let url: URL;
+  try {
+    url = new URL(next, NEXT_PROBE_ORIGIN);
+  } catch {
+    return null;
+  }
+  if (url.origin !== NEXT_PROBE_ORIGIN) return null;
+  const path = url.pathname + url.search + url.hash;
+  // "/.//evil.com" parses to the path "//evil.com", which on its own names another host.
+  if (path.startsWith("//")) return null;
+  return path;
 }
 
 /** Not onboarded, and here for the affiliate program. */
