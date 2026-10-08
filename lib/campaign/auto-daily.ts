@@ -82,6 +82,8 @@ export function nextRunLabel(next: AutoDailyNextRun | null, now: number = Date.n
 const FIX_PATH: Record<string, string> = {
   onboarding_incomplete: "/onboarding",
   employer_answers_missing: "/dashboard/settings?tab=forms",
+  // The one-time review lives in the Start sheet on the dashboard.
+  review_missing: "/dashboard",
   us_only: "/dashboard/settings",
   disposable_email: "/dashboard/settings",
   free_limit_reached: "/dashboard/settings?tab=billing",
