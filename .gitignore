@@ -20,6 +20,10 @@
 # production
 /build
 
+# maplibre's tile worker, copied from node_modules on install/dev/build
+# (scripts/maplibre-worker.mjs) so it always matches the installed version
+/public/maplibre/
+
 # misc
 .DS_Store
 *.pem
