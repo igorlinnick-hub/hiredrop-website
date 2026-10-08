@@ -139,7 +139,7 @@
       "count": 1
     },
     "local/no-history-comments": {
-      "count": 7
+      "count": 9
     }
   },
   "components/dashboard/LaunchModal.tsx": {
@@ -262,7 +262,7 @@
   },
   "components/dashboard/useHandbacks.ts": {
     "@eslint-community/eslint-comments/require-description": {
-      "count": 1
+      "count": 2
     },
     "local/no-history-comments": {
       "count": 4
@@ -361,6 +361,11 @@
       "count": 1
     }
   },
+  "lib/handbacks/freshness.ts": {
+    "local/no-history-comments": {
+      "count": 2
+    }
+  },
   "lib/history/places.ts": {
     "local/no-history-comments": {
       "count": 1
@@ -422,6 +427,11 @@
     }
   },
   "tests/forms-post.test.ts": {
+    "local/no-history-comments": {
+      "count": 1
+    }
+  },
+  "tests/handback-freshness.test.ts": {
     "local/no-history-comments": {
       "count": 1
     }
