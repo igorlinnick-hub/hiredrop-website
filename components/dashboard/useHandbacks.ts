@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { apiGet } from "@/lib/api";
 
@@ -80,4 +80,91 @@ export function handbackProgress(stepsDone: number): number | null {
   const done = Math.max(0, Math.floor(stepsDone || 0));
   if (done <= 0) return null;
   return Math.round((done / (done + 1)) * 100);
+}
+
+/**
+ * The ✕ on the History list (Igor, 10-08: «крестик чтоб убрать если что»).
+ *
+ * Hiding is not resolving: the rows stay open on the server, and "Done" is still the only
+ * way to say a job is finished. The ✕ remembers WHAT was on screen when it was pressed,
+ * so the list — and the nav dot, which reads the same flag — come back on their own the
+ * moment something new needs the person. "Hide these", never "hide hand-backs forever":
+ * a job that needs a human must not go silent because an older batch was dismissed.
+ *
+ * "What", not just which ids: a repeat wall on the same posting OVERWRITES the open row
+ * (jobflow app/db/handbacks.py `_update_open` — same id, requeued_at back to null, new
+ * reason and questions). A row the person re-queued and then hid, which hits the wall
+ * again, keeps its id — keyed by id alone it would stay hidden exactly when it needs them.
+ *
+ * This browser only (localStorage), with an in-memory fallback so the ✕ still works for
+ * the visit when storage refuses the write. The snapshot is the raw string — a primitive —
+ * so useSyncExternalStore sees one value until it actually changes.
+ */
+const HIDDEN_KEY = "hd:handbacks:hidden";
+
+/** Everything about a row that changes when it needs the person again. Queued-or-not is a
+ *  flag, not the timestamp: queued → open again is news, re-queued twice is not. */
+const handbackKey = (h: Handback) =>
+  [
+    h.id,
+    h.requeued_at ? "queued" : "open",
+    h.reason,
+    h.steps_done,
+    h.job_title,
+    h.company,
+    (h.questions || []).map((q) => q.label).join("\u241f"),
+  ].join("|");
+
+const hiddenListeners = new Set<() => void>();
+let hiddenInMemory = "";
+
+// The in-memory copy is set only while storage refuses writes, so a working storage
+// (and another tab's ✕ arriving through it) is always what gets read.
+const readHidden = () => {
+  if (hiddenInMemory) return hiddenInMemory;
+  try {
+    return localStorage.getItem(HIDDEN_KEY) ?? "";
+  } catch {
+    return "";
+  }
+};
+
+const subscribeHidden = (listener: () => void) => {
+  hiddenListeners.add(listener);
+  // The ✕ pressed in another tab hides the list here too.
+  // key === null is another tab's localStorage.clear().
+  const onStorage = (e: StorageEvent) => { if (e.key === HIDDEN_KEY || e.key === null) listener(); };
+  window.addEventListener("storage", onStorage);
+  return () => {
+    hiddenListeners.delete(listener);
+    window.removeEventListener("storage", onStorage);
+  };
+};
+
+export function useHiddenHandbacks(items: Handback[]) {
+  const raw = useSyncExternalStore(subscribeHidden, readHidden, () => "");
+  const hidden = useMemo(() => {
+    try {
+      return new Set<string>(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      return new Set<string>();
+    }
+  }, [raw]);
+
+  const allHidden = items.length > 0 && items.every((h) => hidden.has(handbackKey(h)));
+
+  // Replaces the stored set rather than adding to it: only what is on screen now is
+  // remembered, so the key never outgrows one page of /handbacks.
+  const hide = useCallback(() => {
+    const next = JSON.stringify(items.map(handbackKey));
+    try {
+      localStorage.setItem(HIDDEN_KEY, next);
+      hiddenInMemory = "";
+    } catch {
+      hiddenInMemory = next; // Private mode / full storage — hidden for this visit only.
+    }
+    hiddenListeners.forEach((l) => l());
+  }, [items]);
+
+  return { allHidden, hide };
 }

@@ -1439,6 +1439,26 @@ h1, h2, h3 {
 .dark .hd-hist-day::after {
   background: linear-gradient(90deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, 0));
 }
+/* Icon-only controls that sit on a ledger line (the hand-back list's fold ⌄ and
+   hide ✕): ink glyph, no frame at rest; on hover a paper square and the accent,
+   the same quiet-until-touched manner as .hd-chip-ghost. */
+.hd-icon-btn {
+  display: inline-grid; place-items: center;
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  color: var(--text2);
+  cursor: pointer;
+  transition: background-color .2s, border-color .2s, color .2s, transform .2s cubic-bezier(.3, .9, .4, 1);
+}
+.hd-icon-btn svg { width: 15px; height: 15px; }
+.hd-icon-btn:hover {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--accent);
+}
+.hd-icon-btn:active { transform: scale(.94); }
+.hd-icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Numbers want presence, so they get size and ink — the metric tiles
    are the one place a digit is the content. */

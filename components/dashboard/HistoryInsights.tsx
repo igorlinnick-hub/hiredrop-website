@@ -11,7 +11,7 @@
  * here needs a field we don't have, so no block can go silently empty-but-pretty.
  *
  *   HOW MUCH  → the KPI row (stat tiles; a number is its own best chart)
- *   WHEN      → "Rhythm": a calendar heatmap of applications per day + streaks
+ *   WHEN      → "Rhythm": a calendar heatmap of applications per day
  *   TODAY     → the daily cap as a meter, with the pool numbers beside it
  *   WHERE     → "Where they went": platforms as bars, one hue (the categories are
  *               nominal — colouring them by size would double-encode length)
@@ -212,17 +212,6 @@ export default function HistoryInsights({
     }
     const busiest = cells.reduce((m, c) => Math.max(m, c.n), 0);
 
-    // Streaks: consecutive days with at least one application. Current streak
-    // counts back from today (yesterday still counts — a streak shouldn't break
-    // because it is 9am and the run hasn't started yet).
-    let current = 0;
-    for (let t = (perDay.get(today) ? today : today - DAY); perDay.get(t); t -= DAY) current += 1;
-    let longest = 0, running = 0;
-    for (let t = gridStart; t <= today; t += DAY) {
-      running = perDay.get(t) ? running + 1 : 0;
-      if (running > longest) longest = running;
-    }
-
     // Month ticks for the heatmap header — one label per month, at the column
     // where that month starts.
     const months: { col: number; label: string }[] = [];
@@ -232,7 +221,7 @@ export default function HistoryInsights({
       if (!months.length || months[months.length - 1].label !== label) months.push({ col: w, label });
     }
 
-    return { total, week, hours, last24, hourMax, counts, answered, rate, platforms, platformMax, cells, busiest, current, longest, months };
+    return { total, week, hours, last24, hourMax, counts, answered, rate, platforms, platformMax, cells, busiest, months };
   }, [rows, now]);
 
   // Heat bins: four steps of ONE hue (sequential), plus "nothing that day".
@@ -329,20 +318,15 @@ export default function HistoryInsights({
       {/* WHEN — rhythm. The gaps are the point: a week with no column is a week
           nothing went out, and that is the one thing a job seeker can fix. */}
       <div className="grid gap-3 lg:grid-cols-12">
-      <div className="hd-sheet p-5 sm:p-6 lg:col-span-7">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <div>
-            <h3 className="hd-hist-sub-head">Rhythm</h3>
-            <p className="hd-eyebrow mt-1.5">Applications per day · last {WEEKS} weeks</p>
-          </div>
-          <div className="flex items-baseline gap-5">
-            <span className="hd-eyebrow">
-              Current streak <b className="hd-stat-inline hd-untrack">{data.current} days</b>
-            </span>
-            <span className="hd-eyebrow">
-              Longest <b className="hd-stat-inline hd-untrack">{data.longest} days</b>
-            </span>
-          </div>
+      {/* min-w-0: a grid item defaults to its content's width, so on a phone the
+          18-week heatmap pushed the card (and the page) past the screen instead of
+          scrolling inside .hd-heat-wrap. */}
+      <div className="hd-sheet min-w-0 p-5 sm:p-6 lg:col-span-7">
+        {/* No streak counters (Igor, 10-08: лишнее) — the heatmap already shows a
+            run of days, and a streak number only scolds a day the run didn't start. */}
+        <div>
+          <h3 className="hd-hist-sub-head">Rhythm</h3>
+          <p className="hd-eyebrow mt-1.5">Applications per day · last {WEEKS} weeks</p>
         </div>
 
         <div className="hd-heat-wrap hd-scroll mt-4">
