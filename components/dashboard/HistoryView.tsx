@@ -801,6 +801,7 @@ function ApplicationDetail({ a }: { a: Application }) {
           </a>
         )}
       </div>
+      {!!a.form_answers?.length && <AnswersBlock answers={a.form_answers} delay={120} />}
       {a.cover_letter && (
         <DocBlock label="Cover letter we sent" text={a.cover_letter} delay={140} kind="letter" />
       )}
@@ -824,6 +825,42 @@ function ApplicationDetail({ a }: { a: Application }) {
           submitted, and the cover letter whenever the employer asked for one.
         </p>
       )}
+    </div>
+  );
+}
+
+/** What the employer's form asked and what we answered in the person's name, so they
+ *  walk into the interview knowing it (e.g. "willing to work 5 days in the office: Yes"). */
+function AnswersBlock({ answers, delay = 0 }: { answers: { q: string; a: string }[]; delay?: number }) {
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  const copy = () => {
+    navigator.clipboard.writeText(answers.map((x) => `${x.q}\n${x.a}`).join("\n\n")).catch(() => {});
+    setCopied(true);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCopied(false), 1800);
+  };
+  return (
+    <div className="mb-3 hd-rise" style={{ animationDelay: `${delay}ms` }} data-testid="history-answers">
+      <div className="hd-doc-label">
+        <span className="hd-eyebrow hd-eyebrow-ink order-first">What we answered for you</span>
+        <button onClick={copy} aria-live="polite"
+          className={["order-last hd-chip", copied ? "hd-chip-done" : ""].join(" ")}>
+          {copied
+            ? <span className="hd-copied-pop inline-flex"><IconCheck /></span>
+            : <IconCopy />}
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <dl className="hd-doc hd-scroll max-h-80 overflow-y-auto divide-y divide-border px-4 sm:px-5">
+        {answers.map((x, i) => (
+          <div key={i} className="py-2">
+            <dt className="hd-hist-sub text-[12px] leading-snug">{x.q}</dt>
+            <dd className="mt-0.5 text-[13px] font-medium leading-snug text-text">{x.a}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   );
 }

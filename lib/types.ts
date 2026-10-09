@@ -125,4 +125,7 @@ export interface Application {
   location?: string;
   work_setting?: "remote" | "hybrid" | "onsite" | null;
   place?: string | null;
+  // The employer's form questions and the answers we gave in the person's name, captured
+  // right before submit (ext collectFormAnswers). Empty for older applications.
+  form_answers?: { q: string; a: string }[];
 }
