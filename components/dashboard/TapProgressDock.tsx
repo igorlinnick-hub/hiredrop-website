@@ -431,11 +431,12 @@ function LiveRunDock({ snap, shape, busy, note, onStop, onHide }: {
             ) : platforms.length === 0 ? (
               <span className="text-[12.5px] text-text2">Searching for the next match…</span>
             ) : (
+              // One platform: its count is the gauge number, so the chip keeps only the name.
               platforms.map(([id, n]) => (
                 <span key={id} className="hd-dock-chip">
                   <i style={{ background: hueOf(id) }} aria-hidden />
                   {platformName(id)}
-                  <b>{n}</b>
+                  {platforms.length > 1 && <b>{n}</b>}
                 </span>
               ))
             )}
