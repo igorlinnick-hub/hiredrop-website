@@ -30,6 +30,7 @@ import { handbackAge, handbackExpired } from "@/lib/handbacks/freshness";
 import { useNowMs, useHandbacks, useHiddenHandbacks, handbackProgress, type Handback } from "@/components/dashboard/useHandbacks";
 import HandbackAnswers from "@/components/dashboard/HandbackAnswers";
 import PersonalQuestions from "@/components/dashboard/PersonalQuestions";
+import AnswerRow from "@/components/dashboard/AnswerRow";
 import HistoryInsights from "@/components/dashboard/HistoryInsights";
 import PosterPanel from "@/components/dashboard/PosterPanel";
 import { buildPlaceChips, placeText } from "@/lib/history/places";
@@ -830,8 +831,11 @@ function ApplicationDetail({ a }: { a: Application }) {
 }
 
 /** What the employer's form asked and what we answered in the person's name, so they
- *  walk into the interview knowing it (e.g. "willing to work 5 days in the office: Yes"). */
-function AnswersBlock({ answers, delay = 0 }: { answers: { q: string; a: string }[]; delay?: number }) {
+ *  walk into the interview knowing it (e.g. "willing to work 5 days in the office: Yes").
+ *  Each answer can be changed; the change is remembered for the next forms (AnswerRow). */
+function AnswersBlock({ answers: sent, delay = 0 }: { answers: { q: string; a: string }[]; delay?: number }) {
+  const [changed, setChanged] = useState<Record<number, string>>({});
+  const answers = sent.map((x, i) => (i in changed ? { ...x, a: changed[i] } : x));
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
@@ -855,10 +859,7 @@ function AnswersBlock({ answers, delay = 0 }: { answers: { q: string; a: string 
       </div>
       <dl className="hd-doc hd-scroll max-h-80 overflow-y-auto divide-y divide-border px-4 sm:px-5">
         {answers.map((x, i) => (
-          <div key={i} className="py-2">
-            <dt className="hd-hist-sub text-[12px] leading-snug">{x.q}</dt>
-            <dd className="mt-0.5 text-[13px] font-medium leading-snug text-text">{x.a}</dd>
-          </div>
+          <AnswerRow key={i} q={x.q} a={x.a} onChanged={(a) => setChanged((prev) => ({ ...prev, [i]: a }))} />
         ))}
       </dl>
     </div>
