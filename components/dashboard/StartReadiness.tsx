@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import EmployerAnswersForm, { type MissingAnswer } from "@/components/dashboard/EmployerAnswersForm";
+import ReviewSheet from "@/components/dashboard/ReviewSheet";
 import { answersUi } from "@/lib/employerAnswers";
 import { apiGet } from "@/lib/api";
 
@@ -275,8 +276,16 @@ export default function StartReadinessModal({
   // question, and the server's word beats our local "done".
   const [answeredFor, setAnsweredFor] = useState<ReadinessCheck[] | null>(null);
   const answered = answeredFor === checks;
+  // Same for the one-time review before the first run (fix "review").
+  const [reviewedFor, setReviewedFor] = useState<ReadinessCheck[] | null>(null);
+  const reviewed = reviewedFor === checks;
   if (!open) return null;
-  const failed = checks.filter((c) => !c.ok && !(c.fix === "answers" && answered));
+  const failed = checks.filter(
+    (c) => !c.ok && !(c.fix === "answers" && answered) && !(c.fix === "review" && reviewed),
+  );
+  // The review shows every answer again, so it waits until the unanswered ones are in:
+  // one form, then one look at everything — never the same question twice on one screen.
+  const answersPending = failed.some((c) => c.fix === "answers" && c.missing?.length);
 
   return (
     // A driver that clicks Start and sees nothing happen needs to know WHICH modal
@@ -318,6 +327,16 @@ export default function StartReadinessModal({
                 if (failed.length === 1) onRecheck?.();
               }}
             />
+          ) : c.fix === "review" ? (
+            answersPending ? null : (
+              <ReviewSheet
+                key={c.id}
+                onDone={() => {
+                  setReviewedFor(checks);
+                  if (failed.length === 1) onRecheck?.();
+                }}
+              />
+            )
           ) : (
             <div key={c.id}
               className="flex items-center gap-3 rounded-xl border border-border bg-surface2/40 p-3.5">

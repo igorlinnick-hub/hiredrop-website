@@ -9,7 +9,9 @@
 // Only the checks the run cannot do without block it. The others (keywords, a run already
 // marked running, the free quota) mean something else for a deck of approved cards, and
 // the extension already guards the ones that matter there.
-export const TAP_BLOCKING_CHECKS = ["onboarding", "us_only", "employer_answers", "resume"];
+// "review" — the one-time look at everything before the FIRST run — holds a Tap run too:
+// a first run is a first run whichever mode sends it.
+export const TAP_BLOCKING_CHECKS = ["onboarding", "us_only", "employer_answers", "resume", "review"];
 
 export interface GateCheck {
   id: string;

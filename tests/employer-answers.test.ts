@@ -125,10 +125,11 @@ test("a snapshot saved before the Answers step resumes on the same screen", () =
 
 test("every count of missing answers says which list this build can ask", () => {
   // A client that says nothing is held by the server to the list it always saw — that is
-  // what keeps an old tab from being asked something it cannot draw. This build says 2.
-  assert.equal(ANSWERS_UI, 2);
-  assert.equal(answersUi("/campaign/readiness"), "/campaign/readiness?answers_ui=2");
-  assert.equal(answersUi("/campaign/start?x=1"), "/campaign/start?x=1&answers_ui=2");
+  // what keeps an old tab from being asked something it cannot draw. This build says 3:
+  // it draws the one-time review before the first run too.
+  assert.equal(ANSWERS_UI, 3);
+  assert.equal(answersUi("/campaign/readiness"), "/campaign/readiness?answers_ui=3");
+  assert.equal(answersUi("/campaign/start?x=1"), "/campaign/start?x=1&answers_ui=3");
 });
 
 test("questions from any vintage of server are drawable", () => {

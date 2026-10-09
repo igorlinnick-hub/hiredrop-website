@@ -9,7 +9,8 @@ export type AnswerKind = "text" | "yesno" | "us_resident";
 // server holds a client that sends nothing — a tab loaded before a question existed — to
 // the list it has always seen, so nobody is asked something their screen cannot answer
 // honestly. Bump together with ANSWERS_UI in modules/employer_answers.py.
-export const ANSWERS_UI = 2;
+// 3: this build also draws the one-time review before the first run (ReviewSheet).
+export const ANSWERS_UI = 3;
 
 /** `?answers_ui=N` for the three endpoints that count missing answers. */
 export const answersUi = (path: string) => `${path}${path.includes("?") ? "&" : "?"}answers_ui=${ANSWERS_UI}`;
