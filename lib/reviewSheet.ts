@@ -65,6 +65,18 @@ export function reviewBody(
 }
 
 /** The keys the server still found blank after a save, whichever list named them. */
+/** The server's reason per row it refused (e.g. answers that contradict each other) —
+ * such a row is not blank, so without this the sheet would say "fill in the outlined
+ * ones" and outline nothing. */
+export function serverNotes(res: unknown): Record<string, string> {
+  const r = (res || {}) as { missing?: { key?: unknown; note?: unknown }[] };
+  return Object.fromEntries(
+    (Array.isArray(r.missing) ? r.missing : []).flatMap((m) =>
+      typeof m?.key === "string" && typeof m?.note === "string" && m.note ? [[m.key, m.note]] : [],
+    ),
+  );
+}
+
 export function stillBlank(res: unknown): string[] {
   const r = (res || {}) as { missing?: { key?: unknown }[]; incomplete?: unknown[] };
   const fromMissing = (Array.isArray(r.missing) ? r.missing : [])

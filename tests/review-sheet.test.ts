@@ -15,6 +15,7 @@ import {
   editableRows,
   reviewBody,
   reviewValues,
+  serverNotes,
   stillBlank,
   type ReviewSection,
 } from "../lib/reviewSheet.ts";
@@ -94,6 +95,12 @@ test("the body carries every edit and every tickbox as a real boolean", () => {
 test("whatever the server still found blank is named back", () => {
   assert.deepEqual(stillBlank({ missing: [{ key: "school" }], incomplete: ["phone"] }), ["school", "phone"]);
   assert.deepEqual(stillBlank(null), []);
+});
+
+test("the server's reason for a refused row reaches the sheet", () => {
+  const res = { missing: [{ key: "sponsorship", note: "You said you can't work in the US" }, { key: "school" }] };
+  assert.deepEqual(serverNotes(res), { sponsorship: "You said you can't work in the US" });
+  assert.deepEqual(serverNotes(null), {});
 });
 
 test("a first run in Tap is held for the review too", () => {

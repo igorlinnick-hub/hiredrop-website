@@ -11,6 +11,7 @@ import {
   isInfo,
   reviewBody,
   reviewValues,
+  serverNotes,
   stillBlank,
   type ReviewSection,
 } from "@/lib/reviewSheet";
@@ -41,6 +42,9 @@ export default function ReviewSheet({ onDone }: { onDone: () => void }) {
   const [err, setErr] = useState<string | null>(null);
   // Rows the server still found blank on the last save — outlined until they are filled.
   const [flagged, setFlagged] = useState<string[]>([]);
+  // The server's reason for a row it refused that is not blank (answers that contradict
+  // each other); dropped once the person changes that row.
+  const [notes, setNotes] = useState<Record<string, string>>({});
   // A close (✕) during a save: the answer belongs to a sheet that is gone.
   const mounted = useRef(true);
   useEffect(() => {
@@ -110,7 +114,15 @@ export default function ReviewSheet({ onDone }: { onDone: () => void }) {
   const blank = new Set(blankRows(sections, values, flags));
   const ready = canConfirm(sections, values, flags);
   const abroad = rows.some((q) => q.kind === "us_resident" && values[q.key] === false);
-  const set = (k: string, v: string | boolean) => setValues((s) => ({ ...s, [k]: v }));
+  const set = (k: string, v: string | boolean) => {
+    setValues((s) => ({ ...s, [k]: v }));
+    setNotes((n) => {
+      if (!(k in n)) return n;
+      const rest = { ...n };
+      delete rest[k];
+      return rest;
+    });
+  };
 
   async function confirm() {
     if (!ready || saving || !sections) return;
@@ -125,7 +137,13 @@ export default function ReviewSheet({ onDone }: { onDone: () => void }) {
       if (!mounted.current) return;
       if (res?.confirmed) return onDone();
       setFlagged(stillBlank(res));
-      setErr("A few details are still empty — fill in the outlined ones.");
+      const why = serverNotes(res);
+      setNotes(why);
+      setErr(
+        Object.keys(why).length
+          ? "A few answers don't fit together — check the outlined ones."
+          : "A few details are still empty — fill in the outlined ones.",
+      );
     } catch (e) {
       if (!mounted.current) return;
       setErr(e instanceof ApiError ? e.message : e instanceof Error ? e.message : String(e));
@@ -163,7 +181,8 @@ export default function ReviewSheet({ onDone }: { onDone: () => void }) {
                   );
                 }
                 const q = rows.find((x) => x.key === row.key)!;
-                const outlined = flagged.includes(q.key) && blank.has(q.key);
+                const note = notes[q.key] ?? q.note;
+                const outlined = flagged.includes(q.key) && (blank.has(q.key) || q.key in notes);
                 return (
                   <div key={q.key} data-testid={`review-${q.key}`}>
                     <span className="mb-1 block text-xs font-medium text-text2">
@@ -171,7 +190,7 @@ export default function ReviewSheet({ onDone }: { onDone: () => void }) {
                       {row.required === false && <span className="text-text2/50"> · optional</span>}
                     </span>
                     {q.kind !== "text" ? (
-                      <div className="flex gap-2">
+                      <div className={"flex gap-2" + (outlined ? " rounded-lg ring-1 ring-red" : "")}>
                         {[true, false].map((v) => (
                           <button
                             key={String(v)}
@@ -204,7 +223,7 @@ export default function ReviewSheet({ onDone }: { onDone: () => void }) {
                         {anchors[q.key].label}
                       </label>
                     )}
-                    {q.note && <p className="mt-1 text-xs text-red">{q.note}</p>}
+                    {note && <p className="mt-1 text-xs text-red">{note}</p>}
                   </div>
                 );
               })}
