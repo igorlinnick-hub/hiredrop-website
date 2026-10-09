@@ -11,24 +11,37 @@
   Drop sits down at the desk in two honest cases only: the server says a campaign is
   running (/campaign/status, polled), or the chat backend is reading the account right
   now (the stream's `checking` state). Never on a timer.
+
+  Drop changes nothing himself. His cards are requests the person sends by pressing
+  them, with their own session (`actions` below), the same calls Settings makes.
 */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Buddy from "@/components/buddy/Buddy";
-import { askDrop } from "@/lib/buddy";
-import type { AskFn } from "@/components/buddy/BuddyPanel";
+import { askDrop, sendDropFeedback } from "@/lib/buddy";
+import { apiRequest } from "@/lib/api";
+import type { AskFn, DropActions } from "@/components/buddy/BuddyPanel";
 import { createClient } from "@/lib/supabase/client";
 import { pollMaxAge, readCampaignStatus } from "@/lib/campaign/status";
+import { replaceResume } from "@/lib/resume/replace";
 
-const ask: AskFn = async (question, history, on) => {
+const SESSION_EXPIRED = "Your session expired. Refresh the page and try again.";
+
+async function sessionToken(): Promise<string | null> {
   const { data: { session } } = await createClient().auth.getSession();
-  const token = session?.access_token;
-  if (!token) return "Your session expired — refresh the page and ask me again.";
+  return session?.access_token ?? null;
+}
+
+const ask: AskFn = async (question, history, on, attachment) => {
+  const token = await sessionToken();
+  if (!token) return { text: "Your session expired. Refresh the page and ask me again." };
   return askDrop(
     token,
     question,
     history.map((m) => ({ role: m.role === "drop" ? "assistant" : "user", text: m.text })),
     on,
+    attachment,
   );
 };
 
@@ -36,6 +49,28 @@ const POLL_MS = 10_000;
 
 export default function DashboardBuddy() {
   const [working, setWorking] = useState(false);
+  const router = useRouter();
+
+  const actions = useMemo<DropActions>(() => ({
+    async call(method, path, body) {
+      const token = await sessionToken();
+      if (!token) throw Object.assign(new Error(SESSION_EXPIRED), { status: 401 });
+      return apiRequest(method, path, token, body);
+    },
+    navigate: (path) => router.push(path),
+    feedback(body) {
+      sessionToken()
+        .then((t) => (t ? sendDropFeedback(t, body) : null))
+        .catch(() => { /* a lost vote costs a data point, never the chat */ });
+    },
+    async uploadResume(file) {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return SESSION_EXPIRED;
+      const path = await replaceResume(supabase, session.user.id, session.access_token, file);
+      return path ? null : "The upload didn't go through. Please try again.";
+    },
+  }), [router]);
 
   useEffect(() => {
     let alive = true;
@@ -62,6 +97,7 @@ export default function DashboardBuddy() {
   return (
     <Buddy
       ask={ask}
+      actions={actions}
       greeting="Hi, I'm Drop. I can see your campaign, applications and settings — ask me why something stopped, or anything about HireDrop."
       suggestions={["Why did my campaign stop?", "Why so few applications today?", "What's waiting on me?"]}
       working={working}

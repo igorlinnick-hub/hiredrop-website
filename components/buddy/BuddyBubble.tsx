@@ -10,7 +10,7 @@
 */
 
 import { AnimatePresence, motion } from "framer-motion";
-import BuddyPanel, { type AskFn, type PanelState } from "./BuddyPanel";
+import BuddyPanel, { type AskFn, type DropActions, type PanelState } from "./BuddyPanel";
 
 export default function BuddyBubble({
   open,
@@ -18,6 +18,7 @@ export default function BuddyBubble({
   greeting,
   suggestions,
   ask,
+  actions,
   onClose,
   onStateChange,
   onNudgeOpen,
@@ -29,6 +30,7 @@ export default function BuddyBubble({
   greeting: string;
   suggestions: string[];
   ask: AskFn;
+  actions?: DropActions;
   onClose: () => void;
   onStateChange: (s: PanelState) => void;
   onNudgeOpen: () => void;
@@ -42,6 +44,7 @@ export default function BuddyBubble({
           greeting={greeting}
           suggestions={suggestions}
           ask={ask}
+          actions={actions}
           onClose={onClose}
           onStateChange={onStateChange}
         />
