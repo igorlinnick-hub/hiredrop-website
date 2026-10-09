@@ -10,6 +10,7 @@ import SettingsRail, {
   IconPerson, IconForm, IconDoc, IconCard, IconShare, type SettingsSection,
 } from "@/components/dashboard/SettingsRail";
 import { AccountFields, FormFields } from "@/components/dashboard/SettingsProfileForm";
+import AboutYouCard from "@/components/dashboard/AboutYouCard";
 import { profileFromRow, settingsPatch } from "@/lib/settings/profile";
 import type { UserProfile } from "@/lib/types";
 
@@ -196,6 +197,7 @@ export default function SettingsView({ initialProfile }: { initialProfile: UserP
           {section === "forms" && (
             <>
               <FormFields profile={profile} update={update} saveBar={saveBar} />
+              <AboutYouCard />
               {/* Settings stopped being a second control panel (Igor, 09-07: "на
                   главной выбираются фильтры — пусть там и будет главный управляющий
                   модуль"). Keywords / location / job type, the platform list and the

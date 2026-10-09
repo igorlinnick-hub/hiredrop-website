@@ -29,6 +29,7 @@ import { apiPatch, apiPost, type StatsResponse } from "@/lib/api";
 import { handbackAge, handbackExpired } from "@/lib/handbacks/freshness";
 import { useNowMs, useHandbacks, useHiddenHandbacks, handbackProgress, type Handback } from "@/components/dashboard/useHandbacks";
 import HandbackAnswers from "@/components/dashboard/HandbackAnswers";
+import PersonalQuestions from "@/components/dashboard/PersonalQuestions";
 import HistoryInsights from "@/components/dashboard/HistoryInsights";
 import PosterPanel from "@/components/dashboard/PosterPanel";
 import { buildPlaceChips, placeText } from "@/lib/history/places";
@@ -201,6 +202,30 @@ export default function HistoryView({
     loadHandbacks();
   };
 
+  // Deep link: ?app=<id> (Drop's "Open this application" card) opens that record and
+  // scrolls to it. Read from window.location, like Settings' ?tab=, to avoid a
+  // useSearchParams Suspense boundary. A push to this same page keeps the view mounted
+  // and only re-renders it with fresh `applications`, so the link is re-read then too;
+  // `linked` stops a later refresh from yanking the page back to a card already shown.
+  const linked = useRef<string | null>(null);
+  const [focusApp, setFocusApp] = useState<string | null>(null);
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      const id = new URLSearchParams(window.location.search).get("app");
+      if (!id || id === linked.current || !applications.some((a) => a.id === id)) return;
+      linked.current = id;
+      setWhere("all");
+      setExpanded((prev) => new Set(prev).add(id));
+      setFocusApp(id);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [applications]);
+  // Scrolled after the open record has rendered. A jump, like an anchor link: a smooth
+  // scroll over a page still laying out its panels stopped short of the row on phones.
+  useEffect(() => {
+    if (focusApp) document.getElementById(`app-${focusApp}`)?.scrollIntoView({ block: "start" });
+  }, [focusApp]);
+
   // Pull receipts from the extension (bridge). Non-fatal if absent.
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
@@ -307,6 +332,9 @@ export default function HistoryView({
           10-08: «сворачивался когда больше 5ти незаконченных … и крестик чтоб убрать»).
           The header is the same ruled ledger line as a day below — a place for the two
           controls, not a banner. */}
+      {/* Circumstance questions first: one answer here can free several rows below. */}
+      {!handbacksOverride && <PersonalQuestions onAnswered={loadHandbacks} />}
+
       {handbacks.length > 0 && !handbacksHidden && (
         <div id="handbacks" className="scroll-mt-24" data-testid="handbacks">
           <div className="hd-hist-day">
@@ -584,7 +612,7 @@ export default function HistoryView({
                 const r = receiptFor(a);
                 const isOpen = expanded.has(a.id);
                 return (
-                  <div key={a.id}>
+                  <div key={a.id} id={`app-${a.id}`} className="scroll-mt-24">
                     {/* The whole row toggles the detail — same affordance as a job row in
                         Job Listings. Inner links/buttons stop propagation. */}
                     <div

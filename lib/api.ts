@@ -7,51 +7,73 @@ export const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "https://web-production-db45.up.railway.app";
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  /** `detail` is the server's own error body when it is more than a sentence, e.g.
+   *  {"error": "pick_an_option", "options": [...]} from POST /profile/facts. */
+  status: number;
+  detail?: unknown;
+  // Plain fields, not parameter properties: Node's type stripping (the test runner) can't run those.
+  constructor(status: number, message: string, detail?: unknown) {
     super(message);
     this.name = "ApiError";
+    this.status = status;
+    this.detail = detail;
   }
 }
 
-async function request<T>(
+/** The readable part of an error body: FastAPI puts a sentence or a code in `detail`,
+ *  and a structured refusal names its code in `detail.error`. */
+function errorMessage(body: { message?: unknown; detail?: unknown }, fallback: string): string {
+  if (typeof body.message === "string" && body.message) return body.message;
+  const d = body.detail;
+  if (typeof d === "string" && d) return d;
+  if (d && typeof d === "object" && typeof (d as { error?: unknown }).error === "string") {
+    return (d as { error: string }).error;
+  }
+  return fallback;
+}
+
+export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
+/** One authenticated call to /api/v1. Every verb goes through here, so auth, caching and
+ *  error shape are decided once. */
+export async function apiRequest<T>(
+  method: HttpMethod,
   path: string,
   token: string,
-  options: RequestInit = {}
+  body?: unknown,
 ): Promise<T> {
   const res = await fetch(`${API_BASE}/api/v1${path}`, {
-    ...options,
+    method,
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
-      ...(options.headers || {}),
     },
+    body: body === undefined || body === null ? undefined : JSON.stringify(body),
     cache: "no-store",
   });
 
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new ApiError(res.status, body.message || body.detail || res.statusText);
+    const err = await res.json().catch(() => ({}));
+    throw new ApiError(res.status, errorMessage(err, res.statusText), err.detail);
   }
 
   return res.json() as Promise<T>;
 }
 
 export function apiGet<T>(path: string, token: string): Promise<T> {
-  return request<T>(path, token);
+  return apiRequest<T>("GET", path, token);
 }
 
 export function apiPost<T>(path: string, token: string, body: unknown): Promise<T> {
-  return request<T>(path, token, {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
+  return apiRequest<T>("POST", path, token, body);
 }
 
 export function apiPatch<T>(path: string, token: string, body: unknown): Promise<T> {
-  return request<T>(path, token, {
-    method: "PATCH",
-    body: JSON.stringify(body),
-  });
+  return apiRequest<T>("PATCH", path, token, body);
+}
+
+export function apiDelete<T>(path: string, token: string): Promise<T> {
+  return apiRequest<T>("DELETE", path, token);
 }
 
 // ── Billing (Stripe) ─────────────────────────────────────────────────────────

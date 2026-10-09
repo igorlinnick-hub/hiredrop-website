@@ -25,7 +25,7 @@
 import { useEffect, useState } from "react";
 import DropFigure from "./DropFigure";
 import type { BuddyState } from "./BuddyOrb";
-import type { AskFn } from "./BuddyPanel";
+import type { AskFn, DropActions } from "./BuddyPanel";
 
 type BubbleComponent = typeof import("./BuddyBubble").default;
 
@@ -42,6 +42,7 @@ const NUDGE_SEEN_KEY = "hd_drop_nudge_seen";
 
 export default function Buddy({
   ask,
+  actions,
   greeting = "I can see your campaign, your platforms and your caps. Ask me anything about your account.",
   suggestions = ["Why no applications today?", "Which resume am I sending?", "Is this safe for my account?"],
   mood = "idle",
@@ -49,6 +50,7 @@ export default function Buddy({
   working = false,
 }: {
   ask: AskFn;
+  actions?: DropActions;
   greeting?: string;
   suggestions?: string[];
   mood?: Extract<BuddyState, "idle" | "success" | "stuck">;
@@ -141,6 +143,7 @@ export default function Buddy({
           greeting={greeting}
           suggestions={suggestions}
           ask={ask}
+          actions={actions}
           onClose={() => { setOpen(false); setChatState(null); setChecking(false); }}
           onStateChange={(s) => {
             setChecking(s === "checking");
