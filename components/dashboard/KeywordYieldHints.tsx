@@ -2,12 +2,13 @@
 
 import { useEffect, useEffectEvent, useState } from "react";
 import { apiGet } from "@/lib/api";
-import { dryHints, replacementRoles, type YieldResponse } from "@/lib/keyword-yield";
+import { swapRows, type YieldResponse } from "@/lib/keyword-yield";
 
 // A search phrase that keeps bringing nothing that fits (GET /jobs/keyword-yield: two or
-// more judged pages, 20+ verdicts, zero fits in a week) is named here with one-tap
-// replacements read off the resume. Advice only: nothing is removed unless the person
-// taps a replacement, and "keep" hides the hint for KEEP_DAYS on this browser.
+// more judged pages, 20+ verdicts, zero fits in a week) is shown as "old → new", the new
+// one the best role off the resume. No tallies or counts: one glance should say what to
+// swap. Advice only: nothing changes unless the person taps Swap, and Keep hides that row
+// for KEEP_DAYS on this browser.
 
 const KEEP_DAYS = 30;
 const KEEP_PREFIX = "hd.kwYieldKeep.";
@@ -72,58 +73,70 @@ export default function KeywordYieldHints({
   }, [kwKey]);
 
   if (!data || !kwKey) return null;
-  const dry = dryHints(data, keywords, (k) => kept.includes(k) || keptRecently(k));
-  if (!dry.length) return null;
-  const replacements = replacementRoles(roles, keywords);
+  const rows = swapRows(data, keywords, roles, (k) => kept.includes(k) || keptRecently(k));
+  if (!rows.length) return null;
+  // One phrase: the reason sits right under it, buttons to the side (on a phone they drop
+  // below both). Several: one reason under the whole list.
+  const reason = (
+    <p className="mt-1 text-xs text-text2">
+      {data.all_dry ? "None of your keywords found a fit this week." : "No fits this week."} Next round could find more.
+    </p>
+  );
 
   return (
-    <div className="flex flex-col gap-1.5 px-1" data-testid="keyword-yield-hints">
-      {data.all_dry && (
-        <p className="text-xs text-text2">
-          None of your keywords found a fit this week. Swap one for a role from your resume:
-        </p>
-      )}
-      <div className="flex flex-wrap items-center gap-2">
-        {dry.map((k) => (
-          <span
-            key={k.keyword}
+    <div className="rounded-xl border border-border bg-surface px-3.5 py-3" data-testid="keyword-yield-hints">
+      <ul className="flex flex-col gap-2">
+        {rows.map((r) => (
+          <li
+            key={r.keyword}
             data-testid="keyword-yield-hint"
-            className="inline-flex flex-wrap items-center gap-1.5 rounded-full border border-yellow/30 bg-yellow/[0.07]
-              px-2.5 py-1 text-xs text-text2"
+            className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5"
           >
-            <span>
-              <span className="font-semibold text-text">&ldquo;{k.keyword}&rdquo;</span>
-              <span className="text-text2/70">
-                : 0 of {k.judged} fit in {data.window_days} days
-              </span>
-            </span>
-            {replacements.length > 0 && <span className="text-text2/70">· Try</span>}
-            {replacements.map((r) => (
+            <div className="min-w-0">
+              <p className="text-sm">
+                <span className="text-text2">{r.keyword}</span>
+                {r.replacement && (
+                  <>
+                    <svg
+                      className="mx-1.5 inline-block w-3.5 h-3.5 -mt-0.5 text-text2/70"
+                      fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-5-5 5 5-5 5" />
+                    </svg>
+                    <span className="sr-only">, try </span>
+                    <span className="font-semibold text-text">{r.replacement}</span>
+                  </>
+                )}
+              </p>
+              {rows.length === 1 && reason}
+            </div>
+            <div className="ml-auto flex items-center gap-1 shrink-0">
+              {r.replacement && (
+                <button
+                  type="button"
+                  onClick={() => onReplace(r.keyword, r.replacement!)}
+                  className="px-3 py-1 text-xs font-semibold rounded-lg bg-accent text-white hover:bg-accent2 transition"
+                  aria-label={`Swap "${r.keyword}" for "${r.replacement}"`}
+                >
+                  Swap
+                </button>
+              )}
               <button
-                key={r}
-                onClick={() => onReplace(k.keyword, r)}
-                className="font-semibold text-accent hover:underline"
-                title={`Replace "${k.keyword}" with "${r}"`}
+                type="button"
+                onClick={() => {
+                  rememberKeep(r.keyword);
+                  setKept((s) => [...s, r.keyword]);
+                }}
+                className="px-2.5 py-1 text-xs font-medium rounded-lg text-text2 hover:text-text hover:bg-surface2 transition"
+                aria-label={`Keep "${r.keyword}"`}
               >
-                {r}
+                Keep
               </button>
-            ))}
-            <button
-              onClick={() => {
-                rememberKeep(k.keyword);
-                setKept((s) => [...s, k.keyword]);
-              }}
-              className="ml-0.5 text-text2/40 hover:text-text2 transition"
-              title="Keep this keyword"
-              aria-label={`Keep "${k.keyword}"`}
-            >
-              <svg className="w-2.5 h-2.5" viewBox="0 0 10 10" fill="currentColor">
-                <path d="M5 4.293 8.146 1.146a.5.5 0 0 1 .708.708L5.707 5l3.147 3.146a.5.5 0 0 1-.708.708L5 5.707 1.854 8.854a.5.5 0 0 1-.708-.708L4.293 5 1.146 1.854a.5.5 0 1 1 .708-.708z" />
-              </svg>
-            </button>
-          </span>
+            </div>
+          </li>
         ))}
-      </div>
+      </ul>
+      {rows.length > 1 && reason}
     </div>
   );
 }
