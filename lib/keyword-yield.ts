@@ -11,6 +11,14 @@ export type SwapRow = { keyword: string; replacement: string | null };
 // Same key as the server's keyword_key(): trimmed, inner spaces collapsed, lowercased.
 const norm = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
 
+// A role reads in the case of the phrase it replaces (the server sends roles lower-cased):
+// "Project Manager → digital marketing manager" would read as a glitch, and the swap puts
+// into the list exactly what the chip showed.
+function inCaseOf(phrase: string, role: string): string {
+  if (phrase === phrase.toLowerCase()) return role.toLowerCase();
+  return role.replace(/(^|\s)(\p{Ll})/gu, (_, sp: string, c: string) => sp + c.toUpperCase());
+}
+
 // Only phrases still in the list (the tally can trail an edit the person just made), one
 // role per phrase, best first, never a role already searched and never the same role twice.
 export function swapRows(
@@ -31,7 +39,8 @@ export function swapRows(
   for (const t of data.keywords) {
     const own = mine.get(norm(t.keyword));
     if (!t.dry || own === undefined || isKept(own)) continue;
-    rows.push({ keyword: own, replacement: free.shift() ?? null });
+    const role = free.shift();
+    rows.push({ keyword: own, replacement: role === undefined ? null : inCaseOf(own, role) });
   }
   return rows;
 }

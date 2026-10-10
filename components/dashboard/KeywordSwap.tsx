@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { apiGet } from "@/lib/api";
 import { swapRows, type YieldResponse } from "@/lib/keyword-yield";
 
@@ -31,40 +31,61 @@ function rememberKeep(keyword: string) {
   }
 }
 
+// The tally is read from the saved profile, so a list just edited is asked about again
+// once its save has had time to land, not on every keystroke.
+const YIELD_REFRESH_MS = 1500;
+
 // keyword (as the person typed it) → the role offered in its place.
 export function useKeywordSwaps(keywords: string[], getToken: () => Promise<string>) {
   const [data, setData] = useState<YieldResponse | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
   const [kept, setKept] = useState<string[]>([]);
+  const asked = useRef(false);
   const kwKey = keywords.map((k) => k.trim().toLowerCase()).join("\u001f");
+  const hasDry = !!data?.keywords.some((k) => k.dry);
 
-  // Reads the latest token getter and the roles already fetched without making either a
-  // reason to ask again: only a new phrase list is.
-  const load = useEffectEvent(async (isCancelled: () => boolean) => {
+  // Reads the latest token getter without making it a reason to ask again.
+  const loadYield = useEffectEvent(async (isCancelled: () => boolean) => {
     try {
-      const t = await getToken();
-      const res = await apiGet<YieldResponse>("/jobs/keyword-yield", t);
-      if (isCancelled()) return;
-      setData(res);
-      if (res.keywords.some((k) => k.dry) && roles.length === 0) {
-        const r = await apiGet<{ roles: string[] }>("/tools/suggest-roles", t);
-        if (!isCancelled()) setRoles(r.roles || []);
-      }
+      const res = await apiGet<YieldResponse>("/jobs/keyword-yield", await getToken());
+      if (!isCancelled()) setData(res);
     } catch (e) {
-      // The swap is advice on top of a working campaign: without it the search bar is
-      // exactly what it was, so a failed read is logged and no chip shows.
-      console.warn("[keyword-yield] swaps unavailable", e);
-      if (!isCancelled()) setData(null);
+      // The swap is advice on top of a working campaign: the last answer (or none) stays,
+      // and the search bar works exactly as without it.
+      console.warn("[keyword-yield] tally unavailable", e);
+    }
+  });
+
+  // Roles are a model call capped per day on the server: asked once per visit, and only
+  // when some phrase is dry, so edits and reloads of the tally never spend it again.
+  const loadRoles = useEffectEvent(async (isCancelled: () => boolean) => {
+    try {
+      const r = await apiGet<{ roles: string[] }>("/tools/suggest-roles", await getToken());
+      if (!isCancelled()) setRoles(r.roles || []);
+    } catch (e) {
+      console.warn("[keyword-yield] roles unavailable", e); /* no roles: no chip, nothing else changes */
     }
   });
 
   useEffect(() => {
+    if (!kwKey) return;
     let cancelled = false;
-    if (kwKey) load(() => cancelled);
+    const id = setTimeout(() => loadYield(() => cancelled), asked.current ? YIELD_REFRESH_MS : 0);
+    asked.current = true;
+    return () => {
+      cancelled = true;
+      clearTimeout(id);
+    };
+  }, [kwKey]);
+
+  useEffect(() => {
+    if (!hasDry) return;
+    let cancelled = false;
+    loadRoles(() => cancelled);
     return () => {
       cancelled = true;
     };
-  }, [kwKey]);
+  }, [hasDry]);
 
   const swaps = new Map<string, string>();
   if (data && kwKey) {

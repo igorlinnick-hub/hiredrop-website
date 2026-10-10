@@ -34,7 +34,7 @@ test("a phrase the person already replaced is not named", () => {
 
 test("a kept phrase stays quiet and leaves its role to the next row", () => {
   const got = swapRows(data, ["project manager", "ops lead"], roles, (k) => k === "project manager");
-  assert.deepEqual(got, [{ keyword: "ops lead", replacement: "Social Media" }]);
+  assert.deepEqual(got, [{ keyword: "ops lead", replacement: "social media" }]);
 });
 
 test("unknown is never dry", () => {
@@ -44,11 +44,21 @@ test("unknown is never dry", () => {
 test("each row gets its own role, skipping roles already searched", () => {
   const got = swapRows(data, ["social media", "project manager", "ops lead"], roles, never);
   assert.deepEqual(got, [
-    { keyword: "project manager", replacement: "Digital Marketing Manager" },
-    { keyword: "ops lead", replacement: "Brand Manager" },
+    { keyword: "project manager", replacement: "digital marketing manager" },
+    { keyword: "ops lead", replacement: "brand manager" },
   ]);
 });
 
 test("no role left means no replacement, not an error", () => {
   assert.deepEqual(swapRows(data, ["project manager"], [], never), [{ keyword: "project manager", replacement: null }]);
+});
+
+test("the role takes the case of the phrase it replaces", () => {
+  const lower = { ...data, keywords: [{ keyword: "Project Manager", pages: 2, judged: 28, fits: 0, dry: true }] };
+  assert.deepEqual(swapRows(lower, ["Project Manager"], ["digital marketing manager"], never), [
+    { keyword: "Project Manager", replacement: "Digital Marketing Manager" },
+  ]);
+  assert.deepEqual(swapRows(lower, ["project manager"], ["Digital Marketing Manager"], never), [
+    { keyword: "project manager", replacement: "digital marketing manager" },
+  ]);
 });
