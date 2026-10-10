@@ -10,7 +10,7 @@
  * extension runs on. An Indeed or ZipRecruiter step can't be reopened from a link.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Handback } from "@/components/dashboard/useHandbacks";
 
 const FINISH_PLATFORMS = ["greenhouse", "lever", "ashby"];
@@ -25,6 +25,10 @@ export function finishable(h: Handback): boolean {
     return false;
   }
 }
+
+// The extension runs in desktop Chrome only: on a phone the button could only fail.
+const MOBILE_UA = /Android|iPhone|iPad|iPod|Mobile/i;
+const noSubscribe = () => () => {};
 
 /** filling = the window is open and Drop is on it; the rest say why it didn't start. */
 export type FinishState =
@@ -63,6 +67,8 @@ const FILLING_SHOWN_MS = 4 * 60 * 1000;
 const REFUSAL_SHOWN_MS = 20 * 1000;
 
 export function useFinishHandback() {
+  // False on the server render and on phones; the row then offers the plain link only.
+  const canFinish = useSyncExternalStore(noSubscribe, () => !MOBILE_UA.test(navigator.userAgent), () => false);
   const [state, setState] = useState<Record<string, FinishState>>({});
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   // The PING probe's listener per row, removed as soon as that row has an answer.
@@ -131,5 +137,5 @@ export function useFinishHandback() {
     }, "*");
   }, [set]);
 
-  return { finishState: state, finish };
+  return { finishState: state, finish, canFinish };
 }

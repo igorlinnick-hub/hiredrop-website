@@ -127,7 +127,9 @@ export default function HistoryView({
   const [statusError, setStatusError] = useState<string | null>(null);
   const { items: liveHandbacks, reload: loadHandbacks, setItems: setHandbacks } = useHandbacks();
   const handbacks = handbacksOverride ?? liveHandbacks;
-  const { finishState, finish } = useFinishHandback();
+  const { finishState, finish, canFinish } = useFinishHandback();
+  // A row Drop can refill here: an ATS form on its own host, on a desktop with the extension.
+  const offerFinish = (h: Handback) => canFinish && finishable(h);
   const [openShot, setOpenShot] = useState<string | null>(null);
   // Which hand-back has its questions open, and which ones we just re-queued (so the
   // row can say so without waiting for the next 30s poll).
@@ -503,13 +505,13 @@ export default function HistoryView({
                       says so. The link below stays next to it either way: on a phone,
                       without the extension, or once Drop has stopped at a wall, it is
                       the way in. */}
-                  {h.url && !isQueued && finishable(h) && (finishState[h.id] === "filling" || finishState[h.id] === "asking") && (
+                  {h.url && !isQueued && offerFinish(h) && (finishState[h.id] === "filling" || finishState[h.id] === "asking") && (
                     <span className="shrink-0 rounded-md bg-accent/12 px-2 py-0.5 text-[11px] font-medium text-accent"
                       data-testid="handback-filling">
                       Filling…
                     </span>
                   )}
-                  {h.url && !isQueued && finishable(h) && !finishState[h.id] && (
+                  {h.url && !isQueued && offerFinish(h) && !finishState[h.id] && (
                     <button
                       onClick={() => finish(h)}
                       data-testid="handback-finish"
@@ -525,14 +527,14 @@ export default function HistoryView({
                       target="_blank"
                       rel="noopener noreferrer"
                       data-testid="handback-open-form"
-                      className={finishable(h)
+                      className={offerFinish(h)
                         // Beside "Let Drop finish it" it is the second way, styled like Done.
                         ? "shrink-0 rounded-md border border-border px-2 py-0.5 text-[11px] font-medium text-text2 transition hover:text-text"
                         : [expired ? "" : "hd-answer-cta", // the pulse means "needs you NOW" — a stale record sits still
                           "shrink-0 rounded-md border border-accent/40 bg-accent/8 px-2 py-0.5",
                           "text-[11px] font-medium text-accent transition hover:bg-accent/15"].join(" ")}
                     >
-                      {expired ? "Open posting ↗" : finishable(h) ? "Open form ↗" : "Finish form ↗"}
+                      {expired ? "Open posting ↗" : offerFinish(h) ? "Open form ↗" : "Finish form ↗"}
                     </a>
                   )}
                   {/* Hover-only while fresh (a list that never drains stops being read);
