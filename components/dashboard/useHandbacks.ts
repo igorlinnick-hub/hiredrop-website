@@ -12,6 +12,8 @@ export type Handback = {
   job_title: string;
   company: string;
   url: string;
+  /** greenhouse / lever / ashby / indeed / ziprecruiter: which form this is. */
+  platform?: string;
   reason: string;
   steps_done: number;
   /** When the wall happened. Drives the expired treatment (lib/handbacks/freshness):
