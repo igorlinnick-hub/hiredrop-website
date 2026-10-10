@@ -20,7 +20,7 @@
  * Theme-safe: semantic tokens only.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import type { Application } from "@/lib/types";
 import { PLATFORMS, JOB_STATUSES } from "@/lib/constants";
@@ -291,10 +291,6 @@ export default function HistoryView({
           asked for, in our own art. It earns its place by explaining the one
           thing about this screen that isn't obvious: a row opens into the exact
           documents we sent. */}
-      <div className="relative">
-        {/* Drop stands behind the panel's top edge: the panel is painted over his feet, so he
-            reads as standing behind the block. Desktop only; phones keep the plain panel. The bottom 72px of him sit behind the block, so the desk legs are hidden and only the desk top shows above it. */}
-        <DropCameo pose="at-desk" width={150} enter="up" className="hidden md:block absolute right-10 bottom-[calc(100%-72px)]" />
       <PosterPanel
         title={<>We kept <em className="italic">everything</em> we sent.</>}
         image="/bg/poster-history-day.jpg"
@@ -318,7 +314,6 @@ export default function HistoryView({
           ))}
         </div>
       </PosterPanel>
-      </div>
 
       {/* How much · when · today · where they went. Four blocks, four questions,
           every number computed from the record we already store. */}
@@ -830,39 +825,74 @@ function ApplicationDetail({ a }: { a: Application }) {
   );
 }
 
-/** What the employer's form asked and what we answered in the person's name, so they
- *  walk into the interview knowing it (e.g. "willing to work 5 days in the office: Yes").
- *  Each answer can be changed; the change is remembered for the next forms (AnswerRow). */
-function AnswersBlock({ answers: sent, delay = 0 }: { answers: { q: string; a: string }[]; delay?: number }) {
-  const [changed, setChanged] = useState<Record<number, string>>({});
-  const answers = sent.map((x, i) => (i in changed ? { ...x, a: changed[i] } : x));
+/** One section of the expanded record, folded by default, so an opened row shows what is
+ *  there before any of it is read. The header names what is inside
+ *  and how much, so the record reads as a table of contents before anything is opened.
+ *  Copy sits beside the toggle, not inside it, so copying never folds the section. */
+function Fold({ label, meta, copyText, delay = 0, testId, children }: {
+  label: string; meta: ReactNode; copyText: string; delay?: number; testId?: string;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const bodyId = useId();
+  // Copy → "Copied" for a beat: the feedback lives on the button itself, no toast.
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
   const copy = () => {
-    navigator.clipboard.writeText(answers.map((x) => `${x.q}\n${x.a}`).join("\n\n")).catch(() => {});
+    // A denied clipboard costs nothing: the text is on screen to select by hand.
+    navigator.clipboard.writeText(copyText).catch(() => {});
     setCopied(true);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setCopied(false), 1800);
   };
   return (
-    <div className="mb-3 hd-rise" style={{ animationDelay: `${delay}ms` }} data-testid="history-answers">
-      <div className="hd-doc-label">
-        <span className="hd-eyebrow hd-eyebrow-ink order-first">What we answered for you</span>
+    <div className="hd-fold hd-rise" style={{ animationDelay: `${delay}ms` }} data-testid={testId}>
+      <div className="flex items-center gap-2.5">
+        <button type="button" aria-expanded={open} aria-controls={bodyId}
+          onClick={() => setOpen((o) => !o)} className="hd-fold-toggle">
+          <span className="hd-fold-chev"><IconChevron open={open} /></span>
+          <span className="hd-eyebrow hd-eyebrow-ink">{label}</span>
+          <span className="hd-chip-n inline-flex items-center gap-1.5">{meta}</span>
+          <span className="hd-fold-rule" aria-hidden />
+        </button>
+        {/* On a phone the label stays readable and Copy shrinks to its glyph. */}
         <button onClick={copy} aria-live="polite"
-          className={["order-last hd-chip", copied ? "hd-chip-done" : ""].join(" ")}>
+          className={["hd-chip shrink-0", copied ? "hd-chip-done" : ""].join(" ")}>
           {copied
             ? <span className="hd-copied-pop inline-flex"><IconCheck /></span>
             : <IconCopy />}
-          {copied ? "Copied" : "Copy"}
+          <span className="max-sm:sr-only">{copied ? "Copied" : "Copy"}</span>
         </button>
       </div>
+      {/* Hidden, not unmounted: a half-typed Change and its "Saved" note survive a fold. */}
+      <div id={bodyId} hidden={!open} className="mt-1.5 mb-2 hd-detail-in">{children}</div>
+    </div>
+  );
+}
+
+const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
+const wordCount = (text: string) => text.trim().split(/\s+/).filter(Boolean).length;
+
+/** What the employer's form asked and what we answered in the person's name, so they
+ *  walk into the interview knowing it (e.g. "willing to work 5 days in the office: Yes").
+ *  Our answers carry the marker (.hd-ours), so the eye finds what was said on their
+ *  behalf; one they correct loses it, because from then on it is their own answer.
+ *  Each answer can be changed; the change is remembered for the next forms (AnswerRow). */
+function AnswersBlock({ answers: sent, delay = 0 }: { answers: { q: string; a: string }[]; delay?: number }) {
+  const [changed, setChanged] = useState<Record<number, string>>({});
+  const answers = sent.map((x, i) => (i in changed ? { ...x, a: changed[i] } : x));
+  return (
+    <Fold label="What we answered for you" delay={delay} testId="history-answers"
+      meta={<><span className="hd-ours-dot" aria-hidden />{plural(answers.length, "answer")}</>}
+      copyText={answers.map((x) => `${x.q}\n${x.a}`).join("\n\n")}>
       <dl className="hd-doc hd-scroll max-h-80 overflow-y-auto divide-y divide-border px-4 sm:px-5">
         {answers.map((x, i) => (
-          <AnswerRow key={i} q={x.q} a={x.a} onChanged={(a) => setChanged((prev) => ({ ...prev, [i]: a }))} />
+          <AnswerRow key={i} q={x.q} a={x.a} ours={!(i in changed)}
+            onChanged={(a) => setChanged((prev) => ({ ...prev, [i]: a }))} />
         ))}
       </dl>
-    </div>
+    </Fold>
   );
 }
 
@@ -872,35 +902,15 @@ function DocBlock({ label, text, delay = 0, kind = "resume" }: {
    *  its columns are aligned with spaces. */
   kind?: "letter" | "resume";
 }) {
-  // Copy → "Copied" for a beat: the feedback lives on the button itself, no toast.
-  const [copied, setCopied] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
-  const copy = () => {
-    navigator.clipboard.writeText(text).catch(() => {});
-    setCopied(true);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setCopied(false), 1800);
-  };
   return (
-    <div className="mb-3 last:mb-0 hd-rise" style={{ animationDelay: `${delay}ms` }}>
-      <div className="hd-doc-label">
-        <span className="hd-eyebrow hd-eyebrow-ink order-first">{label}</span>
-        <button onClick={copy} aria-live="polite"
-          className={["order-last hd-chip", copied ? "hd-chip-done" : ""].join(" ")}>
-          {copied
-            ? <span className="hd-copied-pop inline-flex"><IconCheck /></span>
-            : <IconCopy />}
-          {copied ? "Copied" : "Copy"}
-        </button>
-      </div>
+    <Fold label={label} meta={plural(wordCount(text), "word")} copyText={text} delay={delay}>
       <pre className={[
         "hd-doc hd-scroll max-h-80 overflow-y-auto p-4 sm:p-5",
         kind === "letter" ? "hd-doc-letter" : "hd-doc-mono",
       ].join(" ")}>
         {text}
       </pre>
-    </div>
+    </Fold>
   );
 }
 
