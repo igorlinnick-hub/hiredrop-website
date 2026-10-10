@@ -132,7 +132,7 @@ export default function Buddy({
           className="max-w-[250px] bg-surface border border-border rounded-2xl rounded-br-md
                      px-3.5 py-2.5 text-[12.5px] leading-relaxed text-text/85 shadow-lg"
         >
-          The chat didn&apos;t load — check your connection and tap me again.
+          The chat didn&apos;t load. Check your connection and tap me again.
         </p>
       )}
 
@@ -160,7 +160,7 @@ export default function Buddy({
         onClick={() => { dismissNudge(); setLoadFailed(false); setOpen((o) => !o); }}
         onPointerEnter={prefetchBubble}
         onFocus={prefetchBubble}
-        className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
+        className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-text focus-visible:ring-offset-2
                    transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]
                    hover:scale-[1.08] active:scale-[0.93] active:duration-100
                    motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100"

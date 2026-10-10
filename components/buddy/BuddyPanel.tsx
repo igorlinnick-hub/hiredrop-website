@@ -223,23 +223,22 @@ export default function BuddyPanel({
       transition={{ type: "spring", stiffness: 340, damping: 28 }}
       style={{
         transformOrigin: "bottom right",
-        boxShadow: "0 24px 60px rgba(31,22,84,0.22), 0 4px 14px rgba(31,22,84,0.10)",
+        boxShadow: "0 24px 60px rgba(16,16,20,0.18), 0 4px 14px rgba(16,16,20,0.08)",
       }}
       className="w-[min(92vw,380px)] rounded-[26px] overflow-hidden flex flex-col
-                 bg-surface border border-border"
+                 bg-surface2 border border-border"
     >
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border">
         <DropFigure size={34} state="idle" />
         <div className="min-w-0">
           <div className="text-[14px] font-semibold text-text leading-tight">Drop</div>
-          <div className="text-[11px] text-text/50 leading-tight">Knows your account</div>
         </div>
         <button
           onClick={onClose}
           aria-label="Close chat"
           className="ml-auto w-7 h-7 rounded-full grid place-items-center
-                     text-text/40 hover:text-text hover:bg-accent-light transition-colors"
+                     text-text/40 hover:text-text hover:bg-text/5 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -251,14 +250,14 @@ export default function BuddyPanel({
       <div ref={scroller} className="px-4 py-4 flex flex-col gap-4 overflow-y-auto" style={{ maxHeight: 360, minHeight: 190 }}>
         {empty && (
           <>
-            <p className="text-[13.5px] leading-relaxed text-text/80">{greeting}</p>
+            <p className="text-[13.5px] leading-relaxed text-text">{greeting}</p>
             <div className="flex flex-wrap gap-1.5">
               {suggestions.map((s) => (
                 <button
                   key={s}
                   onClick={() => send(s)}
-                  className="text-[12px] px-3 py-1.5 rounded-full border border-border text-text/70
-                             hover:border-accent hover:text-accent hover:bg-accent-light transition-colors"
+                  className="text-[12px] px-3 py-1.5 rounded-full border border-border bg-surface text-text
+                             hover:border-text transition-colors"
                 >
                   {s}
                 </button>
@@ -270,13 +269,13 @@ export default function BuddyPanel({
         {msgs.map((m, i) =>
           m.role === "user" ? (
             <div key={i} className="self-end max-w-[85%]">
-              <div className="bg-accent text-white text-[13.5px] leading-relaxed px-3.5 py-2 rounded-2xl rounded-br-md">
+              <div className="bg-text text-background text-[13.5px] leading-relaxed px-3.5 py-2 rounded-2xl rounded-br-md">
                 {m.text}
               </div>
             </div>
           ) : (
             <div key={i} className="flex flex-col gap-2">
-              <p className="text-[13.5px] leading-relaxed text-text/85 whitespace-pre-wrap">
+              <p className="text-[13.5px] leading-relaxed text-text whitespace-pre-wrap">
                 <DropText text={m.text} />
               </p>
               {m.cards?.map((c) => (
@@ -296,9 +295,9 @@ export default function BuddyPanel({
         )}
 
         {typed !== null && (
-          <p className="text-[13.5px] leading-relaxed text-text/85 whitespace-pre-wrap">
+          <p className="text-[13.5px] leading-relaxed text-text whitespace-pre-wrap">
             <DropText text={typed} />
-            <span className="inline-block w-[2px] h-[1em] align-[-2px] ml-0.5 bg-accent animate-pulse" />
+            <span className="inline-block w-[2px] h-[1em] align-[-2px] ml-0.5 bg-text animate-pulse" />
           </p>
         )}
 
@@ -316,7 +315,7 @@ export default function BuddyPanel({
               {[0, 1, 2].map((i) => (
                 <motion.span
                   key={i}
-                  className="w-1.5 h-1.5 rounded-full bg-accent/50"
+                  className="w-1.5 h-1.5 rounded-full bg-text/40"
                   animate={{ opacity: [0.25, 1, 0.25], y: [0, -3, 0] }}
                   transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15 }}
                 />
@@ -328,8 +327,8 @@ export default function BuddyPanel({
 
       {/* Composer */}
       <div className="px-3 pb-3 pt-1">
-        <div className="flex items-end gap-2 rounded-2xl border border-border bg-background px-3 py-2
-                        focus-within:border-accent transition-colors">
+        <div className="flex items-end gap-2 rounded-2xl border border-border bg-surface px-3 py-2
+                        focus-within:border-text transition-colors">
           {actions && (
             <>
               <input
@@ -351,7 +350,7 @@ export default function BuddyPanel({
                 aria-label="Upload a new resume (PDF)"
                 title="Upload a new resume (PDF)"
                 className="shrink-0 w-7 h-7 rounded-full grid place-items-center text-text/45
-                           hover:text-accent hover:bg-accent-light disabled:opacity-25 disabled:cursor-not-allowed
+                           hover:text-text hover:bg-text/5 disabled:opacity-25 disabled:cursor-not-allowed
                            transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -382,17 +381,14 @@ export default function BuddyPanel({
             onClick={() => send(draft)}
             disabled={!draft.trim() || busy}
             aria-label="Send"
-            className="shrink-0 w-7 h-7 rounded-full grid place-items-center bg-accent text-white
-                       disabled:opacity-25 disabled:cursor-not-allowed hover:bg-accent-hover transition-colors"
+            className="shrink-0 w-7 h-7 rounded-full grid place-items-center bg-text text-background
+                       disabled:opacity-25 disabled:cursor-not-allowed hover:opacity-85 transition"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M5 12h14M13 6l6 6-6 6" />
             </svg>
           </button>
         </div>
-        <p className="text-[10.5px] text-text/35 text-center mt-2">
-          Drop answers from your account and the HireDrop docs.
-        </p>
       </div>
     </motion.div>
   );
@@ -415,7 +411,7 @@ function ProposalCard({
   const settled = status === "done" || status === "dismissed";
   return (
     <div
-      className="rounded-2xl border border-border bg-background px-3.5 py-3 space-y-2"
+      className="rounded-2xl border border-border bg-surface px-3.5 py-3 space-y-2"
       data-testid="drop-card"
       data-status={status}
     >
@@ -423,11 +419,11 @@ function ProposalCard({
       {card.lines.length > 0 && (
         <ul className="space-y-0.5">
           {card.lines.map((l, i) => (
-            <li key={i} className="text-[12.5px] leading-snug text-text/75 break-words">{l}</li>
+            <li key={i} className="text-[12.5px] leading-snug text-text break-words">{l}</li>
           ))}
         </ul>
       )}
-      {card.note && <p className="text-[11.5px] leading-snug text-text/50">{card.note}</p>}
+      {card.note && <p className="text-[11.5px] leading-snug text-text2">{card.note}</p>}
 
       {status === "done" && (
         <p className="text-[12.5px] leading-snug text-green" role="status">{card.done || "Done."}</p>
@@ -446,7 +442,7 @@ function ProposalCard({
               type="button"
               onClick={() => onPress(o)}
               className="text-[12px] px-2.5 py-1 rounded-full border border-border text-text/75
-                         hover:border-accent hover:text-accent hover:bg-accent-light transition-colors"
+                         hover:border-text transition-colors"
             >
               {o}
             </button>
@@ -460,8 +456,8 @@ function ProposalCard({
             type="button"
             onClick={() => onPress()}
             disabled={status === "running"}
-            className="rounded-full bg-accent px-3.5 py-1.5 text-[12.5px] font-semibold text-white
-                       hover:bg-accent-hover disabled:opacity-50 disabled:cursor-wait transition-colors"
+            className="rounded-full bg-text px-3.5 py-1.5 text-[12.5px] font-semibold text-background
+                       hover:opacity-85 disabled:opacity-50 disabled:cursor-wait transition"
           >
             {status === "running" ? "Working…" : card.confirm}
           </button>
@@ -492,8 +488,8 @@ function Rating({ value, onRate }: { value?: "up" | "down"; onRate: (r: "up" | "
       title={label}
       className={[
         "w-6 h-6 rounded-full grid place-items-center transition-colors",
-        value === r ? "text-accent" : "text-text/30",
-        value ? "cursor-default" : "hover:text-text/70 hover:bg-accent-light",
+        value === r ? "text-text" : "text-text/30",
+        value ? "cursor-default" : "hover:text-text/70 hover:bg-text/5",
       ].join(" ")}
     >
       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
