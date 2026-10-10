@@ -98,7 +98,7 @@ export default function DashboardBuddy() {
     <Buddy
       ask={ask}
       actions={actions}
-      greeting="Hi, I'm Drop. I can see your campaign, applications and settings — ask me why something stopped, or anything about HireDrop."
+      greeting="Hi, I'm Drop. I can see your campaign, applications and settings. Ask me why something stopped, or anything about HireDrop."
       suggestions={["Why did my campaign stop?", "Why so few applications today?", "What's waiting on me?"]}
       working={working}
     />

@@ -31,12 +31,13 @@ const REST = dropArt("/character/idle.mp4");     // stands, faces you, blinks â€
 const WORK = dropArt("/character/desk.mp4");     // sits at the desk and types
 const POSTER = dropArt("/character/idle-poster.jpg");
 
-// The ring is the mood tell. Colours come from the ink-day palette already on the site.
+// The ring is the mood tell, shown only for an outcome. While talking the figure stays a
+// clean white circle with its shadow: a coloured outline there read as decoration, not news.
 const RING: Record<BuddyState, { color: string; width: number; pulse: boolean }> = {
   idle:      { color: "transparent",        width: 0, pulse: false },
-  listening: { color: "rgba(176,124,10,.5)", width: 2, pulse: true },
-  thinking:  { color: "rgba(176,124,10,.85)", width: 2, pulse: true },
-  speaking:  { color: "rgba(176,124,10,.6)", width: 2, pulse: false },
+  listening: { color: "transparent",        width: 0, pulse: false },
+  thinking:  { color: "transparent",        width: 0, pulse: false },
+  speaking:  { color: "transparent",        width: 0, pulse: false },
   success:   { color: "rgba(22,163,74,.75)", width: 3, pulse: false },
   stuck:     { color: "rgba(16,16,20,.22)",  width: 2, pulse: false },
 };
