@@ -14,6 +14,7 @@ import StartReadinessModal, { gateStart, type ReadinessCheck } from "@/component
 import RadiusMap, { type RadiusMiles } from "@/components/dashboard/RadiusMap";
 import LaunchModeCards from "@/components/dashboard/LaunchModeCards";
 import AutoDailyRow from "@/components/dashboard/AutoDailyRow";
+import KeywordYieldHints from "@/components/dashboard/KeywordYieldHints";
 
 // Platforms the extension can auto-apply on. Exactly one runs per campaign.
 const AUTO_APPLY_IDS = PLATFORMS.filter((p) => p.autoApply).map((p) => p.id);
@@ -286,10 +287,14 @@ export default function QuickActions({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keywords]);
 
-  function applyTypoFix(original: string, suggestion: string) {
+  // A replacement already in the list drops the original instead of doubling it.
+  function replaceKeyword(original: string, replacement: string) {
     setAndPersistKeywords(
-      keywords.includes(suggestion) ? keywords.filter((k) => k !== original) : keywords.map((k) => (k === original ? suggestion : k)),
+      keywords.includes(replacement) ? keywords.filter((k) => k !== original) : keywords.map((k) => (k === original ? replacement : k)),
     );
+  }
+  function applyTypoFix(original: string, suggestion: string) {
+    replaceKeyword(original, suggestion);
     setTypoSuggestions((s) => s.filter((c) => c.original !== original));
   }
   function dismissTypoFix(original: string) {
@@ -775,6 +780,8 @@ export default function QuickActions({
           ))}
         </div>
       )}
+
+      <KeywordYieldHints keywords={keywords} getToken={getFreshToken} onReplace={replaceKeyword} />
 
       {/* ── Filter chips row ── */}
       <div className="flex flex-wrap items-center gap-2 px-1">
