@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyboardEvent, useEffect, useRef, useState } from "react";
+import { Fragment, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, apiPost } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
@@ -14,7 +14,7 @@ import StartReadinessModal, { gateStart, type ReadinessCheck } from "@/component
 import RadiusMap, { type RadiusMiles } from "@/components/dashboard/RadiusMap";
 import LaunchModeCards from "@/components/dashboard/LaunchModeCards";
 import AutoDailyRow from "@/components/dashboard/AutoDailyRow";
-import KeywordYieldHints from "@/components/dashboard/KeywordYieldHints";
+import { KeywordSwapChip, useKeywordSwaps } from "@/components/dashboard/KeywordSwap";
 
 // Platforms the extension can auto-apply on. Exactly one runs per campaign.
 const AUTO_APPLY_IDS = PLATFORMS.filter((p) => p.autoApply).map((p) => p.id);
@@ -286,6 +286,8 @@ export default function QuickActions({
     return () => { cancelled = true; clearTimeout(id); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keywords]);
+
+  const { swaps, keep: keepKeyword } = useKeywordSwaps(keywords, getFreshToken);
 
   // A replacement already in the list drops the original instead of doubling it.
   function replaceKeyword(original: string, replacement: string) {
@@ -663,18 +665,28 @@ export default function QuickActions({
           </svg>
 
           {keywords.map((kw) => (
-            <span key={kw}
-              className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent/10 text-accent
-                text-xs font-medium rounded-full border border-accent/15 whitespace-nowrap">
-              {kw}
-              <button type="button"
-                onClick={(e) => { e.stopPropagation(); setAndPersistKeywords(keywords.filter((k) => k !== kw)); }}
-                className="hover:text-red/80 transition">
-                <svg className="w-2.5 h-2.5" viewBox="0 0 10 10" fill="currentColor">
-                  <path d="M5 4.293 8.146 1.146a.5.5 0 0 1 .708.708L5.707 5l3.147 3.146a.5.5 0 0 1-.708.708L5 5.707 1.854 8.854a.5.5 0 0 1-.708-.708L4.293 5 1.146 1.854a.5.5 0 1 1 .708-.708z" />
-                </svg>
-              </button>
-            </span>
+            <Fragment key={kw}>
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent/10 text-accent
+                  text-xs font-medium rounded-full border border-accent/15 whitespace-nowrap">
+                {kw}
+                <button type="button"
+                  onClick={(e) => { e.stopPropagation(); setAndPersistKeywords(keywords.filter((k) => k !== kw)); }}
+                  className="hover:text-red/80 transition">
+                  <svg className="w-2.5 h-2.5" viewBox="0 0 10 10" fill="currentColor">
+                    <path d="M5 4.293 8.146 1.146a.5.5 0 0 1 .708.708L5.707 5l3.147 3.146a.5.5 0 0 1-.708.708L5 5.707 1.854 8.854a.5.5 0 0 1-.708-.708L4.293 5 1.146 1.854a.5.5 0 1 1 .708-.708z" />
+                  </svg>
+                </button>
+              </span>
+              {swaps.has(kw) && (
+                <KeywordSwapChip
+                  from={kw}
+                  to={swaps.get(kw)!}
+                  onSwap={() => replaceKeyword(kw, swaps.get(kw)!)}
+                  onKeep={() => keepKeyword(kw)}
+                />
+              )}
+            </Fragment>
           ))}
 
           <input
@@ -780,8 +792,6 @@ export default function QuickActions({
           ))}
         </div>
       )}
-
-      <KeywordYieldHints keywords={keywords} getToken={getFreshToken} onReplace={replaceKeyword} />
 
       {/* ── Filter chips row ── */}
       <div className="flex flex-wrap items-center gap-2 px-1">

@@ -1864,3 +1864,10 @@ h1, h2, h3 {
 @media (prefers-reduced-motion: reduce) {
   .hd-alert-dot, .hd-alert-dot::after, .hd-answer-cta { animation: none; }
 }
+
+/* A role the search bar offers in place of a phrase that found nothing: the tap dock's
+   live-dot ring, so the chip reads as "new, look here" without a word around it. */
+.hd-swap-chip { animation: hd-dock-pulse 1.9s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .hd-swap-chip { animation: none; }
+}

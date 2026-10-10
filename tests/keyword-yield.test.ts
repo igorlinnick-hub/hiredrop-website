@@ -49,6 +49,6 @@ test("each row gets its own role, skipping roles already searched", () => {
   ]);
 });
 
-test("no role left means a row with Keep only, not an error", () => {
+test("no role left means no replacement, not an error", () => {
   assert.deepEqual(swapRows(data, ["project manager"], [], never), [{ keyword: "project manager", replacement: null }]);
 });
