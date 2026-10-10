@@ -500,7 +500,9 @@ export default function HistoryView({
                       nothing to click but Done (10-08). Always visible. */}
                   {/* An ATS form Drop can reopen: it refills it in a window the person
                       sees and leaves them only the last step. While it works the row
-                      says so; a refusal falls back to the link below. */}
+                      says so. The link below stays next to it either way: on a phone,
+                      without the extension, or once Drop has stopped at a wall, it is
+                      the way in. */}
                   {h.url && !isQueued && finishable(h) && (finishState[h.id] === "filling" || finishState[h.id] === "asking") && (
                     <span className="shrink-0 rounded-md bg-accent/12 px-2 py-0.5 text-[11px] font-medium text-accent"
                       data-testid="handback-filling">
@@ -517,17 +519,20 @@ export default function HistoryView({
                       Let Drop finish it
                     </button>
                   )}
-                  {h.url && !isQueued && !(finishable(h) && (!finishState[h.id] || finishState[h.id] === "filling" || finishState[h.id] === "asking")) && (
+                  {h.url && !isQueued && (
                     <a
                       href={h.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       data-testid="handback-open-form"
-                      className={[expired ? "" : "hd-answer-cta", // the pulse means "needs you NOW" — a stale record sits still
-                        "shrink-0 rounded-md border border-accent/40 bg-accent/8 px-2 py-0.5",
-                        "text-[11px] font-medium text-accent transition hover:bg-accent/15"].join(" ")}
+                      className={finishable(h)
+                        // Beside "Let Drop finish it" it is the second way, styled like Done.
+                        ? "shrink-0 rounded-md border border-border px-2 py-0.5 text-[11px] font-medium text-text2 transition hover:text-text"
+                        : [expired ? "" : "hd-answer-cta", // the pulse means "needs you NOW" — a stale record sits still
+                          "shrink-0 rounded-md border border-accent/40 bg-accent/8 px-2 py-0.5",
+                          "text-[11px] font-medium text-accent transition hover:bg-accent/15"].join(" ")}
                     >
-                      {expired ? "Open posting ↗" : "Finish form ↗"}
+                      {expired ? "Open posting ↗" : finishable(h) ? "Open form ↗" : "Finish form ↗"}
                     </a>
                   )}
                   {/* Hover-only while fresh (a list that never drains stops being read);

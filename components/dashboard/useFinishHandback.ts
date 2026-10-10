@@ -27,15 +27,31 @@ export function finishable(h: Handback): boolean {
 }
 
 /** filling = the window is open and Drop is on it; the rest say why it didn't start. */
-export type FinishState = "asking" | "filling" | "busy" | "daily_limit" | "old_extension" | "no_extension";
+export type FinishState =
+  | "asking" | "filling"
+  | "busy" | "daily_limit" | "free_limit" | "unsupported"
+  | "old_extension" | "no_extension";
+
+/** The refusals background startFinishRun answers with, by name. */
+const EXTENSION_REFUSALS: FinishState[] = ["busy", "daily_limit", "free_limit", "unsupported"];
 
 /** What a refused start tells the person. Fixed wording: never the extension's own text. */
 export const FINISH_REFUSAL: Partial<Record<FinishState, string>> = {
   busy: "Drop is busy with your run. Try again when it ends.",
   daily_limit: "Today's applications are used up. Try again tomorrow.",
+  free_limit: "Your free applications are used up. Subscribe to keep applying.",
+  unsupported: "Drop can't reopen this form. Open it yourself instead.",
   old_extension: "This needs the newest HireDrop extension. Chrome updates it within a few hours; until then, open the form yourself.",
   no_extension: "The extension didn't answer. Reload this page and try again.",
 };
+
+/** The row's state for one HIREDROP_FINISH_STARTED answer. */
+export function finishAnswerState(data: { ok?: unknown; error?: unknown }): FinishState {
+  if (data.ok) return "filling";
+  if (EXTENSION_REFUSALS.includes(data.error as FinishState)) return data.error as FinishState;
+  // context_invalidated (the extension was reloaded under this tab), or a word we don't know.
+  return "no_extension";
+}
 
 // The extension answers within a beat; silence means it isn't there or this tab lost it.
 const ANSWER_WAIT_MS = 4000;
@@ -49,9 +65,18 @@ const REFUSAL_SHOWN_MS = 20 * 1000;
 export function useFinishHandback() {
   const [state, setState] = useState<Record<string, FinishState>>({});
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  // The PING probe's listener per row, removed as soon as that row has an answer.
+  const pongs = useRef<Record<string, (e: MessageEvent) => void>>({});
+
+  const dropPong = useCallback((id: string) => {
+    const l = pongs.current[id];
+    if (l) window.removeEventListener("message", l);
+    delete pongs.current[id];
+  }, []);
 
   const set = useCallback((id: string, next: FinishState, clearAfterMs?: number) => {
     clearTimeout(timers.current[id]);
+    dropPong(id);
     setState((prev) => ({ ...prev, [id]: next }));
     if (clearAfterMs) {
       timers.current[id] = setTimeout(() => {
@@ -62,22 +87,23 @@ export function useFinishHandback() {
         });
       }, clearAfterMs);
     }
-  }, []);
+  }, [dropPong]);
 
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
       if (e.source !== window || !e.data || e.data.type !== "HIREDROP_FINISH_STARTED") return;
       const id = String(e.data.id || "");
       if (!id) return;
-      if (e.data.ok) set(id, "filling", FILLING_SHOWN_MS);
-      else if (e.data.error === "busy" || e.data.error === "daily_limit") set(id, e.data.error, REFUSAL_SHOWN_MS);
-      else set(id, "no_extension", REFUSAL_SHOWN_MS);
+      const next = finishAnswerState(e.data);
+      set(id, next, next === "filling" ? FILLING_SHOWN_MS : REFUSAL_SHOWN_MS);
     };
     window.addEventListener("message", onMsg);
     const pending = timers.current;
+    const probes = pongs.current;
     return () => {
       window.removeEventListener("message", onMsg);
       for (const t of Object.values(pending)) clearTimeout(t);
+      for (const l of Object.values(probes)) window.removeEventListener("message", l);
     };
   }, [set]);
 
@@ -89,10 +115,10 @@ export function useFinishHandback() {
     timers.current[h.id] = setTimeout(() => {
       let pong = false;
       const onPong = (e: MessageEvent) => { if (e.source === window && e.data === "HIREDROP_PONG") pong = true; };
+      pongs.current[h.id] = onPong;
       window.addEventListener("message", onPong);
       window.postMessage("HIREDROP_PING", "*");
       timers.current[h.id] = setTimeout(() => {
-        window.removeEventListener("message", onPong);
         set(h.id, pong ? "old_extension" : "no_extension", REFUSAL_SHOWN_MS);
       }, PONG_WAIT_MS);
     }, ANSWER_WAIT_MS);
