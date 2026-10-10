@@ -1535,18 +1535,11 @@ h1, h2, h3 {
 }
 .dark .hd-doc-mono { color: rgba(233, 231, 245, .88); }
 
-/* The label above a document: caps + a rule to the right, so the block
-   announces itself the way a section does in Settings. */
-.hd-doc-label { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.hd-doc-label::after {
-  content: ""; flex: 1 1 auto; height: 1px;
-  background: rgba(26, 22, 14, .14);
-}
-.dark .hd-doc-label::after { background: rgba(255, 255, 255, .14); }
 
-/* The record's sections fold, so an opened row is a table of contents,
-   not a wall of documents. The header is the old doc label made pressable: chevron, caps, count, and
-   the same hairline, which warms to the accent on hover. */
+/* The record's sections fold, so an opened row reads as a table of contents.
+   The header is pressable: chevron, caps, count, and a hairline to the Copy
+   chip, announcing the section the way one does in Settings; the hairline
+   warms to the accent on hover. */
 .hd-fold + .hd-fold { margin-top: 2px; }
 .hd-fold-toggle {
   display: flex; align-items: center; gap: 10px;

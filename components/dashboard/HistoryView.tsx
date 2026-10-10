@@ -830,8 +830,8 @@ function ApplicationDetail({ a }: { a: Application }) {
   );
 }
 
-/** One section of the expanded record, folded by default: a long wall of letter, résumé and
- *  answers buried the one line a person came for. The header names what is inside
+/** One section of the expanded record, folded by default, so an opened row shows what is
+ *  there before any of it is read. The header names what is inside
  *  and how much, so the record reads as a table of contents before anything is opened.
  *  Copy sits beside the toggle, not inside it, so copying never folds the section. */
 function Fold({ label, meta, copyText, delay = 0, testId, children }: {
@@ -845,6 +845,7 @@ function Fold({ label, meta, copyText, delay = 0, testId, children }: {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
   const copy = () => {
+    // A denied clipboard costs nothing: the text is on screen to select by hand.
     navigator.clipboard.writeText(copyText).catch(() => {});
     setCopied(true);
     if (timer.current) clearTimeout(timer.current);
@@ -869,7 +870,8 @@ function Fold({ label, meta, copyText, delay = 0, testId, children }: {
           <span className="max-sm:sr-only">{copied ? "Copied" : "Copy"}</span>
         </button>
       </div>
-      {open && <div id={bodyId} className="mt-1.5 mb-2 hd-detail-in">{children}</div>}
+      {/* Hidden, not unmounted: a half-typed Change and its "Saved" note survive a fold. */}
+      <div id={bodyId} hidden={!open} className="mt-1.5 mb-2 hd-detail-in">{children}</div>
     </div>
   );
 }
