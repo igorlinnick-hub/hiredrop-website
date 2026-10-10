@@ -28,6 +28,7 @@ import { createClient } from "@/lib/supabase/client";
 import { apiPatch, apiPost, type StatsResponse } from "@/lib/api";
 import { handbackAge, handbackExpired } from "@/lib/handbacks/freshness";
 import { useNowMs, useHandbacks, useHiddenHandbacks, handbackProgress, type Handback } from "@/components/dashboard/useHandbacks";
+import { finishable, useFinishHandback, FINISH_REFUSAL } from "@/components/dashboard/useFinishHandback";
 import HandbackAnswers from "@/components/dashboard/HandbackAnswers";
 import PersonalQuestions from "@/components/dashboard/PersonalQuestions";
 import AnswerRow from "@/components/dashboard/AnswerRow";
@@ -126,6 +127,7 @@ export default function HistoryView({
   const [statusError, setStatusError] = useState<string | null>(null);
   const { items: liveHandbacks, reload: loadHandbacks, setItems: setHandbacks } = useHandbacks();
   const handbacks = handbacksOverride ?? liveHandbacks;
+  const { finishState, finish } = useFinishHandback();
   const [openShot, setOpenShot] = useState<string | null>(null);
   // Which hand-back has its questions open, and which ones we just re-queued (so the
   // row can say so without waiting for the next 30s poll).
@@ -496,7 +498,26 @@ export default function HistoryView({
                   {/* The way IN — the one thing the row is FOR. A title that happens to
                       be a link is not an affordance: Igor opened a 95% row and found
                       nothing to click but Done (10-08). Always visible. */}
-                  {h.url && !isQueued && (
+                  {/* An ATS form Drop can reopen: it refills it in a window the person
+                      sees and leaves them only the last step. While it works the row
+                      says so; a refusal falls back to the link below. */}
+                  {h.url && !isQueued && finishable(h) && (finishState[h.id] === "filling" || finishState[h.id] === "asking") && (
+                    <span className="shrink-0 rounded-md bg-accent/12 px-2 py-0.5 text-[11px] font-medium text-accent"
+                      data-testid="handback-filling">
+                      Filling…
+                    </span>
+                  )}
+                  {h.url && !isQueued && finishable(h) && !finishState[h.id] && (
+                    <button
+                      onClick={() => finish(h)}
+                      data-testid="handback-finish"
+                      className="hd-answer-cta shrink-0 rounded-md border border-accent/40 bg-accent/8 px-2 py-0.5
+                        text-[11px] font-medium text-accent transition hover:bg-accent/15"
+                    >
+                      Let Drop finish it
+                    </button>
+                  )}
+                  {h.url && !isQueued && !(finishable(h) && (!finishState[h.id] || finishState[h.id] === "filling" || finishState[h.id] === "asking")) && (
                     <a
                       href={h.url}
                       target="_blank"
@@ -520,6 +541,12 @@ export default function HistoryView({
                     Done
                   </button>
                 </div>
+
+                {FINISH_REFUSAL[finishState[h.id]] && (
+                  <p className="px-4 pt-1.5 text-[12px] text-text2" role="status">
+                    {FINISH_REFUSAL[finishState[h.id]]}
+                  </p>
+                )}
 
                 {answering === h.id && (
                   <HandbackAnswers
