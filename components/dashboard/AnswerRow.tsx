@@ -24,10 +24,13 @@ async function token(): Promise<string> {
 export default function AnswerRow({
   q,
   a,
+  ours = true,
   onChanged,
 }: {
   q: string;
   a: string;
+  /** Still the answer we gave on their behalf: drawn with the marker. */
+  ours?: boolean;
   onChanged: (answer: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -69,7 +72,9 @@ export default function AnswerRow({
       <dt className="hd-hist-sub text-[12px] leading-snug">{q}</dt>
       {!editing ? (
         <dd className="mt-0.5 flex items-baseline justify-between gap-3">
-          <span className="text-[13px] font-medium leading-snug text-text break-words">{a}</span>
+          <span className="min-w-0 text-[13px] font-medium leading-snug text-text break-words">
+            <span className={ours ? "hd-ours" : undefined}>{a}</span>
+          </span>
           <button
             type="button"
             onClick={open}

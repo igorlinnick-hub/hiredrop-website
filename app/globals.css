@@ -1535,14 +1535,47 @@ h1, h2, h3 {
 }
 .dark .hd-doc-mono { color: rgba(233, 231, 245, .88); }
 
-/* The label above a document: caps + a rule to the right, so the block
-   announces itself the way a section does in Settings. */
-.hd-doc-label { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.hd-doc-label::after {
-  content: ""; flex: 1 1 auto; height: 1px;
-  background: rgba(26, 22, 14, .14);
+
+/* The record's sections fold, so an opened row reads as a table of contents.
+   The header is pressable: chevron, caps, count, and a hairline to the Copy
+   chip, announcing the section the way one does in Settings; the hairline
+   warms to the accent on hover. */
+.hd-fold + .hd-fold { margin-top: 2px; }
+.hd-fold-toggle {
+  display: flex; align-items: center; gap: 10px;
+  flex: 1 1 auto; min-width: 0;
+  padding: 7px 0;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
 }
-.dark .hd-doc-label::after { background: rgba(255, 255, 255, .14); }
+.hd-fold-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hd-fold-toggle .hd-eyebrow { min-width: 0; line-height: 1.45; }
+.hd-fold-toggle .hd-chip-n { white-space: nowrap; }
+.hd-fold-chev { display: inline-grid; place-items: center; width: 16px; height: 16px; flex: none; color: var(--text2); transition: color .2s; }
+.hd-fold-chev svg { width: 15px; height: 15px; }
+.hd-fold-toggle:hover .hd-fold-chev { color: var(--accent); }
+.hd-fold-rule { flex: 1 1 auto; min-width: 12px; height: 1px; background: rgba(26, 22, 14, .14); transition: background-color .2s; }
+.dark .hd-fold-rule { background: rgba(255, 255, 255, .14); }
+.hd-fold-toggle:hover .hd-fold-rule { background: color-mix(in srgb, var(--accent) 50%, transparent); }
+
+/* What we said in the person's name, drawn with a highlighter in the accent:
+   amber by day, violet by night. The dot in the section header is the same
+   ink, so the colour reads as a legend: marked = ours. */
+.hd-ours {
+  background: linear-gradient(180deg, transparent 52%, color-mix(in srgb, var(--accent) 30%, transparent) 52%);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  padding: 0 3px;
+  margin: 0 -3px;
+}
+.dark .hd-ours {
+  background: linear-gradient(180deg, transparent 52%, color-mix(in srgb, var(--accent) 45%, transparent) 52%);
+}
+.hd-ours-dot {
+  width: 7px; height: 7px; border-radius: 999px; flex: none;
+  background: color-mix(in srgb, var(--accent) 70%, transparent);
+}
 
 /* ============================================================
    HISTORY INSIGHTS — the panel above the list (Igor 09-23, from
