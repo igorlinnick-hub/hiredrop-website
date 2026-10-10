@@ -27,20 +27,24 @@ export function finishable(h: Handback): boolean {
 }
 
 /** filling = the window is open and Drop is on it; the rest say why it didn't start. */
-export type FinishState = "asking" | "filling" | "busy" | "daily_limit" | "no_extension";
+export type FinishState = "asking" | "filling" | "busy" | "daily_limit" | "old_extension" | "no_extension";
 
 /** What a refused start tells the person. Fixed wording: never the extension's own text. */
 export const FINISH_REFUSAL: Partial<Record<FinishState, string>> = {
   busy: "Drop is busy with your run. Try again when it ends.",
   daily_limit: "Today's applications are used up. Try again tomorrow.",
+  old_extension: "This needs the newest HireDrop extension. Chrome updates it within a few hours; until then, open the form yourself.",
   no_extension: "The extension didn't answer. Reload this page and try again.",
 };
 
 // The extension answers within a beat; silence means it isn't there or this tab lost it.
 const ANSWER_WAIT_MS = 4000;
+const PONG_WAIT_MS = 1000;
 // The fill takes a minute or two; past that the row offers the button again, and the
 // 30s hand-back poll has removed it already if the application went through.
 const FILLING_SHOWN_MS = 4 * 60 * 1000;
+// A refusal is read, then the button comes back for another try.
+const REFUSAL_SHOWN_MS = 20 * 1000;
 
 export function useFinishHandback() {
   const [state, setState] = useState<Record<string, FinishState>>({});
@@ -66,8 +70,8 @@ export function useFinishHandback() {
       const id = String(e.data.id || "");
       if (!id) return;
       if (e.data.ok) set(id, "filling", FILLING_SHOWN_MS);
-      else if (e.data.error === "busy" || e.data.error === "daily_limit") set(id, e.data.error);
-      else set(id, "no_extension");
+      else if (e.data.error === "busy" || e.data.error === "daily_limit") set(id, e.data.error, REFUSAL_SHOWN_MS);
+      else set(id, "no_extension", REFUSAL_SHOWN_MS);
     };
     window.addEventListener("message", onMsg);
     const pending = timers.current;
@@ -79,9 +83,18 @@ export function useFinishHandback() {
 
   const finish = useCallback((h: Handback) => {
     set(h.id, "asking");
-    // No answer at all: the extension isn't installed, or this tab predates its reload.
+    // No answer: either an extension from before this button (the store lags the code,
+    // and its ping.js ignores the message but still answers PING) or none reachable from
+    // this tab (not installed, or reloaded under it). One PING tells them apart.
     timers.current[h.id] = setTimeout(() => {
-      setState((prev) => (prev[h.id] === "asking" ? { ...prev, [h.id]: "no_extension" } : prev));
+      let pong = false;
+      const onPong = (e: MessageEvent) => { if (e.source === window && e.data === "HIREDROP_PONG") pong = true; };
+      window.addEventListener("message", onPong);
+      window.postMessage("HIREDROP_PING", "*");
+      timers.current[h.id] = setTimeout(() => {
+        window.removeEventListener("message", onPong);
+        set(h.id, pong ? "old_extension" : "no_extension", REFUSAL_SHOWN_MS);
+      }, PONG_WAIT_MS);
     }, ANSWER_WAIT_MS);
     window.postMessage({
       type: "HIREDROP_FINISH_HANDBACK",
