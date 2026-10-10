@@ -18,7 +18,7 @@ interface Props {
  *
  * Replaces the old dry summary table. Echoes the user's own answers back into a
  * 3-step plan (Sprout's aha pattern) but framed around OUR positioning: find →
- * tailor → apply from your browser, you review first. Reinforces ban-safe at the
+ * tailor → apply from your browser, Auto or Tap. Reinforces ban-safe at the
  * finish line, then routes to the extension + dashboard.
  */
 export default function StepDone({ profile, resumeFile, onBack, onFinish, saving }: Props) {
@@ -54,7 +54,7 @@ export default function StepDone({ profile, resumeFile, onBack, onFinish, saving
       body: (
         <>
           Applications go out from <strong className="text-text">your own browser</strong>, at a human pace.
-          You review before anything sends.
+          Auto sends them; with Tap, you approve each one first.
         </>
       ),
     },

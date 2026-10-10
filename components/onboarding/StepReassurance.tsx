@@ -14,7 +14,8 @@ interface Props {
  * Placed right after the user tells us what they want (Job Preferences) — the
  * exact moment their guard is up ("is an auto-apply bot going to get me banned?").
  * Mirrors Sprout's motivation interstitials, but sells OUR differentiator:
- * account-safety + review-before-send, not volume. No input — one Continue.
+ * account-safety + a send mode you choose (Auto sends, Tap waits for your OK), not
+ * volume. No input — one Continue.
  */
 export default function StepReassurance({ onNext, onBack }: Props) {
   const points = [
@@ -39,8 +40,8 @@ export default function StepReassurance({ onNext, onBack }: Props) {
           d="M5 13l4 4L19 7"
         />
       ),
-      title: "You review before anything sends",
-      body: "Nothing is submitted without your OK. You stay in control of every application.",
+      title: "You choose how it sends",
+      body: "Auto sends for you. Switch to Tap anytime to approve each one before it goes out.",
     },
     {
       icon: (

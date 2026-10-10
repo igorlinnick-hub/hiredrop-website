@@ -48,7 +48,7 @@ export default function Hero() {
             <motion.p variants={fadeUp} className="text-lg text-[#5C574F] mb-8 max-w-lg">
               HireDrop finds roles, tailors your resume and cover letter for each one,
               and applies from your own browser — at a human pace, so your account stays
-              safe. You review before anything sends.
+              safe. It sends for you, or waits for your OK.
             </motion.p>
 
             <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-start gap-4 mb-3">
@@ -99,13 +99,13 @@ export default function Hero() {
               <span aria-hidden>📱</span>
               <span>
                 Set up from your phone in 2 minutes — applications run in Chrome on your computer,
-                and you approve them from anywhere.
+                and you can approve them from anywhere.
               </span>
             </motion.p>
 
             {/* Trust row — honest, ban-safe (no fabricated counts) */}
             <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              {["From your own browser", "You review first", "Cancel anytime"].map((t) => (
+              {["From your own browser", "You can review first", "Cancel anytime"].map((t) => (
                 <span key={t} className="inline-flex items-center gap-1.5 text-sm text-[#5C574F]">
                   <svg className="w-4 h-4 text-[#00B894] shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />

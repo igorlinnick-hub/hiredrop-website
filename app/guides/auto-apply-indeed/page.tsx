@@ -105,7 +105,7 @@ const STEPS = [
     body: (
       <>
         <p>
-          Whatever you use, keep a review step on at the start. Look at ten finished applications:
+          Whatever you use, review the first ones yourself (in HireDrop that is Tap mode). Look at ten finished applications:
           did it answer the screener questions sensibly, did the cover letter reference the actual
           posting, did it pick roles you would have picked?
         </p>
@@ -125,7 +125,7 @@ const FAQS = [
   },
   {
     q: "Is automating Indeed applications against the rules?",
-    a: "Indeed's terms restrict automated access to the site, and we are not going to pretend the line is crisp for a browser assistant that a human supervises. What we do to stay on the defensible side: applications run in your own browser under your own login at a human pace, we never solve captchas, we don't run server-side submission bots, and every application can be reviewed by you before it sends. Tools that blast from data-centre IPs or crack challenges are a different category of risk.",
+    a: "Indeed's terms restrict automated access to the site, and we are not going to pretend the line is crisp for a browser assistant that runs under your own login. What we do to stay on the defensible side: applications run in your own browser under your own login at a human pace, we never solve captchas, we don't run server-side submission bots, and in Tap mode you approve each application before it sends. Tools that blast from data-centre IPs or crack challenges are a different category of risk.",
   },
   {
     q: "Why do auto-apply tools fail on some Indeed jobs?",
@@ -228,9 +228,9 @@ export default function Page() {
             screener questions — in the Chrome window on your computer.
           </p>
           <p>
-            Then it waits for you. Tap mode is the default: you see the finished application and
-            approve it, from your phone if you are not at the desk. Up to 30 a day, 20 per
-            platform, paced across the day.{" "}
+            Then it submits, at a human pace — that is Auto mode, the default. In Tap mode it waits
+            for you instead: you see the finished application and approve it, from your phone if
+            you are not at the desk. Up to 30 a day, 15 per platform, paced across the day.{" "}
             <Link href="/guides/ats-resume-keywords" className="text-[#6C5CE7] underline">
               The ATS guide
             </Link>{" "}

@@ -12,7 +12,7 @@ const QUESTIONS = [
   },
   {
     q: "How does auto-apply work?",
-    a: "The Chrome extension reads matching listings, fills the application form with your profile, attaches your resume, and writes a tailored cover letter — then submits from your own browser. By default you review each one before it sends; switch to auto anytime.",
+    a: "The Chrome extension reads matching listings, fills the application form with your profile, attaches your resume, and writes a tailored cover letter — then submits from your own browser. By default it sends for you; switch to Tap mode anytime to review each one first.",
   },
   {
     q: "Which platforms are supported?",

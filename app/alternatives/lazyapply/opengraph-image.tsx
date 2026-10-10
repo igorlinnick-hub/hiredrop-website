@@ -1,6 +1,6 @@
 import { OG_CONTENT_TYPE, OG_SIZE, ogImage } from "@/lib/og";
 
-export const alt = "HireDrop vs LazyApply — volume blasting versus applications you approve";
+export const alt = "HireDrop vs LazyApply — volume blasting versus tailored, human-paced applications";
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 

@@ -122,7 +122,7 @@ export default function AutoFillDemo() {
         </div>
 
         <p className="text-center text-xs text-[#5C574F] mt-4">
-          From your own browser · at a human pace · you review first
+          From your own browser · at a human pace · you can review first
         </p>
       </div>
     </div>

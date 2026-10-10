@@ -34,7 +34,7 @@ const SLIDES: Slide[] = [
   {
     name: "welcome",
     title: "You stay in control",
-    body: "Review before anything sends. You approve, HireDrop does the busywork.",
+    body: "It sends for you, or waits for your OK. HireDrop does the busywork.",
   },
 ];
 

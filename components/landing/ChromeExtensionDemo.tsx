@@ -462,7 +462,7 @@ export default function ChromeExtensionDemo() {
           {[
             { value: "23 min", label: "saved per application" },
             { value: "Your IP", label: "applies from your browser" },
-            { value: "Review", label: "before anything sends" },
+            { value: "Your call", label: "auto-send or review first" },
           ].map((stat, i) => (
             <div
               key={stat.label}

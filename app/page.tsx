@@ -20,7 +20,7 @@ import Footer from "@/components/landing/Footer";
 export const metadata = pageMetadata({
   title: "HireDrop — AI auto-apply for jobs, without risking your account",
   description:
-    "HireDrop finds matching jobs on Indeed, ZipRecruiter and company ATS boards, writes a tailored resume and cover letter for each one, and applies from your own browser. You approve before anything sends. First 40 applications free.",
+    "HireDrop finds matching jobs on Indeed, ZipRecruiter and company ATS boards, writes a tailored resume and cover letter for each one, and applies from your own browser. It sends for you, or waits for your OK. First 40 applications free.",
   path: "/",
 });
 

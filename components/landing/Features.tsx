@@ -18,8 +18,8 @@ const features = [
   },
   {
     title: "You stay in control",
-    subtitle: "Review before send",
-    description: "Nothing is submitted without your OK. Approve each application before it goes out — or switch to full auto. Your call, not ours.",
+    subtitle: "Auto or Tap",
+    description: "Auto sends for you at a human pace. Or switch to Tap and approve each application before it goes out. Your call, not ours.",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="9" />

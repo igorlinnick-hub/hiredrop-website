@@ -32,7 +32,7 @@ const FAQS = [
   },
   {
     q: "How does the Chrome extension work?",
-    a: "It reads matching listings, fills the application form with your profile, attaches your resume, writes a tailored cover letter, and submits — all from your own browser. By default you review each application before it sends.",
+    a: "It reads matching listings, fills the application form with your profile, attaches your resume, writes a tailored cover letter, and submits — all from your own browser. By default it sends for you; switch to Tap mode to review each application first.",
   },
   {
     q: "What are Apply Modes?",

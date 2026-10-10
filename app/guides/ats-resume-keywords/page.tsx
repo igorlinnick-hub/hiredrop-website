@@ -233,7 +233,7 @@ export default function Page() {
           <p>
             HireDrop does that ten minutes for each posting — reshapes the resume toward it, writes
             the cover letter from its text, answers the form questions from your stored profile —
-            and then shows you the result before it sends.{" "}
+            and then sends it, or shows you the result first if you are in Tap mode.{" "}
             <Link href="/guides/auto-apply-indeed" className="text-[#6C5CE7] underline">
               The Indeed guide
             </Link>{" "}
